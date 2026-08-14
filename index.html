@@ -247,28 +247,7 @@
     </div>
   </div>
 
-  <!-- TAB 4: Dashboard / Analytics -->
-  <div id="dashboardTab" class="tab-content">
-    <div class="app-header-bar">
-      <h2>📊 របាយការណ៍សង្ខេប</h2>
-    </div>
-
-    <div class="dashboard-grid">
-      <div class="dash-card">
-        <h4>ចំណូលសរុប</h4>
-        <div class="val" id="dashSales">0 ៛</div>
-      </div>
-      <div class="dash-card">
-        <h4>ចំនួនវិក្កយបត្រ</h4>
-        <div class="val" id="dashOrders" style="color: #0a84ff;">0</div>
-      </div>
-    </div>
-
-    <h3 style="font-size: 16px; margin-top: 20px;">🔥 ទំនិញលក់ដាច់ជាងគេ ៥ មុខ</h3>
-    <div class="list-container-ui" id="topProductsContainer"></div>
-  </div>
-
-  <!-- TAB 5: ការកំណត់ -->
+  <!-- TAB 4: ការកំណត់ -->
   <div id="settingsTab" class="tab-content">
     <div class="app-header-bar">
       <h2>ការកំណត់</h2>
@@ -276,6 +255,12 @@
 
     <div class="settings-header-ui">របាយការណ៍ & ប្រវត្តិ</div>
     <div class="settings-group-ui">
+      <!-- បន្ថែមម៉ឺនុយរបាយការណ៍នៅទីនេះ ក្នុងទម្រង់ដូចប្រវត្តិទិញដូរ -->
+      <div class="setting-row-ui" onclick="openReportModal()">
+        <div class="setting-icon-ui" style="background: #ff9500;">📊</div>
+        <div class="setting-title-ui">របាយការណ៍លក់សង្ខេប</div>
+        <div>❯</div>
+      </div>
       <div class="setting-row-ui" onclick="openModal('historyModal')">
         <div class="setting-icon-ui" style="background: #c2bedc;">🔍</div>
         <div class="setting-title-ui">ស្វែងរកប្រវត្តិទិញដូរ</div>
@@ -301,6 +286,31 @@
     </div>
   </div>
 
+</div>
+
+<!-- Modal របាយការណ៍សង្ខេប -->
+<div id="reportModal" class="modal-ui">
+  <div class="modal-content-ui">
+    <h3>📊 របាយការណ៍លក់សង្ខេប</h3>
+    
+    <div class="dashboard-grid">
+      <div class="dash-card">
+        <h4>ចំណូលសរុប</h4>
+        <div class="val" id="dashSales">0 ៛</div>
+      </div>
+      <div class="dash-card">
+        <h4>ចំនួនវិក្កយបត្រ</h4>
+        <div class="val" id="dashOrders" style="color: #0a84ff;">0</div>
+      </div>
+    </div>
+
+    <h3 style="font-size: 16px; margin-top: 20px;">🔥 ទំនិញលក់ដាច់ជាងគេ ៥ មុខ</h3>
+    <div class="list-container-ui" id="topProductsContainer"></div>
+
+    <div class="modal-btn-group">
+      <button class="btn-modal btn-cancel" onclick="closeModal('reportModal')">បិទ</button>
+    </div>
+  </div>
 </div>
 
 <!-- Modal KHQR Payment -->
@@ -382,7 +392,7 @@
   </div>
 </div>
 
-<!-- BOTTOM NAVIGATION BAR -->
+<!-- BOTTOM NAVIGATION BAR (បានដកប៊ូតុងរបាយការណ៍ចេញ នៅសល់តែ ៤) -->
 <div class="bottom-nav">
   <button class="bottom-nav-item" onclick="switchBottomTab('productTab', this)">
     <div class="nav-icon">📦</div>
@@ -395,10 +405,6 @@
   <button class="bottom-nav-item active" onclick="switchBottomTab('invoiceTab', this)">
     <div class="nav-icon">📄</div>
     <span>វិក្កយបត្រ</span>
-  </button>
-  <button class="bottom-nav-item" onclick="switchBottomTab('dashboardTab', this)">
-    <div class="nav-icon">📊</div>
-    <span>របាយការណ៍</span>
   </button>
   <button class="bottom-nav-item" onclick="switchBottomTab('settingsTab', this)">
     <div class="nav-icon">⚙️</div>
@@ -427,8 +433,6 @@
 
     const mainHeader = document.getElementById('mainHeader');
     mainHeader.style.display = (tabId === 'invoiceTab') ? 'flex' : 'none';
-
-    if(tabId === 'dashboardTab') loadDashboard();
   }
 
   function openModal(id) { document.getElementById(id).style.display = 'flex'; }
@@ -594,6 +598,14 @@
     openModal('qrModal');
   }
 
+  function openReportModal() {
+    openModal('reportModal');
+    document.getElementById('dashSales').innerText = "...";
+    document.getElementById('dashOrders').innerText = "...";
+    document.getElementById('topProductsContainer').innerHTML = '<div style="text-align:center; padding: 15px; color: var(--sub-text);">កំពុងទាញយកទិន្នន័យ...</div>';
+    loadDashboard();
+  }
+
   function loadDashboard() {
     fetch(`${SCRIPT_URL}?action=getDashboardData`)
       .then(res => res.json())
@@ -702,7 +714,6 @@
     });
   }
 
-  // អនុគមន៍ស្វែងរកដែលបានកែសម្រួលរួច
   function performSearch() {
     let kw = encodeURIComponent(document.getElementById('searchKeyword').value.trim());
     let startDate = document.getElementById('searchStartDate').value;
