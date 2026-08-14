@@ -255,7 +255,6 @@
 
     <div class="settings-header-ui">របាយការណ៍ & ប្រវត្តិ</div>
     <div class="settings-group-ui">
-      <!-- បន្ថែមម៉ឺនុយរបាយការណ៍នៅទីនេះ ក្នុងទម្រង់ដូចប្រវត្តិទិញដូរ -->
       <div class="setting-row-ui" onclick="openReportModal()">
         <div class="setting-icon-ui" style="background: #ff9500;">📊</div>
         <div class="setting-title-ui">របាយការណ៍លក់សង្ខេប</div>
@@ -392,7 +391,7 @@
   </div>
 </div>
 
-<!-- BOTTOM NAVIGATION BAR (បានដកប៊ូតុងរបាយការណ៍ចេញ នៅសល់តែ ៤) -->
+<!-- BOTTOM NAVIGATION BAR -->
 <div class="bottom-nav">
   <button class="bottom-nav-item" onclick="switchBottomTab('productTab', this)">
     <div class="nav-icon">📦</div>
@@ -413,7 +412,7 @@
 </div>
 
 <script>
-  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxh_qgKsItR-xQNqZbz0dg_wiccRYhnUO7xS_C-0ULP24A5PnNe1fhX0PkZVL9HuPW0/exec";
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx6FcVb6ysm7A_5pNCqz3EXQlA2Dust5n5paYszkGfcnWGjfJ8c0q_Cqh_wsuWbc9qE/exec";
 
   let customersData = [];
   let productsData = [];
@@ -445,11 +444,12 @@
   };
 
   function renderProducts() {
-    let kw = document.getElementById('searchProduct').value.toLowerCase();
+    let kw = (document.getElementById('searchProduct').value || '').toLowerCase();
     let container = document.getElementById('productsListContainer');
     container.innerHTML = '';
 
-    let filtered = productsData.filter(p => p.name.toLowerCase().includes(kw));
+    if (!Array.isArray(productsData)) productsData = [];
+    let filtered = productsData.filter(p => p.name && p.name.toLowerCase().includes(kw));
 
     filtered.forEach(p => {
       let stockClass = p.stock < 10 ? 'stock-low' : '';
@@ -467,11 +467,12 @@
   }
 
   function renderCustomers() {
-    let kw = document.getElementById('searchCustomer').value.toLowerCase();
+    let kw = (document.getElementById('searchCustomer').value || '').toLowerCase();
     let container = document.getElementById('customersListContainer');
     container.innerHTML = '';
 
-    let filtered = customersData.filter(c => c.name.toLowerCase().includes(kw) || (c.phone && c.phone.includes(kw)));
+    if (!Array.isArray(customersData)) customersData = [];
+    let filtered = customersData.filter(c => (c.name && c.name.toLowerCase().includes(kw)) || (c.phone && c.phone.includes(kw)));
 
     filtered.forEach(c => {
       let prefix = c.name ? c.name.trim().substring(0, 2) : 'អ';
@@ -491,7 +492,7 @@
     fetch(`${SCRIPT_URL}?action=getCustomers`)
       .then(res => res.json())
       .then(list => {
-        customersData = list || [];
+        customersData = Array.isArray(list) ? list : [];
         let datalist = document.getElementById('customerListOptions');
         datalist.innerHTML = '';
         customersData.forEach(c => {
@@ -500,15 +501,20 @@
           datalist.appendChild(opt);
         });
         renderCustomers();
+      })
+      .catch(err => {
+        customersData = [];
+        renderCustomers();
       });
   }
 
   function onCustomerSelect() {
     let val = document.getElementById('customerInput').value.trim();
-    let found = customersData.find(c => c.name.toLowerCase() === val.toLowerCase());
+    if (!Array.isArray(customersData)) return;
+    let found = customersData.find(c => c.name && c.name.toLowerCase() === val.toLowerCase());
     if (found) {
-      document.getElementById('phone').value = found.phone;
-      document.getElementById('address').value = found.address;
+      document.getElementById('phone').value = found.phone || "";
+      document.getElementById('address').value = found.address || "";
     }
   }
 
@@ -516,7 +522,7 @@
     fetch(`${SCRIPT_URL}?action=getItems`)
       .then(res => res.json())
       .then(list => {
-        productsData = list || [];
+        productsData = Array.isArray(list) ? list : [];
         let datalist = document.getElementById('productListOptions');
         datalist.innerHTML = '';
         productsData.forEach(p => {
@@ -526,6 +532,11 @@
         });
         renderProducts();
         if (callback) callback();
+      })
+      .catch(err => {
+        productsData = [];
+        renderProducts();
+        if (callback) callback();
       });
   }
 
@@ -533,7 +544,8 @@
     let row = input.closest('tr');
     let val = input.value.trim();
     let priceInput = row.querySelector('.item-price');
-    let found = productsData.find(p => p.name.toLowerCase() === val.toLowerCase());
+    if (!Array.isArray(productsData)) return;
+    let found = productsData.find(p => p.name && p.name.toLowerCase() === val.toLowerCase());
     if (found) priceInput.value = found.price;
     calculateRow(priceInput);
   }
@@ -610,12 +622,14 @@
     fetch(`${SCRIPT_URL}?action=getDashboardData`)
       .then(res => res.json())
       .then(data => {
+        if (!data) data = {};
         document.getElementById('dashSales').innerText = (data.totalSales || 0).toLocaleString() + " ៛";
         document.getElementById('dashOrders').innerText = data.totalOrders || 0;
 
         let container = document.getElementById('topProductsContainer');
         container.innerHTML = '';
-        (data.topProducts || []).forEach(p => {
+        let topProds = Array.isArray(data.topProducts) ? data.topProducts : [];
+        topProds.forEach(p => {
           container.innerHTML += `
             <div class="list-item-ui">
               <div class="item-icon-box">🔥</div>
@@ -663,12 +677,17 @@
     })
     .then(res => res.json())
     .then(response => {
-      alert(response);
+      alert(typeof response === 'string' ? response : "រក្សាទុកទិន្នន័យរួចរាល់!");
       document.getElementById('customerInput').value = '';
       document.getElementById('phone').value = '';
       document.getElementById('address').value = '';
       resetFormRows();
       loadProducts();
+      btnSave.innerText = "💾 SAVE DATA";
+      btnSave.disabled = false;
+    })
+    .catch(err => {
+      alert("មានបញ្ហាក្នុងការរក្សាទុកទិន្នន័យ!");
       btnSave.innerText = "💾 SAVE DATA";
       btnSave.disabled = false;
     });
@@ -690,7 +709,7 @@
     })
     .then(res => res.json())
     .then(res => {
-      alert(res.message);
+      alert(res.message || "បានរក្សាទុក!");
       closeModal('customerModal');
       loadCustomers();
     });
@@ -708,7 +727,7 @@
     })
     .then(res => res.json())
     .then(res => {
-      alert(res.message);
+      alert(res.message || "បានរក្សាទុក!");
       closeModal('productModal');
       loadProducts();
     });
@@ -735,7 +754,7 @@
         btn.disabled = false;
         tbody.innerHTML = '';
 
-        if (!res.success || !res.items || res.items.length === 0) {
+        if (!res.success || !Array.isArray(res.items) || res.items.length === 0) {
           summary.innerText = res.message || "រកមិនឃើញទិន្នន័យទេ!";
           summary.style.color = "#ff3b30";
           return;
