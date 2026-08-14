@@ -11,8 +11,27 @@
 
   <style>
     body { font-family: 'Kantumruy Pro', 'Khmer OS Battambang', Arial, sans-serif; margin: 20px; background-color: #f9f9f9; }
-    .container { max-width: 900px; margin: auto; background: white; padding: 20px; border: 1px solid #ccc; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+    .container { max-width: 900px; margin: auto; background: white; padding: 20px; border: 1px solid #ccc; box-shadow: 0 0 10px rgba(0,0,0,0.1); position: relative; }
     
+    /* Mode Toggle Button Style */
+    .mode-toggle-btn {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      background-color: #003366;
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+      transition: all 0.2s ease;
+      z-index: 5;
+    }
+    .mode-toggle-btn:hover { background-color: #005599; transform: scale(1.05); }
+
     .header { display: flex; align-items: center; justify-content: center; gap: 20px; color: #800000; margin-bottom: 10px; }
     .logo-img { width: 150px; height: auto; object-fit: contain; }
     .header-text { text-align: center; }
@@ -36,6 +55,7 @@
     .btn-add-item { background-color: #17a2b8; margin-top: 10px; }
     .btn-remove { background-color: #dc3545; padding: 2px 8px; font-size: 12px; border: none; color: white; cursor: pointer; border-radius: 3px; }
     
+    .table-container { width: 100%; overflow-x: auto; }
     table { width: 100%; border-collapse: collapse; margin-top: 10px; }
     th { background-color: #1b4f72; color: white; border: 1px solid #ccc; padding: 8px; text-align: center; font-size: 14px; }
     td { border: 1px solid #ccc; padding: 4px; }
@@ -54,11 +74,37 @@
     .modal-field input { width: 100%; padding: 6px; box-sizing: border-box; border: 1px solid #777; }
     .modal-footer { text-align: right; margin-top: 15px; }
     .btn-close { background-color: #6c757d; }
+
+    /* ======================================================== */
+    /* 📱 MOBILE MODE STYLES (យ៉ាងស្អាតសម្រាប់ទូរស័ព្ទ) */
+    /* ======================================================== */
+    body.mobile-mode { margin: 10px 5px; background-color: #f0f2f5; }
+    body.mobile-mode .container { padding: 15px 10px; border-radius: 8px; box-shadow: none; border: none; }
+    body.mobile-mode .mode-toggle-btn { top: 10px; right: 10px; font-size: 11px; padding: 4px 8px; }
+    body.mobile-mode .header { flex-direction: column; gap: 8px; }
+    body.mobile-mode .logo-img { width: 110px; }
+    body.mobile-mode .header-text h2 { font-size: 20px; }
+    body.mobile-mode .header-text p { font-size: 12px; }
+    
+    body.mobile-mode .form-group { flex-direction: column; gap: 10px; margin-bottom: 10px; }
+    body.mobile-mode .form-field { width: 100% !important; flex-direction: column; align-items: flex-start; gap: 4px; }
+    body.mobile-mode .form-field label { margin-right: 0; font-size: 13px; }
+    body.mobile-mode .form-field input { padding: 8px; font-size: 14px; }
+    
+    body.mobile-mode .action-bar-container { flex-direction: column; gap: 10px; align-items: stretch !important; }
+    body.mobile-mode .action-bar-container div { display: flex; justify-content: space-between; width: 100%; }
+    body.mobile-mode .btn-save { width: 100%; margin-top: 5px; padding: 10px; }
+
+    body.mobile-mode table { min-width: 600px; }
   </style>
 </head>
-<body>
+<body class="desktop-mode">
 
 <div class="container">
+  
+  <!-- ប៊ូតុង Mode Toggle -->
+  <button type="button" class="mode-toggle-btn" id="modeBtn" onclick="toggleViewMode()">📱 Mode: Mobile</button>
+
   <div class="header">
     <img src="https://lh3.googleusercontent.com/d/1BRp73oflV5zYR7d3HlPkeWlGZh9ajTWx" alt="Logo" class="logo-img">
     <div class="header-text">
@@ -99,7 +145,7 @@
     <input type="text" id="address">
   </div>
 
-  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+  <div class="action-bar-container" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
     <div>
       <button class="btn-action btn-add-small" onclick="openProductModal()">+ បន្ថែមទំនិញ</button>
       <button class="btn-action btn-search" onclick="openSearchModal()">🔍 ស្វែងរកប្រវត្តិទិញ</button>
@@ -109,19 +155,21 @@
 
   <datalist id="productListOptions"></datalist>
 
-  <table>
-    <thead>
-      <tr>
-        <th style="width: 38%;">មុខទំនិញ (Item)</th>
-        <th style="width: 10%;">ចំនួន (QTY)</th>
-        <th style="width: 17%;">តម្លៃ (Price) ៛</th>
-        <th style="width: 15%;">បញ្ចុះតម្លៃ (Discount) ៛</th>
-        <th style="width: 15%;">ទឹកប្រាក់ (Amount) ៛</th>
-        <th style="width: 5%;">លុប</th>
-      </tr>
-    </thead>
-    <tbody id="itemTable"></tbody>
-  </table>
+  <div class="table-container">
+    <table>
+      <thead>
+        <tr>
+          <th style="width: 38%;">មុខទំនិញ (Item)</th>
+          <th style="width: 10%;">ចំនួន (QTY)</th>
+          <th style="width: 17%;">តម្លៃ (Price) ៛</th>
+          <th style="width: 15%;">បញ្ចុះតម្លៃ (Discount) ៛</th>
+          <th style="width: 15%;">ទឹកប្រាក់ (Amount) ៛</th>
+          <th style="width: 5%;">លុប</th>
+        </tr>
+      </thead>
+      <tbody id="itemTable"></tbody>
+    </table>
+  </div>
 
   <button class="btn-action btn-add-item" onclick="addItemRow()">+ Add Item Row</button>
 
@@ -133,7 +181,7 @@
 
 <!-- Modal ស្វែងរកប្រវត្តិទិញ -->
 <div id="searchModal" class="modal">
-  <div class="modal-content" style="width: 780px;">
+  <div class="modal-content" style="max-width: 780px; width: 90%;">
     <div class="modal-header">🔍 ស្វែងរកប្រវត្តិទិញរបស់អតិថិជន</div>
     
     <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px;">
@@ -141,7 +189,7 @@
         <input type="text" id="searchKeyword" placeholder="វាយឈ្មោះ ឬលេខទូរស័ព្ទ (ទុកទទេដើម្បីរកគ្រប់គ្នា)..." style="flex: 1; padding: 8px; font-size: 14px; border: 1px solid #777;">
       </div>
       
-      <div style="display: flex; gap: 10px; align-items: center;">
+      <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
         <label style="font-weight: bold; font-size: 13px;">ចាប់ពីថ្ងៃ៖</label>
         <input type="date" id="searchStartDate" style="padding: 6px; border: 1px solid #777; flex: 1;">
         
@@ -154,27 +202,29 @@
 
     <div id="searchSummary" style="font-weight: bold; color: #800000; margin-bottom: 10px; font-size: 15px;"></div>
 
-    <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
-      <thead>
-        <tr style="background-color: #1b4f72; color: white;">
-          <th style="padding: 8px; width: 14%;">ថ្ងៃទី</th>
-          <th style="padding: 8px; width: 20%;">ឈ្មោះអតិថិជន</th>
-          <th style="padding: 8px; width: 34%;">មុខទំនិញ</th>
-          <th style="padding: 8px; width: 8%;">ចំនួន</th>
-          <th style="padding: 8px; width: 12%;">តម្លៃរាយ</th>
-          <th style="padding: 8px; width: 12%;">តម្លៃសរុប</th>
-        </tr>
-      </thead>
-      <tbody id="searchResultsTable">
-        <tr><td colspan="6" style="text-align: center; padding: 10px; color: #777;">សូមវាយបញ្ចូលឈ្មោះ ឬជ្រើសរើសថ្ងៃដើម្បីស្វែងរក</td></tr>
-      </tbody>
-      <tfoot id="searchResultFooter" style="display: none;">
-        <tr style="background-color: #f2f2f2; font-weight: bold;">
-          <td colspan="5" style="text-align: right; padding: 8px; font-size: 14px;">សរុបរួមទាំងអស់ (Grand Total)៖</td>
-          <td id="searchGrandTotalCell" style="text-align: right; padding: 8px; font-size: 14px; color: #800000; border-top: 2px solid #000;">0 ៛</td>
-        </tr>
-      </tfoot>
-    </table>
+    <div class="table-container">
+      <table style="width: 100%; border-collapse: collapse; font-size: 13px; min-width: 550px;">
+        <thead>
+          <tr style="background-color: #1b4f72; color: white;">
+            <th style="padding: 8px; width: 14%;">ថ្ងៃទី</th>
+            <th style="padding: 8px; width: 20%;">ឈ្មោះអតិថិជន</th>
+            <th style="padding: 8px; width: 34%;">មុខទំនិញ</th>
+            <th style="padding: 8px; width: 8%;">ចំនួន</th>
+            <th style="padding: 8px; width: 12%;">តម្លៃរាយ</th>
+            <th style="padding: 8px; width: 12%;">តម្លៃសរុប</th>
+          </tr>
+        </thead>
+        <tbody id="searchResultsTable">
+          <tr><td colspan="6" style="text-align: center; padding: 10px; color: #777;">សូមវាយបញ្ចូលឈ្មោះ ឬជ្រើសរើសថ្ងៃដើម្បីស្វែងរក</td></tr>
+        </tbody>
+        <tfoot id="searchResultFooter" style="display: none;">
+          <tr style="background-color: #f2f2f2; font-weight: bold;">
+            <td colspan="5" style="text-align: right; padding: 8px; font-size: 14px;">សរុបរួមទាំងអស់ (Grand Total)៖</td>
+            <td id="searchGrandTotalCell" style="text-align: right; padding: 8px; font-size: 14px; color: #800000; border-top: 2px solid #000;">0 ៛</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
 
     <div class="modal-footer">
       <button class="btn-action btn-close" onclick="closeSearchModal()">បិទ</button>
@@ -184,7 +234,7 @@
 
 <!-- Modal បន្ថែមអតិថិជន -->
 <div id="customerModal" class="modal">
-  <div class="modal-content" style="width: 400px;">
+  <div class="modal-content" style="max-width: 400px; width: 90%;">
     <div class="modal-header">បន្ថែមអតិថិជនថ្មី</div>
     <div class="modal-field"><label>ឈ្មោះ</label><input type="text" id="newCustName"></div>
     <div class="modal-field"><label>លេខទូរស័ព្ទ</label><input type="text" id="newCustPhone"></div>
@@ -198,7 +248,7 @@
 
 <!-- Modal បន្ថែមទំនិញ -->
 <div id="productModal" class="modal">
-  <div class="modal-content" style="width: 400px;">
+  <div class="modal-content" style="max-width: 400px; width: 90%;">
     <div class="modal-header">បន្ថែមមុខទំនិញថ្មី</div>
     <div class="modal-field"><label>ឈ្មោះទំនិញ</label><input type="text" id="newProdName"></div>
     <div class="modal-field"><label>តម្លៃ (៛)</label><input type="number" id="newProdPrice" value="0"></div>
@@ -211,7 +261,7 @@
 
 <script>
   // ⚠️ ជំនួស WEB APP URL របស់ Google Apps Script របស់អ្នកត្រង់នេះ
-  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxOPFOYkp6DxWvLb9UYIKjxxgJlEjZiWt10z2DrQDadX1Jrlhk9Ln8L0JDZvl5UZSD1/exec";
+  const SCRIPT_URL = "YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE";
 
   let customersData = [];
   let productsData = [];
@@ -220,7 +270,33 @@
     document.getElementById('date').valueAsDate = new Date();
     loadCustomers();
     loadProducts(function() { resetFormRows(); });
+
+    // ស្វ័យប្រវត្តិតម្រូវ Mode ទៅតាមអេក្រង់ពេលដំបូង
+    if (window.innerWidth <= 768) {
+      setMobileMode(true);
+    } else {
+      setMobileMode(false);
+    }
   };
+
+  // មុខងារប្តូរ Mode (Mobile vs Desktop)
+  function toggleViewMode() {
+    let isMobile = document.body.classList.contains('mobile-mode');
+    setMobileMode(!isMobile);
+  }
+
+  function setMobileMode(isMobile) {
+    let btn = document.getElementById('modeBtn');
+    if (isMobile) {
+      document.body.classList.remove('desktop-mode');
+      document.body.classList.add('mobile-mode');
+      btn.innerHTML = '💻 Mode: Desktop';
+    } else {
+      document.body.classList.remove('mobile-mode');
+      document.body.classList.add('desktop-mode');
+      btn.innerHTML = '📱 Mode: Mobile';
+    }
+  }
 
   function loadCustomers() {
     fetch(`${SCRIPT_URL}?action=getCustomers`)
