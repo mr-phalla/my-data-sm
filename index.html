@@ -3,19 +3,11 @@
 <head>
   <base target="_top">
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ស្រែមាស - ប្រព័ន្ធបញ្ចូលទិន្នន័យលក់</title>
   
-  <!-- Icon សម្រាប់ App -->
   <link rel="icon" href="https://lh3.googleusercontent.com/d/1BRp73oflV5zYR7d3HlPkeWlGZh9ajTWx" type="image/x-icon">
   <link rel="apple-touch-icon" href="https://lh3.googleusercontent.com/d/1BRp73oflV5zYR7d3HlPkeWlGZh9ajTWx">
-
-  <!-- Meta Tags សម្រាប់ Full Screen Mobile App (លុប URL Bar) -->
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="ស្រែមាស">
-  <meta name="theme-color" content="#1b4f72">
 
   <style>
     body { font-family: 'Kantumruy Pro', 'Khmer OS Battambang', Arial, sans-serif; margin: 20px; background-color: #f9f9f9; }
@@ -83,7 +75,9 @@
     .modal-footer { text-align: right; margin-top: 15px; }
     .btn-close { background-color: #6c757d; }
 
-    /* MOBILE MODE STYLES */
+    /* ======================================================== */
+    /* 📱 MOBILE MODE STYLES (យ៉ាងស្អាតសម្រាប់ទូរស័ព្ទ) */
+    /* ======================================================== */
     body.mobile-mode { margin: 10px 5px; background-color: #f0f2f5; }
     body.mobile-mode .container { padding: 15px 10px; border-radius: 8px; box-shadow: none; border: none; }
     body.mobile-mode .mode-toggle-btn { top: 10px; right: 10px; font-size: 11px; padding: 4px 8px; }
@@ -108,6 +102,7 @@
 
 <div class="container">
   
+  <!-- ប៊ូតុង Mode Toggle -->
   <button type="button" class="mode-toggle-btn" id="modeBtn" onclick="toggleViewMode()">📱 Mode: Mobile</button>
 
   <div class="header">
@@ -266,41 +261,17 @@
 
 <script>
   // ⚠️ ជំនួស WEB APP URL របស់ Google Apps Script របស់អ្នកត្រង់នេះ
-  const SCRIPT_URL = "YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE";
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxOPFOYkp6DxWvLb9UYIKjxxgJlEjZiWt10z2DrQDadX1Jrlhk9Ln8L0JDZvl5UZSD1/exec";
 
   let customersData = [];
   let productsData = [];
 
-  // មុខងារ Inject PWA Manifest ដោយសុវត្ថិភាព មិនឲ្យកើត Error
-  function injectManifest() {
-    const manifestObj = {
-      "name": "ស្រែមាស ចំការលើ",
-      "short_name": "ស្រែមាស",
-      "start_url": ".",
-      "display": "standalone",
-      "background_color": "#ffffff",
-      "theme_color": "#1b4f72",
-      "icons": [{
-        "src": "https://lh3.googleusercontent.com/d/1BRp73oflV5zYR7d3HlPkeWlGZh9ajTWx",
-        "sizes": "192x192",
-        "type": "image/png"
-      }]
-    };
-    const stringManifest = JSON.stringify(manifestObj);
-    const blob = new Blob([stringManifest], {type: 'application/json'});
-    const manifestURL = URL.createObjectURL(blob);
-    const link = document.createElement('link');
-    link.rel = 'manifest';
-    link.href = manifestURL;
-    document.getElementsByTagName('head')[0].appendChild(link);
-  }
-
   window.onload = function() {
-    injectManifest(); // ដំណើរការ PWA Manifest
     document.getElementById('date').valueAsDate = new Date();
     loadCustomers();
     loadProducts(function() { resetFormRows(); });
 
+    // ស្វ័យប្រវត្តិតម្រូវ Mode ទៅតាមអេក្រង់ពេលដំបូង
     if (window.innerWidth <= 768) {
       setMobileMode(true);
     } else {
@@ -308,6 +279,7 @@
     }
   };
 
+  // មុខងារប្តូរ Mode (Mobile vs Desktop)
   function toggleViewMode() {
     let isMobile = document.body.classList.contains('mobile-mode');
     setMobileMode(!isMobile);
