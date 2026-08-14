@@ -169,7 +169,7 @@
 <div class="container">
 
   <!-- Header -->
-  <div class="header">
+  <div class="header" id="mainHeader">
     <img src="https://lh3.googleusercontent.com/d/1BRp73oflV5zYR7d3HlPkeWlGZh9ajTWx" alt="Logo" class="logo-img">
     <div class="header-text">
       <h2>ស្រែមាស ចំការលើ</h2>
@@ -454,6 +454,15 @@
 
     document.getElementById(tabId).classList.add('active');
     btn.classList.add('active');
+
+    // លាក់/បង្ហាញ Header និង Logo ផ្អែកលើ Tab ដែលបានជ្រើសរើស
+    const mainHeader = document.getElementById('mainHeader');
+    if (tabId === 'productTab' || tabId === 'customerTab' || tabId === 'settingsTab') {
+      mainHeader.style.display = 'none';
+    } else {
+      mainHeader.style.display = 'flex';
+    }
+
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
