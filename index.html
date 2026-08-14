@@ -6,7 +6,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>ស្រែមាស - ប្រព័ន្ធគ្រប់គ្រងការលក់</title>
   
+  <!-- Manifest & App Icons -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#000000">
   <link rel="icon" href="https://lh3.googleusercontent.com/d/1-lHJgWS1XhknNZPCQ3nUUGSPi7CoJmLC" type="image/x-icon">
+  <link rel="apple-touch-icon" href="https://lh3.googleusercontent.com/d/1-lHJgWS1XhknNZPCQ3nUUGSPi7CoJmLC">
 
   <style>
     :root {
@@ -62,7 +66,6 @@
     .item-title { font-size: 16px; font-weight: 500; margin: 0; color: var(--text-color); }
     .item-sub { font-size: 13px; color: var(--sub-text); margin-top: 3px; }
 
-    /* Dashboard Widgets */
     .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; }
     .dash-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 15px; text-align: center; }
     .dash-card h4 { margin: 0 0 5px 0; color: var(--sub-text); font-size: 14px; }
@@ -684,10 +687,6 @@
       btnSave.innerText = "💾 SAVE DATA";
       btnSave.disabled = false;
     });
-  }
-
-  function exportToCSV() {
-    alert("ទិន្នន័យទាំងអស់ត្រូវរក្សាទុកក្នុង Google Sheet របស់អ្នករួចរាល់ហើយ។ អ្នកអាចទាញយកជា CSV តាមរយៈ Google Sheet ផ្ទាល់បានយ៉ាងងាយស្រួល!");
   }
 
   function saveNewCustomer() {
