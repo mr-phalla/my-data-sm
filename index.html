@@ -124,6 +124,8 @@
     .bottom-nav-item span { font-size: 10px; font-weight: 500; }
     .bottom-nav-item.active { color: #0a84ff; }
 
+    .no-data-msg { text-align: center; padding: 20px; color: var(--sub-text); font-size: 14px; }
+
     @media print {
       body { background: white !important; color: black !important; padding: 0; }
       .bottom-nav, .btn-action, .btn-add-item, .search-box-ui, .app-header-bar, .btn-add-header { display: none !important; }
@@ -392,7 +394,7 @@
 </div>
 
 <script>
-  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwmAipQHce8c1YdMmgw5hzalQtAigj1PPOU-rkRekK1724gQUdIT0DWe0E_cEE3U6au/exec";
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzTJ3eiei-eFOwqotFQxNTggRz7mAMo32CJ2BRHC_GqGJTAcRJQaX_P4JG7ExNxpPk/exec";
 
   let customersData = [];
   let productsData = [];
@@ -424,20 +426,30 @@
   };
 
   function renderProducts() {
-    let kw = (document.getElementById('searchProduct').value || '').toLowerCase();
+    let kw = (document.getElementById('searchProduct').value || '').toLowerCase().trim();
     let container = document.getElementById('productsListContainer');
     container.innerHTML = '';
 
-    if (!Array.isArray(productsData)) productsData = [];
-    let filtered = productsData.filter(p => p.name && p.name.toLowerCase().includes(kw));
+    if (!Array.isArray(productsData) || productsData.length === 0) {
+      container.innerHTML = '<div class="no-data-msg">ពុំទាន់មានទិន្នន័យមុខទំនិញឡើយ</div>';
+      return;
+    }
+
+    let filtered = productsData.filter(p => p && p.name && p.name.toString().toLowerCase().includes(kw));
+
+    if (filtered.length === 0) {
+      container.innerHTML = '<div class="no-data-msg">រកមិនឃើញមុខទំនិញឡើយ</div>';
+      return;
+    }
 
     filtered.forEach(p => {
+      let priceVal = parseFloat(p.price) || 0;
       container.innerHTML += `
         <div class="list-item-ui">
           <div class="item-icon-box">📦</div>
           <div class="item-info">
             <div class="item-title">${p.name}</div>
-            <div class="item-sub">${Number(p.price).toLocaleString()} ៛</div>
+            <div class="item-sub">${priceVal.toLocaleString()} ៛</div>
           </div>
         </div>
       `;
@@ -445,12 +457,21 @@
   }
 
   function renderCustomers() {
-    let kw = (document.getElementById('searchCustomer').value || '').toLowerCase();
+    let kw = (document.getElementById('searchCustomer').value || '').toLowerCase().trim();
     let container = document.getElementById('customersListContainer');
     container.innerHTML = '';
 
-    if (!Array.isArray(customersData)) customersData = [];
-    let filtered = customersData.filter(c => (c.name && c.name.toLowerCase().includes(kw)) || (c.phone && c.phone.includes(kw)));
+    if (!Array.isArray(customersData) || customersData.length === 0) {
+      container.innerHTML = '<div class="no-data-msg">ពុំទាន់មានទិន្នន័យអតិថិជនឡើយ</div>';
+      return;
+    }
+
+    let filtered = customersData.filter(c => c && ((c.name && c.name.toString().toLowerCase().includes(kw)) || (c.phone && c.phone.toString().includes(kw))));
+
+    if (filtered.length === 0) {
+      container.innerHTML = '<div class="no-data-msg">រកមិនឃើញអតិថិជនឡើយ</div>';
+      return;
+    }
 
     filtered.forEach(c => {
       let prefix = c.name ? c.name.trim().substring(0, 2) : 'អ';
@@ -474,13 +495,16 @@
         let datalist = document.getElementById('customerListOptions');
         datalist.innerHTML = '';
         customersData.forEach(c => {
-          let opt = document.createElement('option');
-          opt.value = c.name;
-          datalist.appendChild(opt);
+          if (c && c.name) {
+            let opt = document.createElement('option');
+            opt.value = c.name;
+            datalist.appendChild(opt);
+          }
         });
         renderCustomers();
       })
       .catch(err => {
+        console.error("Error loading customers:", err);
         customersData = [];
         renderCustomers();
       });
@@ -489,7 +513,7 @@
   function onCustomerSelect() {
     let val = document.getElementById('customerInput').value.trim();
     if (!Array.isArray(customersData)) return;
-    let found = customersData.find(c => c.name && c.name.toLowerCase() === val.toLowerCase());
+    let found = customersData.find(c => c && c.name && c.name.toLowerCase() === val.toLowerCase());
     if (found) {
       document.getElementById('phone').value = found.phone || "";
       document.getElementById('address').value = found.address || "";
@@ -504,17 +528,20 @@
         let datalist = document.getElementById('productListOptions');
         datalist.innerHTML = '';
         productsData.forEach(p => {
-          let opt = document.createElement('option');
-          opt.value = p.name;
-          datalist.appendChild(opt);
+          if (p && p.name) {
+            let opt = document.createElement('option');
+            opt.value = p.name;
+            datalist.appendChild(opt);
+          }
         });
         renderProducts();
-        if (callback) callback();
+        if (typeof callback === 'function') callback();
       })
       .catch(err => {
+        console.error("Error loading products:", err);
         productsData = [];
         renderProducts();
-        if (callback) callback();
+        if (typeof callback === 'function') callback();
       });
   }
 
@@ -523,7 +550,7 @@
     let val = input.value.trim();
     let priceInput = row.querySelector('.item-price');
     if (!Array.isArray(productsData)) return;
-    let found = productsData.find(p => p.name && p.name.toLowerCase() === val.toLowerCase());
+    let found = productsData.find(p => p && p.name && p.name.toLowerCase() === val.toLowerCase());
     if (found) priceInput.value = found.price;
     calculateRow(priceInput);
   }
@@ -596,6 +623,10 @@
         let container = document.getElementById('topProductsContainer');
         container.innerHTML = '';
         let topProds = Array.isArray(data.topProducts) ? data.topProducts : [];
+        if (topProds.length === 0) {
+          container.innerHTML = '<div class="no-data-msg">គ្មានទិន្នន័យលក់ទេ</div>';
+          return;
+        }
         topProds.forEach(p => {
           container.innerHTML += `
             <div class="list-item-ui">
@@ -644,7 +675,7 @@
     })
     .then(res => res.json())
     .then(response => {
-      alert(typeof response === 'string' ? response : "រក្សាទុកទិន្នន័យរួចរាល់!");
+      alert(typeof response === 'string' ? response : (response.message || "រក្សាទុកទិន្នន័យរួចរាល់!"));
       document.getElementById('customerInput').value = '';
       document.getElementById('phone').value = '';
       document.getElementById('address').value = '';
@@ -678,6 +709,9 @@
     .then(res => {
       alert(res.message || "បានរក្សាទុក!");
       closeModal('customerModal');
+      document.getElementById('newCustName').value = '';
+      document.getElementById('newCustPhone').value = '';
+      document.getElementById('newCustAddress').value = '';
       loadCustomers();
     });
   }
@@ -695,6 +729,8 @@
     .then(res => {
       alert(res.message || "បានរក្សាទុក!");
       closeModal('productModal');
+      document.getElementById('newProdName').value = '';
+      document.getElementById('newProdPrice').value = '0';
       loadProducts();
     });
   }
