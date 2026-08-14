@@ -127,7 +127,6 @@
     .bottom-nav-item span { font-size: 10px; font-weight: 500; }
     .bottom-nav-item.active { color: #0a84ff; }
 
-    /* Print Style Optimization */
     @media print {
       body { background: white !important; color: black !important; padding: 0; }
       .bottom-nav, .btn-action, .btn-add-item, .search-box-ui, .app-header-bar, .btn-add-header { display: none !important; }
@@ -352,11 +351,11 @@
   <div class="modal-content-ui">
     <h3>🔍 ស្វែងរកប្រវត្តិទិញ</h3>
     <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px;">
-      <input type="text" id="searchKeyword" class="form-input-ui" placeholder="វាយឈ្មោះ ឬលេខទូរស័ព្ទ...">
+      <input type="text" id="searchKeyword" class="form-input-ui" placeholder="វាយឈ្មោះ ឬលេខទូរស័ព្ទ (ទុកទទេដើម្បីបង្ហាញទាំងអស់)...">
       <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
         <input type="date" id="searchStartDate" class="form-input-ui" style="flex: 1;">
         <input type="date" id="searchEndDate" class="form-input-ui" style="flex: 1;">
-        <button class="btn-action btn-search" onclick="performSearch()">ស្វែងរក</button>
+        <button class="btn-action btn-search" id="btnSearchSubmit" onclick="performSearch()">ស្វែងរក</button>
       </div>
     </div>
 
@@ -408,7 +407,7 @@
 </div>
 
 <script>
-  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzciTfk74i9swiDBwGxjMI83dtIvBMkOQFGw6SZ6fk-_8qZp7Cfy51aKwQx6ibidEDa/exec";
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxh_qgKsItR-xQNqZbz0dg_wiccRYhnUO7xS_C-0ULP24A5PnNe1fhX0PkZVL9HuPW0/exec";
 
   let customersData = [];
   let productsData = [];
@@ -441,7 +440,6 @@
     loadProducts(function() { resetFormRows(); });
   };
 
-  /* Render Products + Stock */
   function renderProducts() {
     let kw = document.getElementById('searchProduct').value.toLowerCase();
     let container = document.getElementById('productsListContainer');
@@ -585,20 +583,17 @@
     calculateGrandTotal();
   }
 
-  /* KHQR Payment Modal Generator */
   function showKHQRModal() {
     if(currentTotalAmount <= 0) {
       alert("សូមបញ្ចូលទំនិញ និងតម្លៃជាមុនសិន!");
       return;
     }
     document.getElementById('qrAmountText').innerText = currentTotalAmount.toLocaleString() + " ៛";
-    // QR Code API Generator ផ្អែកលើចំនួនទឹកប្រាក់
     let qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=SREAMAS_PAYMENT_KHR_${currentTotalAmount}`;
     document.getElementById('qrImage').src = qrUrl;
     openModal('qrModal');
   }
 
-  /* Dashboard Data Loader */
   function loadDashboard() {
     fetch(`${SCRIPT_URL}?action=getDashboardData`)
       .then(res => res.json())
@@ -707,27 +702,53 @@
     });
   }
 
+  // អនុគមន៍ស្វែងរកដែលបានកែសម្រួលរួច
   function performSearch() {
     let kw = encodeURIComponent(document.getElementById('searchKeyword').value.trim());
     let startDate = document.getElementById('searchStartDate').value;
     let endDate = document.getElementById('searchEndDate').value;
+    
+    let btn = document.getElementById('btnSearchSubmit');
+    let tbody = document.getElementById('searchResultsTable');
+    let summary = document.getElementById('searchSummary');
+
+    btn.innerText = "កំពុងស្វែងរក...";
+    btn.disabled = true;
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">កំពុងទាញយកទិន្នន័យ...</td></tr>';
+    summary.innerText = "";
 
     fetch(`${SCRIPT_URL}?action=searchHistory&kw=${kw}&startDate=${startDate}&endDate=${endDate}`)
       .then(res => res.json())
       .then(res => {
-        let tbody = document.getElementById('searchResultsTable');
+        btn.innerText = "ស្វែងរក";
+        btn.disabled = false;
         tbody.innerHTML = '';
-        (res.items || []).forEach(item => {
+
+        if (!res.success || !res.items || res.items.length === 0) {
+          summary.innerText = res.message || "រកមិនឃើញទិន្នន័យទេ!";
+          summary.style.color = "#ff3b30";
+          return;
+        }
+
+        summary.style.color = "#30d158";
+        summary.innerText = `អតិថិជន: ${res.customerName} (${res.customerPhone || 'គ្មានលេខ'}) | សរុប: ${res.totalSpent.toLocaleString()} ៛`;
+
+        res.items.forEach(item => {
           tbody.innerHTML += `
             <tr>
               <td>${item.date}</td>
               <td>${item.customer}</td>
               <td>${item.item}</td>
-              <td>${item.qty}</td>
+              <td style="text-align:center;">${item.qty}</td>
               <td style="text-align:right;">${item.amount.toLocaleString()} ៛</td>
             </tr>
           `;
         });
+      })
+      .catch(err => {
+        btn.innerText = "ស្វែងរក";
+        btn.disabled = false;
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#ff3b30;">មានបញ្ហាក្នុងការភ្ជាប់ទៅកាន់ Server!</td></tr>';
       });
   }
 </script>
