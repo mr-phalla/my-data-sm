@@ -4,6 +4,7 @@
   <base target="_top">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ស្រែមាស - ប្រព័ន្ធបញ្ចូលទិន្នន័យលក់</title>
   
   <link rel="icon" href="https://lh3.googleusercontent.com/d/1kocqtku0Dc25NSU77x2Wti9a-KNYwf1d" type="image/x-icon">
   <link rel="apple-touch-icon" href="https://lh3.googleusercontent.com/d/1kocqtku0Dc25NSU77x2Wti9a-KNYwf1d">
@@ -209,6 +210,9 @@
 </div>
 
 <script>
+  // ⚠️ ជំនួស WEB APP URL របស់ Google Apps Script របស់អ្នកត្រង់នេះ
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxOPFOYkp6DxWvLb9UYIKjxxgJlEjZiWt10z2DrQDadX1Jrlhk9Ln8L0JDZvl5UZSD1/exec";
+
   let customersData = [];
   let productsData = [];
 
@@ -219,16 +223,19 @@
   };
 
   function loadCustomers() {
-    google.script.run.withSuccessHandler(function(list) {
-      customersData = list || [];
-      let datalist = document.getElementById('customerListOptions');
-      datalist.innerHTML = '';
-      customersData.forEach(c => {
-        let opt = document.createElement('option');
-        opt.value = c.name;
-        datalist.appendChild(opt);
-      });
-    }).getCustomersList();
+    fetch(`${SCRIPT_URL}?action=getCustomers`)
+      .then(res => res.json())
+      .then(list => {
+        customersData = list || [];
+        let datalist = document.getElementById('customerListOptions');
+        datalist.innerHTML = '';
+        customersData.forEach(c => {
+          let opt = document.createElement('option');
+          opt.value = c.name;
+          datalist.appendChild(opt);
+        });
+      })
+      .catch(err => console.error("Error loading customers:", err));
   }
 
   function onCustomerSelect() {
@@ -241,17 +248,20 @@
   }
 
   function loadProducts(callback) {
-    google.script.run.withSuccessHandler(function(list) {
-      productsData = list || [];
-      let datalist = document.getElementById('productListOptions');
-      datalist.innerHTML = '';
-      productsData.forEach(p => {
-        let opt = document.createElement('option');
-        opt.value = p.name;
-        datalist.appendChild(opt);
-      });
-      if (callback) callback();
-    }).getItemsList();
+    fetch(`${SCRIPT_URL}?action=getItems`)
+      .then(res => res.json())
+      .then(list => {
+        productsData = list || [];
+        let datalist = document.getElementById('productListOptions');
+        datalist.innerHTML = '';
+        productsData.forEach(p => {
+          let opt = document.createElement('option');
+          opt.value = p.name;
+          datalist.appendChild(opt);
+        });
+        if (callback) callback();
+      })
+      .catch(err => console.error("Error loading products:", err));
   }
 
   function onProductSelect(input) {
@@ -293,7 +303,7 @@
   };
 
   function performSearch() {
-    let kw = document.getElementById('searchKeyword').value.trim();
+    let kw = encodeURIComponent(document.getElementById('searchKeyword').value.trim());
     let startDate = document.getElementById('searchStartDate').value;
     let endDate = document.getElementById('searchEndDate').value;
 
@@ -304,41 +314,46 @@
     tfoot.style.display = 'none';
     document.getElementById('searchSummary').innerText = "";
 
-    google.script.run.withSuccessHandler(function(res) {
-      if (!res.success) {
-        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: red;">${res.message}</td></tr>`;
-        return;
-      }
-      
-      let items = res.items || [];
-      if (items.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #777;">មិនមានទិន្នន័យទិញដូរក្នុងលក្ខខណ្ឌនេះទេ!</td></tr>';
-        return;
-      }
+    fetch(`${SCRIPT_URL}?action=searchHistory&kw=${kw}&startDate=${startDate}&endDate=${endDate}`)
+      .then(res => res.json())
+      .then(res => {
+        if (!res.success) {
+          tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: red;">${res.message}</td></tr>`;
+          return;
+        }
+        
+        let items = res.items || [];
+        if (items.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #777;">មិនមានទិន្នន័យទិញដូរក្នុងលក្ខខណ្ឌនេះទេ!</td></tr>';
+          return;
+        }
 
-      tbody.innerHTML = '';
-      let grandTotal = res.totalSpent || 0;
-      
-      items.forEach(item => {
-        let itemAmt = Number(item.amount) || 0;
-        let itemPrice = Number(item.price) || 0;
+        tbody.innerHTML = '';
+        let grandTotal = res.totalSpent || 0;
+        
+        items.forEach(item => {
+          let itemAmt = Number(item.amount) || 0;
+          let itemPrice = Number(item.price) || 0;
 
-        let tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td style="text-align:center;">${item.date}</td>
-          <td>${res.customerName || '-'}</td>
-          <td>${item.item}</td>
-          <td style="text-align:center;">${item.qty}</td>
-          <td style="text-align:right;">${itemPrice.toLocaleString()} ៛</td>
-          <td style="text-align:right;">${itemAmt.toLocaleString()} ៛</td>
-        `;
-        tbody.appendChild(tr);
+          let tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td style="text-align:center;">${item.date}</td>
+            <td>${res.customerName || '-'}</td>
+            <td>${item.item}</td>
+            <td style="text-align:center;">${item.qty}</td>
+            <td style="text-align:right;">${itemPrice.toLocaleString()} ៛</td>
+            <td style="text-align:right;">${itemAmt.toLocaleString()} ៛</td>
+          `;
+          tbody.appendChild(tr);
+        });
+
+        document.getElementById('searchSummary').innerText = `សរុបការទិញ៖ ${grandTotal.toLocaleString()} ៛ (${items.length} មុខទំនិញ)`;
+        document.getElementById('searchGrandTotalCell').innerText = `${grandTotal.toLocaleString()} ៛`;
+        tfoot.style.display = '';
+      })
+      .catch(err => {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: red;">កំហុសក្នុងការតភ្ជាប់៖ ${err.toString()}</td></tr>`;
       });
-
-      document.getElementById('searchSummary').innerText = `សរុបការទិញ៖ ${grandTotal.toLocaleString()} ៛ (${items.length} មុខទំនិញ)`;
-      document.getElementById('searchGrandTotalCell').innerText = `${grandTotal.toLocaleString()} ៛`;
-      tfoot.style.display = '';
-    }).searchCustomerHistoryWebApp(kw, startDate, endDate);
   }
 
   function saveNewCustomer() {
@@ -346,22 +361,34 @@
     let phone = document.getElementById('newCustPhone').value;
     let address = document.getElementById('newCustAddress').value;
     if (!name.trim()) { alert("សូមបញ្ចូលឈ្មោះអតិថិជន!"); return; }
-    google.script.run.withSuccessHandler(function(res) {
+
+    fetch(SCRIPT_URL, {
+      method: "POST",
+      body: JSON.stringify({ action: "addCustomer", payload: { name: name, phone: phone, address: address } })
+    })
+    .then(res => res.json())
+    .then(res => {
       alert(res.message);
       closeCustomerModal();
       loadCustomers();
-    }).addCustomer({ name: name, phone: phone, address: address });
+    });
   }
 
   function saveNewProduct() {
     let name = document.getElementById('newProdName').value;
     let price = parseFloat(document.getElementById('newProdPrice').value) || 0;
     if (!name.trim()) { alert("សូមបញ្ចូលឈ្មោះមុខទំនិញ!"); return; }
-    google.script.run.withSuccessHandler(function(res) {
+
+    fetch(SCRIPT_URL, {
+      method: "POST",
+      body: JSON.stringify({ action: "addNewProduct", payload: { name: name, price: price } })
+    })
+    .then(res => res.json())
+    .then(res => {
       alert(res.message);
       closeProductModal();
       loadProducts();
-    }).addNewProduct({ name: name, price: price });
+    });
   }
 
   function addItemRow() {
@@ -440,7 +467,12 @@
     btnSave.innerText = "SAVING...";
     btnSave.disabled = true;
 
-    google.script.run.withSuccessHandler(function(response) {
+    fetch(SCRIPT_URL, {
+      method: "POST",
+      body: JSON.stringify({ action: "saveData", payload: payload })
+    })
+    .then(res => res.json())
+    .then(response => {
       alert(response);
       document.getElementById('customerInput').value = '';
       document.getElementById('phone').value = '';
@@ -448,7 +480,12 @@
       resetFormRows();
       btnSave.innerText = "SAVE DATA";
       btnSave.disabled = false;
-    }).saveData(payload);
+    })
+    .catch(err => {
+      alert("កំហុសក្នុងការរក្សាទុក៖ " + err);
+      btnSave.innerText = "SAVE DATA";
+      btnSave.disabled = false;
+    });
   }
 </script>
 
