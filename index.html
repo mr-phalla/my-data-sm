@@ -61,8 +61,6 @@
     .item-info { flex: 1; }
     .item-title { font-size: 16px; font-weight: 500; margin: 0; color: var(--text-color); }
     .item-sub { font-size: 13px; color: var(--sub-text); margin-top: 3px; }
-    .stock-badge { background: #30d158; color: #000; font-weight: bold; padding: 2px 8px; border-radius: 10px; font-size: 12px; }
-    .stock-low { background: #ff3b30; color: #fff; }
 
     /* Dashboard Widgets */
     .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; }
@@ -104,7 +102,6 @@
 
     .btn-action { color: white; border: none; padding: 8px 15px; font-weight: bold; cursor: pointer; border-radius: 4px; }
     .btn-save { background-color: #0a84ff; }
-    .btn-qr { background-color: #34c759; }
     .btn-print { background-color: #af52de; }
     .btn-search { background-color: #ff9500; }
     .btn-add-item { background-color: #30d158; margin-top: 10px; }
@@ -157,7 +154,7 @@
   <div id="productTab" class="tab-content">
     <div class="app-header-bar">
       <div style="width:28px;"></div>
-      <h2>មុខទំនិញ & ស្តុក</h2>
+      <h2>មុខទំនិញ</h2>
       <button class="btn-add-header" onclick="openModal('productModal')">+</button>
     </div>
 
@@ -241,7 +238,6 @@
     </div>
 
     <div style="margin-top: 20px; display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap;">
-      <button class="btn-action btn-qr" onclick="showKHQRModal()">📱 Scan KHQR</button>
       <button class="btn-action btn-print" onclick="window.print()">🖨️ Print / PDF</button>
       <button class="btn-action btn-save" id="btnSave" onclick="saveData()">💾 SAVE DATA</button>
     </div>
@@ -312,28 +308,12 @@
   </div>
 </div>
 
-<!-- Modal KHQR Payment -->
-<div id="qrModal" class="modal-ui">
-  <div class="modal-content-ui" style="max-width: 350px; text-align: center;">
-    <h3>KHQR Payment</h3>
-    <p style="font-size: 14px; color: var(--sub-text);">សូម Scan ដើម្បីទូទាត់ប្រាក់</p>
-    <div style="background: white; padding: 15px; border-radius: 12px; display: inline-block;">
-      <img id="qrImage" src="" alt="Bakong KHQR" style="width: 200px; height: 200px;">
-    </div>
-    <h2 id="qrAmountText" style="color: #30d158; margin: 15px 0 5px 0;">0 ៛</h2>
-    <div class="modal-btn-group" style="justify-content: center;">
-      <button class="btn-modal btn-cancel" onclick="closeModal('qrModal')">បិទ</button>
-    </div>
-  </div>
-</div>
-
 <!-- Modal បន្ថែមទំនិញ -->
 <div id="productModal" class="modal-ui">
   <div class="modal-content-ui" style="max-width: 400px;">
     <h3>បន្ថែមមុខទំនិញថ្មី</h3>
     <input type="text" id="newProdName" class="form-input-ui" placeholder="បញ្ចូលឈ្មោះទំនិញ...">
     <input type="number" id="newProdPrice" class="form-input-ui" placeholder="តម្លៃ (៛)" value="0">
-    <input type="number" id="newProdStock" class="form-input-ui" placeholder="ចំនួនស្តុកដំបូង" value="100">
     <div class="modal-btn-group">
       <button class="btn-modal btn-cancel" onclick="closeModal('productModal')">បោះបង់</button>
       <button class="btn-modal btn-save-m" onclick="saveNewProduct()">រក្សាទុក</button>
@@ -395,7 +375,7 @@
 <div class="bottom-nav">
   <button class="bottom-nav-item" onclick="switchBottomTab('productTab', this)">
     <div class="nav-icon">📦</div>
-    <span>ទំនិញ/ស្តុក</span>
+    <span>ទំនិញ</span>
   </button>
   <button class="bottom-nav-item" onclick="switchBottomTab('customerTab', this)">
     <div class="nav-icon">👤</div>
@@ -412,7 +392,7 @@
 </div>
 
 <script>
-  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx6FcVb6ysm7A_5pNCqz3EXQlA2Dust5n5paYszkGfcnWGjfJ8c0q_Cqh_wsuWbc9qE/exec";
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwmAipQHce8c1YdMmgw5hzalQtAigj1PPOU-rkRekK1724gQUdIT0DWe0E_cEE3U6au/exec";
 
   let customersData = [];
   let productsData = [];
@@ -452,7 +432,6 @@
     let filtered = productsData.filter(p => p.name && p.name.toLowerCase().includes(kw));
 
     filtered.forEach(p => {
-      let stockClass = p.stock < 10 ? 'stock-low' : '';
       container.innerHTML += `
         <div class="list-item-ui">
           <div class="item-icon-box">📦</div>
@@ -460,7 +439,6 @@
             <div class="item-title">${p.name}</div>
             <div class="item-sub">${Number(p.price).toLocaleString()} ៛</div>
           </div>
-          <span class="stock-badge ${stockClass}">ស្តុក: ${p.stock}</span>
         </div>
       `;
     });
@@ -599,17 +577,6 @@
     calculateGrandTotal();
   }
 
-  function showKHQRModal() {
-    if(currentTotalAmount <= 0) {
-      alert("សូមបញ្ចូលទំនិញ និងតម្លៃជាមុនសិន!");
-      return;
-    }
-    document.getElementById('qrAmountText').innerText = currentTotalAmount.toLocaleString() + " ៛";
-    let qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=SREAMAS_PAYMENT_KHR_${currentTotalAmount}`;
-    document.getElementById('qrImage').src = qrUrl;
-    openModal('qrModal');
-  }
-
   function openReportModal() {
     openModal('reportModal');
     document.getElementById('dashSales').innerText = "...";
@@ -718,12 +685,11 @@
   function saveNewProduct() {
     let name = document.getElementById('newProdName').value;
     let price = parseFloat(document.getElementById('newProdPrice').value) || 0;
-    let stock = parseFloat(document.getElementById('newProdStock').value) || 0;
     if (!name.trim()) return;
 
     fetch(SCRIPT_URL, {
       method: "POST",
-      body: JSON.stringify({ action: "addNewProduct", payload: { name: name, price: price, stock: stock } })
+      body: JSON.stringify({ action: "addNewProduct", payload: { name: name, price: price } })
     })
     .then(res => res.json())
     .then(res => {
