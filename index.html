@@ -3,11 +3,36 @@
 <head>
   <base target="_top">
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>ស្រែមាស - ប្រព័ន្ធបញ្ចូលទិន្នន័យលក់</title>
   
+  <!-- Icon សម្រាប់ App -->
   <link rel="icon" href="https://lh3.googleusercontent.com/d/1BRp73oflV5zYR7d3HlPkeWlGZh9ajTWx" type="image/x-icon">
   <link rel="apple-touch-icon" href="https://lh3.googleusercontent.com/d/1BRp73oflV5zYR7d3HlPkeWlGZh9ajTWx">
+
+  <!-- ========================================================= -->
+  <!-- 📱 PWA Meta Tags: លុប URL Bar & បង្កើតទម្រង់ App ពេញអេក្រង់ -->
+  <!-- ========================================================= -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="ស្រែមាស">
+  <meta name="theme-color" content="#1b4f72">
+
+  <!-- Web App Manifest embedded ជួយឱ្យ Android/iOS ស្គាល់ថាជា App ពេញលេញ -->
+  <link rel="manifest" href='data:application/manifest+json,{
+    "name": "ស្រែមាស ចំការលើ",
+    "short_name": "ស្រែមាស",
+    "start_url": ".",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "theme_color": "#1b4f72",
+    "icons": [{
+      "src": "https://lh3.googleusercontent.com/d/1BRp73oflV5zYR7d3HlPkeWlGZh9ajTWx",
+      "sizes": "192x192",
+      "type": "image/png"
+    }]
+  }'>
 
   <style>
     body { font-family: 'Kantumruy Pro', 'Khmer OS Battambang', Arial, sans-serif; margin: 20px; background-color: #f9f9f9; }
@@ -125,7 +150,7 @@
     </div>
   </div>
 
-  <div class="title">ប្រព័ន្ធបញ្ចូលទិន្នន័យលក់</div>
+  <div class="title">ប្រព័ន្ធបញ្ចូលទិន្នន័យលក់ (Sales Invoice Input Form)</div>
 
   <div class="form-group">
     <div class="form-field" style="width: 50%;">
