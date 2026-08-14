@@ -6,62 +6,92 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>ស្រែមាស - ប្រព័ន្ធបញ្ចូលទិន្នន័យលក់</title>
   
-  <!-- Icon សម្រាប់ App -->
   <link rel="icon" href="https://lh3.googleusercontent.com/d/1BRp73oflV5zYR7d3HlPkeWlGZh9ajTWx" type="image/x-icon">
   <link rel="apple-touch-icon" href="https://lh3.googleusercontent.com/d/1BRp73oflV5zYR7d3HlPkeWlGZh9ajTWx">
 
-  <!-- Meta Tags សម្រាប់ Full Screen Mobile App (លុប URL Bar) -->
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="ស្រែមាស">
-  <meta name="theme-color" content="#1b4f72">
+  <meta name="theme-color" content="#000000">
 
   <style>
-    body { font-family: 'Kantumruy Pro', 'Khmer OS Battambang', Arial, sans-serif; margin: 20px; background-color: #f9f9f9; }
-    .container { max-width: 900px; margin: auto; background: white; padding: 20px; border: 1px solid #ccc; box-shadow: 0 0 10px rgba(0,0,0,0.1); position: relative; }
+    body { font-family: 'Kantumruy Pro', 'Khmer OS Battambang', Arial, sans-serif; margin: 0; padding: 10px 10px 80px 10px; background-color: #f9f9f9; }
+    .container { max-width: 900px; margin: auto; background: white; padding: 20px; border: 1px solid #ccc; box-shadow: 0 0 10px rgba(0,0,0,0.1); position: relative; border-radius: 8px; }
     
-    /* Mode Toggle Button Style */
-    .mode-toggle-btn {
-      position: absolute;
-      top: 15px;
-      right: 15px;
-      background-color: #003366;
-      color: white;
-      border: none;
-      padding: 6px 12px;
-      border-radius: 20px;
-      font-size: 13px;
-      font-weight: bold;
-      cursor: pointer;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-      transition: all 0.2s ease;
-      z-index: 5;
-    }
-    .mode-toggle-btn:hover { background-color: #005599; transform: scale(1.05); }
-
     .header { display: flex; align-items: center; justify-content: center; gap: 20px; color: #800000; margin-bottom: 10px; }
-    .logo-img { width: 150px; height: auto; object-fit: contain; }
+    .logo-img { width: 120px; height: auto; object-fit: contain; }
     .header-text { text-align: center; }
-    .header-text h2 { margin: 2px 0; font-size: 24px; }
-    .header-text p { margin: 2px 0; color: #333; font-size: 14px; }
+    .header-text h2 { margin: 2px 0; font-size: 22px; }
+    .header-text p { margin: 2px 0; color: #333; font-size: 13px; }
     
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
     .title { text-align: center; color: #003366; font-size: 18px; font-weight: bold; margin: 15px 0; }
     
-    .form-group { display: flex; justify-content: space-between; margin-bottom: 10px; }
-    .form-field { display: flex; align-items: center; width: 48%; }
-    .form-field.full { width: 100%; margin-bottom: 10px; }
-    .form-field label { color: #0088cc; font-weight: bold; margin-right: 10px; white-space: nowrap; }
-    .form-field input { width: 100%; padding: 6px; border: 1px solid #777; font-size: 14px; box-sizing: border-box; }
+    /* ==========================================
+       COMPACT & AUTO-FIT FORM STYLES
+    ========================================== */
+    .compact-form-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 12px;
+      background: #fdfdfd;
+      padding: 12px;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+    }
+
+    .form-field-compact {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .form-field-compact label {
+      color: #0088cc;
+      font-weight: bold;
+      white-space: nowrap;
+      font-size: 13px;
+    }
+
+    .form-field-compact input {
+      padding: 6px 10px;
+      border: 1px solid #777;
+      font-size: 14px;
+      border-radius: 4px;
+      box-sizing: border-box;
+      outline: none;
+    }
+
+    .form-field-compact input:focus {
+      border-color: #0088cc;
+      box-shadow: 0 0 4px rgba(0,136,204,0.3);
+    }
+
+    /* ទំហំកំណត់តាមប្រភេទ Fields */
+    .input-date { width: 135px; }
+    .input-cashier { width: 130px; }
+    .input-phone { width: 130px; }
     
-    .btn-action { color: white; border: none; padding: 8px 15px; font-weight: bold; cursor: pointer; border-radius: 3px; }
+    /* Input ដែលអាចពង្រីកតាមអត្ថបទបាន */
+    .input-auto {
+      min-width: 140px;
+      max-width: 100%;
+      flex-grow: 1;
+    }
+
+    .btn-action { color: white; border: none; padding: 8px 15px; font-weight: bold; cursor: pointer; border-radius: 4px; }
     .btn-save { background-color: #336699; }
     .btn-save:hover { background-color: #23476d; }
     .btn-search { background-color: #ff9900; }
     .btn-search:hover { background-color: #e68a00; }
-    .btn-add-small { background-color: #28a745; margin-left: 5px; white-space: nowrap; padding: 5px 10px; }
+    .btn-add-small { background-color: #28a745; white-space: nowrap; padding: 8px 15px; }
     .btn-add-item { background-color: #17a2b8; margin-top: 10px; }
-    .btn-remove { background-color: #dc3545; padding: 2px 8px; font-size: 12px; border: none; color: white; cursor: pointer; border-radius: 3px; }
+    .btn-remove { background-color: #dc3545; padding: 4px 8px; font-size: 12px; border: none; color: white; cursor: pointer; border-radius: 3px; }
     
     .table-container { width: 100%; overflow-x: auto; }
     table { width: 100%; border-collapse: collapse; margin-top: 10px; }
@@ -74,42 +104,78 @@
     .total-row { font-weight: bold; font-size: 16px; }
     .total-amount { border-bottom: 2px solid black; }
 
-    .modal { display: none; position: fixed; z-index: 10; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); }
-    .modal-content { background-color: white; margin: 5% auto; padding: 20px; border: 1px solid #888; border-radius: 5px; max-height: 85vh; overflow-y: auto; }
-    .modal-header { font-weight: bold; font-size: 16px; color: #003366; margin-bottom: 15px; }
-    .modal-field { margin-bottom: 10px; }
-    .modal-field label { display: block; font-weight: bold; margin-bottom: 5px; }
-    .modal-field input { width: 100%; padding: 6px; box-sizing: border-box; border: 1px solid #777; }
-    .modal-footer { text-align: right; margin-top: 15px; }
-    .btn-close { background-color: #6c757d; }
+    .card-box { background: #fdfdfd; border: 1px solid #ddd; padding: 20px; border-radius: 6px; margin-top: 10px; }
 
-    /* MOBILE MODE STYLES */
-    body.mobile-mode { margin: 10px 5px; background-color: #f0f2f5; }
-    body.mobile-mode .container { padding: 15px 10px; border-radius: 8px; box-shadow: none; border: none; }
-    body.mobile-mode .mode-toggle-btn { top: 10px; right: 10px; font-size: 11px; padding: 4px 8px; }
-    body.mobile-mode .header { flex-direction: column; gap: 8px; }
-    body.mobile-mode .logo-img { width: 110px; }
-    body.mobile-mode .header-text h2 { font-size: 20px; }
-    body.mobile-mode .header-text p { font-size: 12px; }
-    
-    body.mobile-mode .form-group { flex-direction: column; gap: 10px; margin-bottom: 10px; }
-    body.mobile-mode .form-field { width: 100% !important; flex-direction: column; align-items: flex-start; gap: 4px; }
-    body.mobile-mode .form-field label { margin-right: 0; font-size: 13px; }
-    body.mobile-mode .form-field input { padding: 8px; font-size: 14px; }
-    
-    body.mobile-mode .action-bar-container { flex-direction: column; gap: 10px; align-items: stretch !important; }
-    body.mobile-mode .action-bar-container div { display: flex; justify-content: space-between; width: 100%; }
-    body.mobile-mode .btn-save { width: 100%; margin-top: 5px; padding: 10px; }
+    /* BOTTOM NAVIGATION BAR */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      background-color: #000000;
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      padding: 8px 0 12px 0;
+      box-shadow: 0 -2px 10px rgba(0,0,0,0.3);
+      z-index: 1000;
+      border-top: 1px solid #222;
+    }
 
-    body.mobile-mode table { min-width: 600px; }
+    .bottom-nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #8e8e93;
+      text-decoration: none;
+      background: none;
+      border: none;
+      cursor: pointer;
+      flex: 1;
+      padding: 4px 0;
+      transition: color 0.2s ease;
+    }
+
+    .bottom-nav-item .nav-icon { font-size: 22px; margin-bottom: 3px; line-height: 1; }
+    .bottom-nav-item span { font-size: 11px; font-weight: 500; }
+    .bottom-nav-item.active { color: #ffffff; }
+    .bottom-nav-item.active .nav-icon { transform: scale(1.1); }
+
+    .home-indicator {
+      position: fixed;
+      bottom: 3px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 130px;
+      height: 4px;
+      background-color: #ffffff;
+      border-radius: 3px;
+      z-index: 1001;
+      opacity: 0.8;
+      pointer-events: none;
+    }
+
+    @media (max-width: 768px) {
+      .container { padding: 8px 5px; border-radius: 0; box-shadow: none; border: none; }
+      .header { flex-direction: column; gap: 6px; }
+      .logo-img { width: 85px; }
+      .header-text h2 { font-size: 17px; }
+      .header-text p { font-size: 11px; }
+      
+      .compact-form-row { padding: 8px; gap: 8px; }
+      .form-field-compact { width: 100%; flex-direction: row; }
+      .form-field-compact label { width: 110px; min-width: 110px; }
+      .form-field-compact input { flex-grow: 1; width: 100% !important; }
+      table { min-width: 550px; }
+    }
   </style>
 </head>
-<body class="desktop-mode">
+<body>
 
 <div class="container">
-  
-  <button type="button" class="mode-toggle-btn" id="modeBtn" onclick="toggleViewMode()">📱 Mode: Mobile</button>
 
+  <!-- Header -->
   <div class="header">
     <img src="https://lh3.googleusercontent.com/d/1BRp73oflV5zYR7d3HlPkeWlGZh9ajTWx" alt="Logo" class="logo-img">
     <div class="header-text">
@@ -119,167 +185,221 @@
     </div>
   </div>
 
-  <div class="form-group" style="margin-top: 20px;">
-    <div class="form-field">
-      <label>កាលបរិច្ឆេទ (Date):</label>
-      <input type="date" id="date">
-    </div>
-    <div class="form-field">
-      <label>អ្នកគិតលុយ (Cashier):</label>
-      <input type="text" id="cashier">
-    </div>
-  </div>
-
-  <div class="title">ប្រព័ន្ធបញ្ចូលទិន្នន័យលក់ (Sales Invoice Input Form)</div>
-
-  <div class="form-group">
-    <div class="form-field" style="width: 50%;">
-      <label>អតិថិជន (Customer):</label>
-      <input type="text" id="customerInput" list="customerListOptions" placeholder="🔍 វាយស្វែងរក..." oninput="onCustomerSelect()">
-      <datalist id="customerListOptions"></datalist>
-      <button class="btn-action btn-add-small" onclick="openCustomerModal()">+</button>
-    </div>
-    <div class="form-field">
-      <label>លេខទូរស័ព្ទ (Phone):</label>
-      <input type="text" id="phone">
-    </div>
-  </div>
-
-  <div class="form-field full">
-    <label>អាសយដ្ឋាន (Address):</label>
-    <input type="text" id="address">
-  </div>
-
-  <div class="action-bar-container" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-    <div>
-      <button class="btn-action btn-add-small" onclick="openProductModal()">+ បន្ថែមទំនិញ</button>
-      <button class="btn-action btn-search" onclick="openSearchModal()">🔍 ស្វែងរកប្រវត្តិទិញ</button>
-    </div>
-    <button class="btn-action btn-save" id="btnSave" onclick="saveData()">SAVE DATA</button>
-  </div>
-
+  <datalist id="customerListOptions"></datalist>
   <datalist id="productListOptions"></datalist>
 
-  <div class="table-container">
-    <table>
-      <thead>
-        <tr>
-          <th style="width: 38%;">មុខទំនិញ (Item)</th>
-          <th style="width: 10%;">ចំនួន (QTY)</th>
-          <th style="width: 17%;">តម្លៃ (Price) ៛</th>
-          <th style="width: 15%;">បញ្ចុះតម្លៃ (Discount) ៛</th>
-          <th style="width: 15%;">ទឹកប្រាក់ (Amount) ៛</th>
-          <th style="width: 5%;">លុប</th>
-        </tr>
-      </thead>
-      <tbody id="itemTable"></tbody>
-    </table>
-  </div>
-
-  <button class="btn-action btn-add-item" onclick="addItemRow()">+ Add Item Row</button>
-
-  <div style="margin-top: 15px; display: flex; justify-content: flex-end; align-items: center;">
-    <span class="total-row" style="margin-right: 15px;">សរុប (Total):</span>
-    <span id="grandTotal" class="total-row total-amount" style="width: 200px; text-align: right; display: inline-block;">0 ៛</span>
-  </div>
-</div>
-
-<!-- Modal ស្វែងរកប្រវត្តិទិញ -->
-<div id="searchModal" class="modal">
-  <div class="modal-content" style="max-width: 780px; width: 90%;">
-    <div class="modal-header">🔍 ស្វែងរកប្រវត្តិទិញរបស់អតិថិជន</div>
-    
-    <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px;">
-      <div style="display: flex; gap: 10px;">
-        <input type="text" id="searchKeyword" placeholder="វាយឈ្មោះ ឬលេខទូរស័ព្ទ (ទុកទទេដើម្បីរកគ្រប់គ្នា)..." style="flex: 1; padding: 8px; font-size: 14px; border: 1px solid #777;">
+  <!-- TAB 1: មុខទំនិញ -->
+  <div id="productTab" class="tab-content">
+    <div class="title">📦 គ្រប់គ្រងមុខទំនិញ</div>
+    <div class="card-box" style="max-width: 500px; margin: auto;">
+      <h3 style="margin-top: 0; color: #003366; text-align: center;">បន្ថែមមុខទំនិញថ្មី</h3>
+      <div class="form-field-compact" style="margin-bottom: 12px;">
+        <label style="width:120px;">ឈ្មោះទំនិញ:</label>
+        <input type="text" id="newProdName" placeholder="បញ្ចូលឈ្មោះទំនិញ..." class="input-auto">
       </div>
-      
-      <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-        <label style="font-weight: bold; font-size: 13px;">ចាប់ពីថ្ងៃ៖</label>
-        <input type="date" id="searchStartDate" style="padding: 6px; border: 1px solid #777; flex: 1;">
-        
-        <label style="font-weight: bold; font-size: 13px;">ដល់ថ្ងៃ៖</label>
-        <input type="date" id="searchEndDate" style="padding: 6px; border: 1px solid #777; flex: 1;">
-        
-        <button class="btn-action btn-search" onclick="performSearch()" style="padding: 8px 20px;">ស្វែងរក</button>
+      <div class="form-field-compact" style="margin-bottom: 12px;">
+        <label style="width:120px;">តម្លៃ (៛):</label>
+        <input type="number" id="newProdPrice" value="0" class="input-cashier">
+      </div>
+      <div style="text-align: right; margin-top: 15px;">
+        <button class="btn-action btn-add-small" onclick="saveNewProduct()">រក្សាទុកទំនិញ</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 2: អតិថិជន -->
+  <div id="customerTab" class="tab-content">
+    <div class="title">👤 គ្រប់គ្រងអតិថិជន</div>
+    <div class="card-box" style="max-width: 500px; margin: auto;">
+      <h3 style="margin-top: 0; color: #003366; text-align: center;">បន្ថែមអតិថិជនថ្មី</h3>
+      <div class="form-field-compact" style="margin-bottom: 12px;">
+        <label style="width:110px;">ឈ្មោះអតិថិជន:</label>
+        <input type="text" id="newCustName" placeholder="បញ្ចូលឈ្មោះ..." class="input-auto">
+      </div>
+      <div class="form-field-compact" style="margin-bottom: 12px;">
+        <label style="width:110px;">លេខទូរស័ព្ទ:</label>
+        <input type="text" id="newCustPhone" placeholder="បញ្ចូលលេខទូរស័ព្ទ..." class="input-phone">
+      </div>
+      <div class="form-field-compact" style="margin-bottom: 12px;">
+        <label style="width:110px;">អាសយដ្ឋាន:</label>
+        <input type="text" id="newCustAddress" placeholder="បញ្ចូលអាសយដ្ឋាន..." class="input-auto">
+      </div>
+      <div style="text-align: right; margin-top: 15px;">
+        <button class="btn-action btn-add-small" onclick="saveNewCustomer()">រក្សាទុកអតិថិជន</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 3: វិក្កយបត្រ (Sales Invoice) -->
+  <div id="invoiceTab" class="tab-content active">
+    <div class="title">📄 ទម្រង់វិក្កយបត្រលក់ (Sales Invoice)</div>
+
+    <!-- ផ្នែកព័ត៌មានលក់ ដែលមានទំហំល្មមស្អាត -->
+    <div class="compact-form-row">
+      <div class="form-field-compact">
+        <label>កាលបរិច្ឆេទ:</label>
+        <input type="date" id="date" class="input-date">
+      </div>
+
+      <div class="form-field-compact">
+        <label>អ្នកគិតលុយ:</label>
+        <input type="text" id="cashier" class="input-cashier" oninput="adjustWidth(this)">
+      </div>
+
+      <div class="form-field-compact">
+        <label>អតិថិជន:</label>
+        <input type="text" id="customerInput" list="customerListOptions" placeholder="🔍 វាយស្វែងរក..." class="input-auto" oninput="onCustomerSelect(); adjustWidth(this);">
+      </div>
+
+      <div class="form-field-compact">
+        <label>លេខទូរស័ព្ទ:</label>
+        <input type="text" id="phone" class="input-phone" oninput="adjustWidth(this)">
+      </div>
+
+      <div class="form-field-compact" style="flex-grow: 1;">
+        <label>អាសយដ្ឋាន:</label>
+        <input type="text" id="address" class="input-auto" oninput="adjustWidth(this)">
       </div>
     </div>
 
-    <div id="searchSummary" style="font-weight: bold; color: #800000; margin-bottom: 10px; font-size: 15px;"></div>
-
+    <!-- តារាងទំនិញ -->
     <div class="table-container">
-      <table style="width: 100%; border-collapse: collapse; font-size: 13px; min-width: 550px;">
+      <table>
         <thead>
-          <tr style="background-color: #1b4f72; color: white;">
-            <th style="padding: 8px; width: 14%;">ថ្ងៃទី</th>
-            <th style="padding: 8px; width: 20%;">ឈ្មោះអតិថិជន</th>
-            <th style="padding: 8px; width: 34%;">មុខទំនិញ</th>
-            <th style="padding: 8px; width: 8%;">ចំនួន</th>
-            <th style="padding: 8px; width: 12%;">តម្លៃរាយ</th>
-            <th style="padding: 8px; width: 12%;">តម្លៃសរុប</th>
+          <tr>
+            <th style="width: 38%;">មុខទំនិញ (Item)</th>
+            <th style="width: 10%;">ចំនួន (QTY)</th>
+            <th style="width: 17%;">តម្លៃ (Price) ៛</th>
+            <th style="width: 15%;">បញ្ចុះតម្លៃ (Discount) ៛</th>
+            <th style="width: 15%;">ទឹកប្រាក់ (Amount) ៛</th>
+            <th style="width: 5%;">លុប</th>
           </tr>
         </thead>
-        <tbody id="searchResultsTable">
-          <tr><td colspan="6" style="text-align: center; padding: 10px; color: #777;">សូមវាយបញ្ចូលឈ្មោះ ឬជ្រើសរើសថ្ងៃដើម្បីស្វែងរក</td></tr>
-        </tbody>
-        <tfoot id="searchResultFooter" style="display: none;">
-          <tr style="background-color: #f2f2f2; font-weight: bold;">
-            <td colspan="5" style="text-align: right; padding: 8px; font-size: 14px;">សរុបរួមទាំងអស់ (Grand Total)៖</td>
-            <td id="searchGrandTotalCell" style="text-align: right; padding: 8px; font-size: 14px; color: #800000; border-top: 2px solid #000;">0 ៛</td>
-          </tr>
-        </tfoot>
+        <tbody id="itemTable"></tbody>
       </table>
     </div>
 
-    <div class="modal-footer">
-      <button class="btn-action btn-close" onclick="closeSearchModal()">បិទ</button>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
+      <button class="btn-action btn-add-item" onclick="addItemRow()">+ Add Item Row</button>
+      <div style="text-align: right;">
+        <span class="total-row" style="margin-right: 15px;">សរុប (Total):</span>
+        <span id="grandTotal" class="total-row total-amount" style="width: 180px; text-align: right; display: inline-block;">0 ៛</span>
+      </div>
+    </div>
+
+    <div style="margin-top: 20px; text-align: right;">
+      <button class="btn-action btn-save" id="btnSave" onclick="saveData()" style="padding: 10px 25px; font-size: 16px;">SAVE DATA</button>
     </div>
   </div>
+
+  <!-- TAB 4: ការកំណត់ -->
+  <div id="settingsTab" class="tab-content">
+    <div class="title">ប្រវត្តិទិញ (Search History) </div>
+    
+    <div class="card-box">
+      <h3 style="margin-top: 0; color: #003366;">🔍 ស្វែងរកប្រវត្តិទិញរបស់អតិថិជន</h3>
+      <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px;">
+        <div>
+          <input type="text" id="searchKeyword" placeholder="វាយឈ្មោះ ឬលេខទូរស័ព្ទ..." style="width: 100%; padding: 8px; font-size: 14px; border: 1px solid #777; box-sizing: border-box; border-radius: 4px;">
+        </div>
+        
+        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+          <label style="font-weight: bold; font-size: 13px;">ចាប់ពីថ្ងៃ៖</label>
+          <input type="date" id="searchStartDate" style="padding: 6px; border: 1px solid #777; flex: 1; border-radius: 4px;">
+          
+          <label style="font-weight: bold; font-size: 13px;">ដល់ថ្ងៃ៖</label>
+          <input type="date" id="searchEndDate" style="padding: 6px; border: 1px solid #777; flex: 1; border-radius: 4px;">
+          
+          <button class="btn-action btn-search" onclick="performSearch()" style="padding: 8px 20px;">ស្វែងរក</button>
+        </div>
+      </div>
+
+      <div id="searchSummary" style="font-weight: bold; color: #800000; margin-bottom: 10px; font-size: 15px;"></div>
+
+      <div class="table-container">
+        <style>#searchResultsTable td, #searchResultsTable th { border: 1px solid #ccc; }</style>
+        <table style="width: 100%; border-collapse: collapse; font-size: 13px; min-width: 550px;">
+          <thead>
+            <tr style="background-color: #1b4f72; color: white;">
+              <th style="padding: 8px; width: 14%;">ថ្ងៃទី</th>
+              <th style="padding: 8px; width: 20%;">ឈ្មោះអតិថិជន</th>
+              <th style="padding: 8px; width: 34%;">មុខទំនិញ</th>
+              <th style="padding: 8px; width: 8%;">ចំនួន</th>
+              <th style="padding: 8px; width: 12%;">តម្លៃរាយ</th>
+              <th style="padding: 8px; width: 12%;">តម្លៃសរុប</th>
+            </tr>
+          </thead>
+          <tbody id="searchResultsTable">
+            <tr><td colspan="6" style="text-align: center; padding: 10px; color: #777;">សូមវាយបញ្ចូលឈ្មោះ ឬជ្រើសរើសថ្ងៃដើម្បីស្វែងរក</td></tr>
+          </tbody>
+          <tfoot id="searchResultFooter" style="display: none;">
+            <tr style="background-color: #f2f2f2; font-weight: bold;">
+              <td colspan="5" style="text-align: right; padding: 8px; font-size: 14px;">សរុបរួមទាំងអស់ (Grand Total)៖</td>
+              <td id="searchGrandTotalCell" style="text-align: right; padding: 8px; font-size: 14px; color: #800000; border-top: 2px solid #000;">0 ៛</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+  </div>
+
 </div>
 
-<!-- Modal បន្ថែមអតិថិជន -->
-<div id="customerModal" class="modal">
-  <div class="modal-content" style="max-width: 400px; width: 90%;">
-    <div class="modal-header">បន្ថែមអតិថិជនថ្មី</div>
-    <div class="modal-field"><label>ឈ្មោះ</label><input type="text" id="newCustName"></div>
-    <div class="modal-field"><label>លេខទូរស័ព្ទ</label><input type="text" id="newCustPhone"></div>
-    <div class="modal-field"><label>អាសយដ្ឋាន</label><input type="text" id="newCustAddress"></div>
-    <div class="modal-footer">
-      <button class="btn-action btn-close" onclick="closeCustomerModal()">បិទ</button>
-      <button class="btn-action btn-add-small" onclick="saveNewCustomer()">រក្សាទុក</button>
-    </div>
-  </div>
+<!-- BOTTOM NAVIGATION BAR -->
+<div class="bottom-nav">
+  <button class="bottom-nav-item" onclick="switchBottomTab('productTab', this)">
+    <div class="nav-icon">📦</div>
+    <span>មុខទំនិញ</span>
+  </button>
+  <button class="bottom-nav-item" onclick="switchBottomTab('customerTab', this)">
+    <div class="nav-icon">👤</div>
+    <span>អតិថិជន</span>
+  </button>
+  <button class="bottom-nav-item active" onclick="switchBottomTab('invoiceTab', this)">
+    <div class="nav-icon">📄</div>
+    <span>វិក្កយបត្រ</span>
+  </button>
+  <button class="bottom-nav-item" onclick="switchBottomTab('settingsTab', this)">
+    <div class="nav-icon">🔍</div>
+    <span>ប្រវត្តិទិញ</span> 
+  </button>
 </div>
 
-<!-- Modal បន្ថែមទំនិញ -->
-<div id="productModal" class="modal">
-  <div class="modal-content" style="max-width: 400px; width: 90%;">
-    <div class="modal-header">បន្ថែមមុខទំនិញថ្មី</div>
-    <div class="modal-field"><label>ឈ្មោះទំនិញ</label><input type="text" id="newProdName"></div>
-    <div class="modal-field"><label>តម្លៃ (៛)</label><input type="number" id="newProdPrice" value="0"></div>
-    <div class="modal-footer">
-      <button class="btn-action btn-close" onclick="closeProductModal()">បិទ</button>
-      <button class="btn-action btn-add-small" onclick="saveNewProduct()">រក្សាទុក</button>
-    </div>
-  </div>
-</div>
+<div class="home-indicator"></div>
 
 <script>
-  // ⚠️ ជំនួស WEB APP URL របស់ Google Apps Script របស់អ្នកត្រង់នេះ
   const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxOPFOYkp6DxWvLb9UYIKjxxgJlEjZiWt10z2DrQDadX1Jrlhk9Ln8L0JDZvl5UZSD1/exec";
 
   let customersData = [];
   let productsData = [];
 
-  // មុខងារ Inject PWA Manifest ដោយសុវត្ថិភាព មិនឲ្យកើត Error
+  // មុខងារសម្រួលប្រវែង Input Dynamic ពេលវាយបញ្ចូល
+  function adjustWidth(input) {
+    if (window.innerWidth > 768) {
+      let len = input.value.length;
+      if (len > 12) {
+        input.style.width = (len * 9) + 'px';
+      }
+    }
+  }
+
+  function switchBottomTab(tabId, btn) {
+    document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+    document.querySelectorAll('.bottom-nav-item').forEach(b => b.classList.remove('active'));
+
+    document.getElementById(tabId).classList.add('active');
+    btn.classList.add('active');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
   function injectManifest() {
     const manifestObj = {
       "name": "ស្រែមាស ចំការលើ",
       "short_name": "ស្រែមាស",
       "start_url": ".",
       "display": "standalone",
-      "background_color": "#ffffff",
-      "theme_color": "#1b4f72",
+      "background_color": "#000000",
+      "theme_color": "#000000",
       "icons": [{
         "src": "https://lh3.googleusercontent.com/d/1BRp73oflV5zYR7d3HlPkeWlGZh9ajTWx",
         "sizes": "192x192",
@@ -296,35 +416,11 @@
   }
 
   window.onload = function() {
-    injectManifest(); // ដំណើរការ PWA Manifest
+    injectManifest();
     document.getElementById('date').valueAsDate = new Date();
     loadCustomers();
     loadProducts(function() { resetFormRows(); });
-
-    if (window.innerWidth <= 768) {
-      setMobileMode(true);
-    } else {
-      setMobileMode(false);
-    }
   };
-
-  function toggleViewMode() {
-    let isMobile = document.body.classList.contains('mobile-mode');
-    setMobileMode(!isMobile);
-  }
-
-  function setMobileMode(isMobile) {
-    let btn = document.getElementById('modeBtn');
-    if (isMobile) {
-      document.body.classList.remove('desktop-mode');
-      document.body.classList.add('mobile-mode');
-      btn.innerHTML = '💻 Mode: Desktop';
-    } else {
-      document.body.classList.remove('mobile-mode');
-      document.body.classList.add('desktop-mode');
-      btn.innerHTML = '📱 Mode: Mobile';
-    }
-  }
 
   function loadCustomers() {
     fetch(`${SCRIPT_URL}?action=getCustomers`)
@@ -348,6 +444,8 @@
     if (found) {
       document.getElementById('phone').value = found.phone;
       document.getElementById('address').value = found.address;
+      adjustWidth(document.getElementById('phone'));
+      adjustWidth(document.getElementById('address'));
     }
   }
 
@@ -376,35 +474,6 @@
     if (found) priceInput.value = found.price;
     calculateRow(priceInput);
   }
-
-  function openSearchModal() { 
-    document.getElementById('searchModal').style.display = 'block'; 
-    let currentCust = document.getElementById('customerInput').value.trim();
-    if(currentCust) {
-      document.getElementById('searchKeyword').value = currentCust;
-      performSearch();
-    }
-  }
-  function closeSearchModal() { document.getElementById('searchModal').style.display = 'none'; }
-  function openCustomerModal() { document.getElementById('customerModal').style.display = 'block'; }
-  function closeCustomerModal() { 
-    document.getElementById('customerModal').style.display = 'none'; 
-    document.getElementById('newCustName').value = '';
-    document.getElementById('newCustPhone').value = '';
-    document.getElementById('newCustAddress').value = '';
-  }
-  function openProductModal() { document.getElementById('productModal').style.display = 'block'; }
-  function closeProductModal() { 
-    document.getElementById('productModal').style.display = 'none'; 
-    document.getElementById('newProdName').value = '';
-    document.getElementById('newProdPrice').value = '0';
-  }
-
-  window.onclick = function(event) {
-    if (event.target.classList.contains('modal')) {
-      event.target.style.display = "none";
-    }
-  };
 
   function performSearch() {
     let kw = encodeURIComponent(document.getElementById('searchKeyword').value.trim());
@@ -473,7 +542,9 @@
     .then(res => res.json())
     .then(res => {
       alert(res.message);
-      closeCustomerModal();
+      document.getElementById('newCustName').value = '';
+      document.getElementById('newCustPhone').value = '';
+      document.getElementById('newCustAddress').value = '';
       loadCustomers();
     });
   }
@@ -490,7 +561,8 @@
     .then(res => res.json())
     .then(res => {
       alert(res.message);
-      closeProductModal();
+      document.getElementById('newProdName').value = '';
+      document.getElementById('newProdPrice').value = '0';
       loadProducts();
     });
   }
