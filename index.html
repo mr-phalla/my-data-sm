@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <link rel="icon" href="https://lh3.googleusercontent.com/d/1kocqtku0Dc25NSU77x2Wti9a-KNYwf1d" type="image/x-icon">
+  <link rel="apple-touch-icon" href="https://lh3.googleusercontent.com/d/1kocqtku0Dc25NSU77x2Wti9a-KNYwf1d">
+
+  <style>
+    body { font-family: 'Kantumruy Pro', 'Khmer OS Battambang', Arial, sans-serif; margin: 20px; background-color: #f9f9f9; }
+    .container { max-width: 900px; margin: auto; background: white; padding: 20px; border: 1px solid #ccc; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+    
+    .header { display: flex; align-items: center; justify-content: center; gap: 20px; color: #800000; margin-bottom: 10px; }
+    .logo-img { width: 150px; height: auto; object-fit: contain; }
+    .header-text { text-align: center; }
+    .header-text h2 { margin: 2px 0; font-size: 24px; }
+    .header-text p { margin: 2px 0; color: #333; font-size: 14px; }
+    
+    .title { text-align: center; color: #003366; font-size: 18px; font-weight: bold; margin: 15px 0; }
+    
+    .form-group { display: flex; justify-content: space-between; margin-bottom: 10px; }
+    .form-field { display: flex; align-items: center; width: 48%; }
+    .form-field.full { width: 100%; margin-bottom: 10px; }
+    .form-field label { color: #0088cc; font-weight: bold; margin-right: 10px; white-space: nowrap; }
+    .form-field input { width: 100%; padding: 6px; border: 1px solid #777; font-size: 14px; box-sizing: border-box; }
+    
+    .btn-action { color: white; border: none; padding: 8px 15px; font-weight: bold; cursor: pointer; border-radius: 3px; }
+    .btn-save { background-color: #336699; }
+    .btn-save:hover { background-color: #23476d; }
+    .btn-search { background-color: #ff9900; }
+    .btn-search:hover { background-color: #e68a00; }
+    .btn-add-small { background-color: #28a745; margin-left: 5px; white-space: nowrap; padding: 5px 10px; }
+    .btn-add-item { background-color: #17a2b8; margin-top: 10px; }
+    .btn-remove { background-color: #dc3545; padding: 2px 8px; font-size: 12px; border: none; color: white; cursor: pointer; border-radius: 3px; }
+    
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th { background-color: #1b4f72; color: white; border: 1px solid #ccc; padding: 8px; text-align: center; font-size: 14px; }
+    td { border: 1px solid #ccc; padding: 4px; }
+    td input { width: 98%; border: none; outline: none; font-size: 14px; padding: 4px; background: transparent; }
+    .text-center { text-align: center; }
+    .text-right { text-align: right; }
+    
+    .total-row { font-weight: bold; font-size: 16px; }
+    .total-amount { border-bottom: 2px solid black; }
+
+    .modal { display: none; position: fixed; z-index: 10; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); }
+    .modal-content { background-color: white; margin: 5% auto; padding: 20px; border: 1px solid #888; border-radius: 5px; max-height: 85vh; overflow-y: auto; }
+    .modal-header { font-weight: bold; font-size: 16px; color: #003366; margin-bottom: 15px; }
+    .modal-field { margin-bottom: 10px; }
+    .modal-field label { display: block; font-weight: bold; margin-bottom: 5px; }
+    .modal-field input { width: 100%; padding: 6px; box-sizing: border-box; border: 1px solid #777; }
+    .modal-footer { text-align: right; margin-top: 15px; }
+    .btn-close { background-color: #6c757d; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <img src="https://lh3.googleusercontent.com/d/1kocqtku0Dc25NSU77x2Wti9a-KNYwf1d" alt="Logo" class="logo-img">
+    <div class="header-text">
+      <h2>ស្រែមាស ចំការលើ</h2>
+      <p>ភូមិថ្នល់បែកកើត ឃុំស្វាយទាប ស្រុកចំការលើ ខេត្តកំពង់ចាម</p>
+      <p>លេខទូរស័ព្ទ / Phone: <b>088 733 7888</b></p>
+    </div>
+  </div>
+
+  <div class="form-group" style="margin-top: 20px;">
+    <div class="form-field">
+      <label>កាលបរិច្ឆេទ (Date):</label>
+      <input type="date" id="date">
+    </div>
+    <div class="form-field">
+      <label>អ្នកគិតលុយ (Cashier):</label>
+      <input type="text" id="cashier">
+    </div>
+  </div>
+
+  <div class="title">ប្រព័ន្ធបញ្ចូលទិន្នន័យលក់ (Sales Invoice Input Form)</div>
+
+  <div class="form-group">
+    <div class="form-field" style="width: 50%;">
+      <label>អតិថិជន (Customer):</label>
+      <input type="text" id="customerInput" list="customerListOptions" placeholder="🔍 វាយស្វែងរក..." oninput="onCustomerSelect()">
+      <datalist id="customerListOptions"></datalist>
+      <button class="btn-action btn-add-small" onclick="openCustomerModal()">+</button>
+    </div>
+    <div class="form-field">
+      <label>លេខទូរស័ព្ទ (Phone):</label>
+      <input type="text" id="phone">
+    </div>
+  </div>
+
+  <div class="form-field full">
+    <label>អាសយដ្ឋាន (Address):</label>
+    <input type="text" id="address">
+  </div>
+
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+    <div>
+      <button class="btn-action btn-add-small" onclick="openProductModal()">+ បន្ថែមទំនិញ</button>
+      <button class="btn-action btn-search" onclick="openSearchModal()">🔍 ស្វែងរកប្រវត្តិទិញ</button>
+    </div>
+    <button class="btn-action btn-save" id="btnSave" onclick="saveData()">SAVE DATA</button>
+  </div>
+
+  <datalist id="productListOptions"></datalist>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width: 38%;">មុខទំនិញ (Item)</th>
+        <th style="width: 10%;">ចំនួន (QTY)</th>
+        <th style="width: 17%;">តម្លៃ (Price) ៛</th>
+        <th style="width: 15%;">បញ្ចុះតម្លៃ (Discount) ៛</th>
+        <th style="width: 15%;">ទឹកប្រាក់ (Amount) ៛</th>
+        <th style="width: 5%;">លុប</th>
+      </tr>
+    </thead>
+    <tbody id="itemTable"></tbody>
+  </table>
+
+  <button class="btn-action btn-add-item" onclick="addItemRow()">+ Add Item Row</button>
+
+  <div style="margin-top: 15px; display: flex; justify-content: flex-end; align-items: center;">
+    <span class="total-row" style="margin-right: 15px;">សរុប (Total):</span>
+    <span id="grandTotal" class="total-row total-amount" style="width: 200px; text-align: right; display: inline-block;">0 ៛</span>
+  </div>
+</div>
+
+<!-- Modal ស្វែងរកប្រវត្តិទិញ -->
+<div id="searchModal" class="modal">
+  <div class="modal-content" style="width: 780px;">
+    <div class="modal-header">🔍 ស្វែងរកប្រវត្តិទិញរបស់អតិថិជន</div>
+    
+    <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px;">
+      <div style="display: flex; gap: 10px;">
+        <input type="text" id="searchKeyword" placeholder="វាយឈ្មោះ ឬលេខទូរស័ព្ទ (ទុកទទេដើម្បីរកគ្រប់គ្នា)..." style="flex: 1; padding: 8px; font-size: 14px; border: 1px solid #777;">
+      </div>
+      
+      <div style="display: flex; gap: 10px; align-items: center;">
+        <label style="font-weight: bold; font-size: 13px;">ចាប់ពីថ្ងៃ៖</label>
+        <input type="date" id="searchStartDate" style="padding: 6px; border: 1px solid #777; flex: 1;">
+        
+        <label style="font-weight: bold; font-size: 13px;">ដល់ថ្ងៃ៖</label>
+        <input type="date" id="searchEndDate" style="padding: 6px; border: 1px solid #777; flex: 1;">
+        
+        <button class="btn-action btn-search" onclick="performSearch()" style="padding: 8px 20px;">ស្វែងរក</button>
+      </div>
+    </div>
+
+    <div id="searchSummary" style="font-weight: bold; color: #800000; margin-bottom: 10px; font-size: 15px;"></div>
+
+    <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+      <thead>
+        <tr style="background-color: #1b4f72; color: white;">
+          <th style="padding: 8px; width: 14%;">ថ្ងៃទី</th>
+          <th style="padding: 8px; width: 20%;">ឈ្មោះអតិថិជន</th>
+          <th style="padding: 8px; width: 34%;">មុខទំនិញ</th>
+          <th style="padding: 8px; width: 8%;">ចំនួន</th>
+          <th style="padding: 8px; width: 12%;">តម្លៃរាយ</th>
+          <th style="padding: 8px; width: 12%;">តម្លៃសរុប</th>
+        </tr>
+      </thead>
+      <tbody id="searchResultsTable">
+        <tr><td colspan="6" style="text-align: center; padding: 10px; color: #777;">សូមវាយបញ្ចូលឈ្មោះ ឬជ្រើសរើសថ្ងៃដើម្បីស្វែងរក</td></tr>
+      </tbody>
+      <tfoot id="searchResultFooter" style="display: none;">
+        <tr style="background-color: #f2f2f2; font-weight: bold;">
+          <td colspan="5" style="text-align: right; padding: 8px; font-size: 14px;">សរុបរួមទាំងអស់ (Grand Total)៖</td>
+          <td id="searchGrandTotalCell" style="text-align: right; padding: 8px; font-size: 14px; color: #800000; border-top: 2px solid #000;">0 ៛</td>
+        </tr>
+      </tfoot>
+    </table>
+
+    <div class="modal-footer">
+      <button class="btn-action btn-close" onclick="closeSearchModal()">បិទ</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal បន្ថែមអតិថិជន -->
+<div id="customerModal" class="modal">
+  <div class="modal-content" style="width: 400px;">
+    <div class="modal-header">បន្ថែមអតិថិជនថ្មី</div>
+    <div class="modal-field"><label>ឈ្មោះ</label><input type="text" id="newCustName"></div>
+    <div class="modal-field"><label>លេខទូរស័ព្ទ</label><input type="text" id="newCustPhone"></div>
+    <div class="modal-field"><label>អាសយដ្ឋាន</label><input type="text" id="newCustAddress"></div>
+    <div class="modal-footer">
+      <button class="btn-action btn-close" onclick="closeCustomerModal()">បិទ</button>
+      <button class="btn-action btn-add-small" onclick="saveNewCustomer()">រក្សាទុក</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal បន្ថែមទំនិញ -->
+<div id="productModal" class="modal">
+  <div class="modal-content" style="width: 400px;">
+    <div class="modal-header">បន្ថែមមុខទំនិញថ្មី</div>
+    <div class="modal-field"><label>ឈ្មោះទំនិញ</label><input type="text" id="newProdName"></div>
+    <div class="modal-field"><label>តម្លៃ (៛)</label><input type="number" id="newProdPrice" value="0"></div>
+    <div class="modal-footer">
+      <button class="btn-action btn-close" onclick="closeProductModal()">បិទ</button>
+      <button class="btn-action btn-add-small" onclick="saveNewProduct()">រក្សាទុក</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  let customersData = [];
+  let productsData = [];
+
+  window.onload = function() {
+    document.getElementById('date').valueAsDate = new Date();
+    loadCustomers();
+    loadProducts(function() { resetFormRows(); });
+  };
+
+  function loadCustomers() {
+    google.script.run.withSuccessHandler(function(list) {
+      customersData = list || [];
+      let datalist = document.getElementById('customerListOptions');
+      datalist.innerHTML = '';
+      customersData.forEach(c => {
+        let opt = document.createElement('option');
+        opt.value = c.name;
+        datalist.appendChild(opt);
+      });
+    }).getCustomersList();
+  }
+
+  function onCustomerSelect() {
+    let val = document.getElementById('customerInput').value.trim();
+    let found = customersData.find(c => c.name.toLowerCase() === val.toLowerCase());
+    if (found) {
+      document.getElementById('phone').value = found.phone;
+      document.getElementById('address').value = found.address;
+    }
+  }
+
+  function loadProducts(callback) {
+    google.script.run.withSuccessHandler(function(list) {
+      productsData = list || [];
+      let datalist = document.getElementById('productListOptions');
+      datalist.innerHTML = '';
+      productsData.forEach(p => {
+        let opt = document.createElement('option');
+        opt.value = p.name;
+        datalist.appendChild(opt);
+      });
+      if (callback) callback();
+    }).getItemsList();
+  }
+
+  function onProductSelect(input) {
+    let row = input.closest('tr');
+    let val = input.value.trim();
+    let priceInput = row.querySelector('.item-price');
+    let found = productsData.find(p => p.name.toLowerCase() === val.toLowerCase());
+    if (found) priceInput.value = found.price;
+    calculateRow(priceInput);
+  }
+
+  function openSearchModal() { 
+    document.getElementById('searchModal').style.display = 'block'; 
+    let currentCust = document.getElementById('customerInput').value.trim();
+    if(currentCust) {
+      document.getElementById('searchKeyword').value = currentCust;
+      performSearch();
+    }
+  }
+  function closeSearchModal() { document.getElementById('searchModal').style.display = 'none'; }
+  function openCustomerModal() { document.getElementById('customerModal').style.display = 'block'; }
+  function closeCustomerModal() { 
+    document.getElementById('customerModal').style.display = 'none'; 
+    document.getElementById('newCustName').value = '';
+    document.getElementById('newCustPhone').value = '';
+    document.getElementById('newCustAddress').value = '';
+  }
+  function openProductModal() { document.getElementById('productModal').style.display = 'block'; }
+  function closeProductModal() { 
+    document.getElementById('productModal').style.display = 'none'; 
+    document.getElementById('newProdName').value = '';
+    document.getElementById('newProdPrice').value = '0';
+  }
+
+  window.onclick = function(event) {
+    if (event.target.classList.contains('modal')) {
+      event.target.style.display = "none";
+    }
+  };
+
+  function performSearch() {
+    let kw = document.getElementById('searchKeyword').value.trim();
+    let startDate = document.getElementById('searchStartDate').value;
+    let endDate = document.getElementById('searchEndDate').value;
+
+    let tbody = document.getElementById('searchResultsTable');
+    let tfoot = document.getElementById('searchResultFooter');
+    
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 10px;">⏳ កំពុងស្វែងរក...</td></tr>';
+    tfoot.style.display = 'none';
+    document.getElementById('searchSummary').innerText = "";
+
+    google.script.run.withSuccessHandler(function(res) {
+      if (!res.success) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: red;">${res.message}</td></tr>`;
+        return;
+      }
+      
+      let items = res.items || [];
+      if (items.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #777;">មិនមានទិន្នន័យទិញដូរក្នុងលក្ខខណ្ឌនេះទេ!</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = '';
+      let grandTotal = res.totalSpent || 0;
+      
+      items.forEach(item => {
+        let itemAmt = Number(item.amount) || 0;
+        let itemPrice = Number(item.price) || 0;
+
+        let tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td style="text-align:center;">${item.date}</td>
+          <td>${res.customerName || '-'}</td>
+          <td>${item.item}</td>
+          <td style="text-align:center;">${item.qty}</td>
+          <td style="text-align:right;">${itemPrice.toLocaleString()} ៛</td>
+          <td style="text-align:right;">${itemAmt.toLocaleString()} ៛</td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      document.getElementById('searchSummary').innerText = `សរុបការទិញ៖ ${grandTotal.toLocaleString()} ៛ (${items.length} មុខទំនិញ)`;
+      document.getElementById('searchGrandTotalCell').innerText = `${grandTotal.toLocaleString()} ៛`;
+      tfoot.style.display = '';
+    }).searchCustomerHistoryWebApp(kw, startDate, endDate);
+  }
+
+  function saveNewCustomer() {
+    let name = document.getElementById('newCustName').value;
+    let phone = document.getElementById('newCustPhone').value;
+    let address = document.getElementById('newCustAddress').value;
+    if (!name.trim()) { alert("សូមបញ្ចូលឈ្មោះអតិថិជន!"); return; }
+    google.script.run.withSuccessHandler(function(res) {
+      alert(res.message);
+      closeCustomerModal();
+      loadCustomers();
+    }).addCustomer({ name: name, phone: phone, address: address });
+  }
+
+  function saveNewProduct() {
+    let name = document.getElementById('newProdName').value;
+    let price = parseFloat(document.getElementById('newProdPrice').value) || 0;
+    if (!name.trim()) { alert("សូមបញ្ចូលឈ្មោះមុខទំនិញ!"); return; }
+    google.script.run.withSuccessHandler(function(res) {
+      alert(res.message);
+      closeProductModal();
+      loadProducts();
+    }).addNewProduct({ name: name, price: price });
+  }
+
+  function addItemRow() {
+    let tbody = document.getElementById('itemTable');
+    let tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><input type="text" class="item-input" list="productListOptions" placeholder="🔍 ស្វែងរក..." oninput="onProductSelect(this)"></td>
+      <td><input type="number" class="item-qty text-center" oninput="calculateRow(this)"></td>
+      <td><input type="number" class="item-price text-right" oninput="calculateRow(this)"></td>
+      <td><input type="number" class="item-discount text-right" oninput="calculateRow(this)" value="0"></td>
+      <td><input type="text" class="item-amount text-right" readonly value="0 ៛"></td>
+      <td class="text-center"><button class="btn-action btn-remove" onclick="removeRow(this)">X</button></td>
+    `;
+    tbody.appendChild(tr);
+  }
+
+  function removeRow(btn) {
+    btn.closest('tr').remove();
+    calculateGrandTotal();
+  }
+
+  function calculateRow(input) {
+    let row = input.closest('tr');
+    let qty = parseFloat(row.querySelector('.item-qty').value) || 0;
+    let price = parseFloat(row.querySelector('.item-price').value) || 0;
+    let discount = parseFloat(row.querySelector('.item-discount').value) || 0;
+    let amount = (qty * price) - discount;
+    row.querySelector('.item-amount').value = (amount < 0 ? 0 : amount).toLocaleString() + " ៛";
+    calculateGrandTotal();
+  }
+
+  function calculateGrandTotal() {
+    let rows = document.querySelectorAll('#itemTable tr');
+    let total = 0;
+    rows.forEach(row => {
+      let qty = parseFloat(row.querySelector('.item-qty').value) || 0;
+      let price = parseFloat(row.querySelector('.item-price').value) || 0;
+      let discount = parseFloat(row.querySelector('.item-discount').value) || 0;
+      let amount = (qty * price) - discount;
+      if (amount > 0) total += amount;
+    });
+    document.getElementById('grandTotal').innerText = total.toLocaleString() + " ៛";
+  }
+
+  function resetFormRows() {
+    document.getElementById('itemTable').innerHTML = '';
+    for(let i = 0; i < 3; i++) addItemRow();
+    calculateGrandTotal();
+  }
+
+  function saveData() {
+    let items = [];
+    document.querySelectorAll('#itemTable tr').forEach(row => {
+      let prodName = row.querySelector('.item-input').value.trim();
+      let qty = parseFloat(row.querySelector('.item-qty').value) || 0;
+      let price = parseFloat(row.querySelector('.item-price').value) || 0;
+      let discount = parseFloat(row.querySelector('.item-discount').value) || 0;
+      let amount = (qty * price) - discount;
+      if (prodName !== "") {
+        items.push({ name: prodName, qty: qty, price: price, discount: discount, amount: amount < 0 ? 0 : amount });
+      }
+    });
+
+    if (items.length === 0) { alert("សូមបញ្ចូលមុខទំនិញយ៉ាងហោចណាស់ 1!"); return; }
+
+    let payload = {
+      date: document.getElementById('date').value,
+      cashier: document.getElementById('cashier').value,
+      customer: document.getElementById('customerInput').value.trim(),
+      phone: document.getElementById('phone').value,
+      address: document.getElementById('address').value,
+      items: items
+    };
+
+    let btnSave = document.getElementById('btnSave');
+    btnSave.innerText = "SAVING...";
+    btnSave.disabled = true;
+
+    google.script.run.withSuccessHandler(function(response) {
+      alert(response);
+      document.getElementById('customerInput').value = '';
+      document.getElementById('phone').value = '';
+      document.getElementById('address').value = '';
+      resetFormRows();
+      btnSave.innerText = "SAVE DATA";
+      btnSave.disabled = false;
+    }).saveData(payload);
+  }
+</script>
+
+</body>
+</html>
