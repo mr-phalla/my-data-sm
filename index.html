@@ -6,11 +6,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>ស្រែមាស - ប្រព័ន្ធគ្រប់គ្រងការលក់</title>
   
-  <!-- Manifest & App Icons -->
-  <link rel="manifest" href="manifest.json">
+  <!-- កំណត់សោភ័ណភាពសម្រាប់ Add to Home Screen (PWA) -->
   <meta name="theme-color" content="#000000">
-  <link rel="icon" href="sm.jpg" type="image/x-icon">
-  <link rel="apple-touch-icon" href="sm.jpg">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="ស្រែមាស (ភ្ញៀវ)">
+  <link rel="apple-touch-icon" href="https://lh3.googleusercontent.com/d/1-lHJgWS1XhknNZPCQ3nUUGSPi7CoJmLC">
+  <link rel="icon" href="https://lh3.googleusercontent.com/d/1-lHJgWS1XhknNZPCQ3nUUGSPi7CoJmLC" type="image/png">
+  
+  <!-- កន្លែងសម្រាប់ដាក់ Manifest ស្វ័យប្រវត្តិ -->
+  <link rel="manifest" id="dynamic-manifest">
 
   <style>
     :root {
@@ -129,7 +134,6 @@
 
     .no-data-msg { text-align: center; padding: 20px; color: var(--sub-text); font-size: 14px; }
 
-    /* Style បន្ថែមសម្រាប់ Client Public View */
     .client-card-box { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 15px; margin-bottom: 20px; }
 
     @media print {
@@ -165,12 +169,10 @@
       <h2>មុខទំនិញ</h2>
       <button class="btn-add-header" onclick="openModal('productModal')">+</button>
     </div>
-
     <div class="search-box-ui">
       <span class="search-icon-ui">🔍</span>
       <input type="text" id="searchProduct" class="search-input-ui" placeholder="ឈ្មោះមុខទំនិញ" oninput="renderProducts()">
     </div>
-
     <div class="list-container-ui" id="productsListContainer"></div>
   </div>
 
@@ -181,44 +183,22 @@
       <h2>អតិថិជន</h2>
       <button class="btn-add-header" onclick="openModal('customerModal')">+</button>
     </div>
-
     <div class="search-box-ui">
       <span class="search-icon-ui">🔍</span>
       <input type="text" id="searchCustomer" class="search-input-ui" placeholder="ឈ្មោះ, ទូរស័ព្ទ" oninput="renderCustomers()">
     </div>
-
     <div class="list-container-ui" id="customersListContainer"></div>
   </div>
 
   <!-- TAB 3: វិក្កយបត្រ (Sales Invoice) -->
   <div id="invoiceTab" class="tab-content active">
     <div style="text-align: center; color: #d13050; font-size: 18px; font-weight: bold; margin: 10px 0;">📄 ទម្រង់វិក្កយបត្រលក់ (Sales Invoice)</div>
-
     <div class="compact-form-row">
-      <div class="form-field-compact">
-        <label>កាលបរិច្ឆេទ:</label>
-        <input type="date" id="date" class="input-date">
-      </div>
-
-      <div class="form-field-compact">
-        <label>អ្នកគិតលុយ:</label>
-        <input type="text" id="cashier" class="input-cashier">
-      </div>
-
-      <div class="form-field-compact">
-        <label>អតិថិជន:</label>
-        <input type="text" id="customerInput" list="customerListOptions" placeholder="🔍 វាយស្វែងរក..." class="input-auto" oninput="onCustomerSelect()">
-      </div>
-
-      <div class="form-field-compact">
-        <label>លេខទូរស័ព្ទ:</label>
-        <input type="text" id="phone" class="input-phone">
-      </div>
-
-      <div class="form-field-compact" style="flex-grow: 1;">
-        <label>អាសយដ្ឋាន:</label>
-        <input type="text" id="address" class="input-auto">
-      </div>
+      <div class="form-field-compact"><label>កាលបរិច្ឆេទ:</label><input type="date" id="date" class="input-date"></div>
+      <div class="form-field-compact"><label>អ្នកគិតលុយ:</label><input type="text" id="cashier" class="input-cashier"></div>
+      <div class="form-field-compact"><label>អតិថិជន:</label><input type="text" id="customerInput" list="customerListOptions" placeholder="🔍 វាយស្វែងរក..." class="input-auto" oninput="onCustomerSelect()"></div>
+      <div class="form-field-compact"><label>លេខទូរស័ព្ទ:</label><input type="text" id="phone" class="input-phone"></div>
+      <div class="form-field-compact" style="flex-grow: 1;"><label>អាសយដ្ឋាន:</label><input type="text" id="address" class="input-auto"></div>
     </div>
 
     <div class="table-container">
@@ -244,7 +224,6 @@
         <span id="grandTotal" class="total-row total-amount">0 ៛</span>
       </div>
     </div>
-
     <div style="margin-top: 20px; display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap;">
       <button class="btn-action btn-save" id="btnSave" onclick="saveData()">💾 SAVE DATA</button>
     </div>
@@ -252,39 +231,28 @@
 
   <!-- TAB 4: ការកំណត់ -->
   <div id="settingsTab" class="tab-content">
-    <div class="app-header-bar">
-      <h2>ការកំណត់</h2>
-    </div>
-
+    <div class="app-header-bar"><h2>ការកំណត់</h2></div>
     <div class="settings-header-ui">របាយការណ៍ & ប្រវត្តិ</div>
     <div class="settings-group-ui">
       <div class="setting-row-ui" onclick="openReportModal()">
         <div class="setting-icon-ui" style="background: #ff9500;">📊</div>
-        <div class="setting-title-ui">របាយការណ៍លក់សង្ខេប</div>
-        <div>❯</div>
+        <div class="setting-title-ui">របាយការណ៍លក់សង្ខេប</div><div>❯</div>
       </div>
       <div class="setting-row-ui" onclick="openModal('historyModal')">
         <div class="setting-icon-ui" style="background: #c2bedc;">🔍</div>
-        <div class="setting-title-ui">ស្វែងរកប្រវត្តិទិញរបស់អតិថិជន</div>
-        <div>❯</div>
+        <div class="setting-title-ui">ស្វែងរកប្រវត្តិទិញរបស់អតិថិជន</div><div>❯</div>
       </div>
-      <!-- បន្ថែមប៊ូតុង Copy Link សម្រាប់ផ្ញើជូនភ្ញៀវ -->
       <div class="setting-row-ui" onclick="copyClientLink()">
         <div class="setting-icon-ui" style="background: #30d158;">🔗</div>
-        <div class="setting-title-ui">ចម្លង Link ស្វែងរកសម្រាប់ភ្ញៀវ</div>
-        <div>📋</div>
+        <div class="setting-title-ui">ចម្លង Link ស្វែងរកសម្រាប់ភ្ញៀវ</div><div>📋</div>
       </div>
     </div>
-
     <div class="settings-header-ui">ការកំណត់កម្មវិធី</div>
     <div class="settings-group-ui">
       <div class="setting-row-ui" style="cursor: default;">
         <div class="setting-icon-ui" style="background: #5e5ce6;">🌙</div>
         <div class="setting-title-ui">Dark Mode / Light Mode</div>
-        <label class="switch">
-          <input type="checkbox" id="themeToggle" onchange="toggleTheme(this)">
-          <span class="slider"></span>
-        </label>
+        <label class="switch"><input type="checkbox" id="themeToggle" onchange="toggleTheme(this)"><span class="slider"></span></label>
       </div>
     </div>
   </div>
@@ -294,12 +262,10 @@
     <div style="text-align: center; color: #0a84ff; font-size: 20px; font-weight: bold; margin: 15px 0 20px 0;">
       🔍 ស្វែងរកប្រវត្តិបញ្ជាទិញទំនិញ
     </div>
-
     <div class="client-card-box">
       <div style="display: flex; flex-direction: column; gap: 12px;">
         <label style="font-size: 14px; color: var(--sub-text);">សូមបញ្ចូលលេខទូរស័ព្ទ ឬ ឈ្មោះរបស់អ្នក៖</label>
         <input type="text" id="clientKeyword" class="form-input-ui" placeholder="ឧទាហរណ៍៖ 012345678" style="font-size: 16px;">
-
         <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
           <div style="flex: 1; min-width: 140px;">
             <label style="font-size: 12px; color: var(--sub-text);">ចាប់ពីថ្ងៃទី៖</label>
@@ -310,25 +276,16 @@
             <input type="date" id="clientEndDate" class="form-input-ui">
           </div>
         </div>
-
         <button class="btn-action btn-search" id="btnClientSearch" onclick="performClientSearch()" style="width: 100%; padding: 12px; font-size: 16px; margin-top: 5px;">
           🔎 ស្វែងរកប្រវត្តិ
         </button>
       </div>
     </div>
-
     <div id="clientSummary" style="font-weight: bold; color: #30d158; margin-bottom: 15px; text-align: center; font-size: 16px;"></div>
-
     <div class="table-container">
       <table>
         <thead>
-          <tr>
-            <th>ថ្ងៃទី</th>
-            <th>មុខទំនិញ</th>
-            <th>ចំនួន</th>
-            <th>តម្លៃ/ឯកតា</th>
-            <th>សរុប</th>
-          </tr>
+          <tr><th>ថ្ងៃទី</th><th>មុខទំនិញ</th><th>ចំនួន</th><th>តម្លៃ/ឯកតា</th><th>សរុប</th></tr>
         </thead>
         <tbody id="clientResultsTable"></tbody>
       </table>
@@ -337,32 +294,21 @@
 
 </div>
 
-<!-- Modal របាយការណ៍សង្ខេប -->
+<!-- Modals -->
+<!-- (រក្សា Modal ទាំងអស់ដូចដើម) -->
 <div id="reportModal" class="modal-ui">
   <div class="modal-content-ui">
     <h3>📊 របាយការណ៍លក់សង្ខេប</h3>
-    
     <div class="dashboard-grid">
-      <div class="dash-card">
-        <h4>ចំណូលសរុប</h4>
-        <div class="val" id="dashSales">0 ៛</div>
-      </div>
-      <div class="dash-card">
-        <h4>ចំនួនវិក្កយបត្រ</h4>
-        <div class="val" id="dashOrders" style="color: #0a84ff;">0</div>
-      </div>
+      <div class="dash-card"><h4>ចំណូលសរុប</h4><div class="val" id="dashSales">0 ៛</div></div>
+      <div class="dash-card"><h4>ចំនួនវិក្កយបត្រ</h4><div class="val" id="dashOrders" style="color: #0a84ff;">0</div></div>
     </div>
-
     <h3 style="font-size: 16px; margin-top: 20px;">🔥 ទំនិញលក់ដាច់ជាងគេ ៥ មុខ</h3>
     <div class="list-container-ui" id="topProductsContainer"></div>
-
-    <div class="modal-btn-group">
-      <button class="btn-modal btn-cancel" onclick="closeModal('reportModal')">បិទ</button>
-    </div>
+    <div class="modal-btn-group"><button class="btn-modal btn-cancel" onclick="closeModal('reportModal')">បិទ</button></div>
   </div>
 </div>
 
-<!-- Modal បន្ថែមទំនិញ -->
 <div id="productModal" class="modal-ui">
   <div class="modal-content-ui" style="max-width: 400px;">
     <h3>បន្ថែមមុខទំនិញថ្មី</h3>
@@ -375,7 +321,6 @@
   </div>
 </div>
 
-<!-- Modal បន្ថែមអតិថិជន -->
 <div id="customerModal" class="modal-ui">
   <div class="modal-content-ui" style="max-width: 400px;">
     <h3>បន្ថែមអតិថិជនថ្មី</h3>
@@ -389,7 +334,6 @@
   </div>
 </div>
 
-<!-- Modal ប្រវត្តិទិញ (សម្រាប់ Admin) -->
 <div id="historyModal" class="modal-ui">
   <div class="modal-content-ui">
     <h3>🔍 ស្វែងរកប្រវត្តិទិញ</h3>
@@ -401,48 +345,25 @@
         <button class="btn-action btn-search" id="btnSearchSubmit" onclick="performSearch()">ស្វែងរក</button>
       </div>
     </div>
-
     <div id="searchSummary" style="font-weight: bold; color: #30d158; margin-bottom: 10px;"></div>
-    
     <div class="table-container">
       <table>
         <thead>
-          <tr>
-            <th>ថ្ងៃទី</th>
-            <th>អតិថិជន</th>
-            <th>មុខទំនិញ</th>
-            <th>ចំនួន</th>
-            <th>តម្លៃសរុប</th>
-          </tr>
+          <tr><th>ថ្ងៃទី</th><th>អតិថិជន</th><th>មុខទំនិញ</th><th>ចំនួន</th><th>តម្លៃសរុប</th></tr>
         </thead>
         <tbody id="searchResultsTable"></tbody>
       </table>
     </div>
-
-    <div class="modal-btn-group">
-      <button class="btn-modal btn-cancel" onclick="closeModal('historyModal')">បិទ</button>
-    </div>
+    <div class="modal-btn-group"><button class="btn-modal btn-cancel" onclick="closeModal('historyModal')">បិទ</button></div>
   </div>
 </div>
 
 <!-- BOTTOM NAVIGATION BAR (សម្រាប់ Admin ប៉ុណ្ណោះ) -->
 <div class="bottom-nav" id="adminBottomNav">
-  <button class="bottom-nav-item" onclick="switchBottomTab('productTab', this)">
-    <div class="nav-icon">📦</div>
-    <span>ទំនិញ</span>
-  </button>
-  <button class="bottom-nav-item" onclick="switchBottomTab('customerTab', this)">
-    <div class="nav-icon">👤</div>
-    <span>អតិថិជន</span>
-  </button>
-  <button class="bottom-nav-item active" onclick="switchBottomTab('invoiceTab', this)">
-    <div class="nav-icon">📄</div>
-    <span>វិក្កយបត្រ</span>
-  </button>
-  <button class="bottom-nav-item" onclick="switchBottomTab('settingsTab', this)">
-    <div class="nav-icon">⚙️</div>
-    <span>ការកំណត់</span>
-  </button>
+  <button class="bottom-nav-item" onclick="switchBottomTab('productTab', this)"><div class="nav-icon">📦</div><span>ទំនិញ</span></button>
+  <button class="bottom-nav-item" onclick="switchBottomTab('customerTab', this)"><div class="nav-icon">👤</div><span>អតិថិជន</span></button>
+  <button class="bottom-nav-item active" onclick="switchBottomTab('invoiceTab', this)"><div class="nav-icon">📄</div><span>វិក្កយបត្រ</span></button>
+  <button class="bottom-nav-item" onclick="switchBottomTab('settingsTab', this)"><div class="nav-icon">⚙️</div><span>ការកំណត់</span></button>
 </div>
 
 <script>
@@ -452,6 +373,27 @@
   let productsData = [];
   let currentTotalAmount = 0;
 
+  // បង្កើត PWA Manifest ដោយស្វ័យប្រវត្តិដើម្បីអោយវាចងចាំ Link ភ្ញៀវ
+  function setupDynamicManifest(isClient) {
+    const startUrl = isClient ? window.location.href.split('?')[0] + "?view=client" : window.location.href;
+    const manifestJSON = {
+      "name": "ស្រែមាស - ប្រវត្តិទិញ",
+      "short_name": "ស្រែមាស",
+      "start_url": startUrl,
+      "display": "standalone",
+      "background_color": "#000000",
+      "theme_color": "#000000",
+      "icons": [{
+        "src": "https://lh3.googleusercontent.com/d/1-lHJgWS1XhknNZPCQ3nUUGSPi7CoJmLC",
+        "sizes": "192x192",
+        "type": "image/png"
+      }]
+    };
+    const blob = new Blob([JSON.stringify(manifestJSON)], { type: 'application/json' });
+    const manifestURL = URL.createObjectURL(blob);
+    document.getElementById('dynamic-manifest').setAttribute('href', manifestURL);
+  }
+
   function toggleTheme(toggle) {
     if(toggle.checked) { document.body.classList.add('light-mode'); }
     else { document.body.classList.remove('light-mode'); }
@@ -460,10 +402,8 @@
   function switchBottomTab(tabId, btn) {
     document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
     document.querySelectorAll('.bottom-nav-item').forEach(b => b.classList.remove('active'));
-
     document.getElementById(tabId).classList.add('active');
     if(btn) btn.classList.add('active');
-
     const mainHeader = document.getElementById('mainHeader');
     mainHeader.style.display = (tabId === 'invoiceTab' || tabId === 'clientSearchTab') ? 'flex' : 'none';
   }
@@ -472,16 +412,30 @@
   function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
   window.onload = function() {
-    // ពិនិត្យមើលថាតើភ្ញៀវបើកតាម Link សម្រាប់ Client ដែរឬទេ? (?view=client)
     const urlParams = new URLSearchParams(window.location.search);
-    const isClientView = urlParams.get('view') === 'client';
+    
+    // បើ Admin ចង់លុបចោលការចងចាំជាភ្ញៀវ (Clear storage)
+    if (urlParams.get('view') === 'admin') {
+      localStorage.removeItem('appMode');
+    }
+
+    // ចងចាំចូលក្នុងទូរស័ព្ទភ្ញៀវពេលគាត់ចុច Link ដែលមាន ?view=client លើកដំបូង
+    if (urlParams.get('view') === 'client') {
+      localStorage.setItem('appMode', 'client');
+    }
+
+    // ឆែកមើលថាតើទូរស័ព្ទនេះត្រូវបានចំណាំថាជា Client ដែរឬទេ?
+    const isClientView = (localStorage.getItem('appMode') === 'client' || urlParams.get('view') === 'client');
+
+    // ដំណើរការបង្កើត Manifest ទៅតាមប្រភេទអ្នកប្រើប្រាស់
+    setupDynamicManifest(isClientView);
 
     if (isClientView) {
-      // បើជា View របស់ភ្ញៀវ៖ លាក់ Menu Admin ទាំងអស់ ហើយបង្ហាញតែ Tab Client ស្វែងរក
+      // បិទផ្ទាំង Admin ទាំងអស់ ហើយបង្ហាញតែទំព័រភ្ញៀវស្វែងរក
       document.getElementById('adminBottomNav').style.display = 'none';
       switchBottomTab('clientSearchTab');
     } else {
-      // បើជា View របស់ Admin ធម្មតា
+      // បង្ហាញទម្រង់ Admin ជាធម្មតា
       document.getElementById('date').valueAsDate = new Date();
       loadCustomers();
       loadProducts(function() { resetFormRows(); });
@@ -489,42 +443,36 @@
   };
 
   function copyClientLink() {
+    // បង្កើត Link សម្រាប់ភ្ញៀវ ដោយផ្អែកលើ Link GitHub បច្ចុប្បន្នរបស់អ្នក
     let clientUrl = window.location.origin + window.location.pathname + "?view=client";
-    navigator.clipboard.writeText(clientUrl).then(() => {
-      alert("បានចម្លង Link សម្រាប់ភ្ញៀវជោគជ័យ!\n" + clientUrl);
-    }).catch(err => {
-      prompt("សូមចម្លង Link នេះផ្ញើជូនភ្ញៀវ៖", clientUrl);
-    });
+    
+    // កូពីចូលក្ដារតម្បៀតខ្ទាស់ (Clipboard)
+    if(navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(clientUrl).then(() => {
+        alert("បានចម្លង Link សម្រាប់ភ្ញៀវជោគជ័យ!\nសូមផ្ញើ Link នេះទៅកាន់ភ្ញៀវ។\n" + clientUrl);
+      });
+    } else {
+      prompt("សូមចម្លង Link ខាងក្រោមនេះផ្ញើជូនភ្ញៀវ៖", clientUrl);
+    }
   }
 
+  // ============== (កូដពាក់ព័ន្ធជាមួយ API, Google Apps Script រក្សាទុកដូចដើមទាំងអស់) ==============
   function renderProducts() {
     let kw = (document.getElementById('searchProduct').value || '').toLowerCase().trim();
     let container = document.getElementById('productsListContainer');
     container.innerHTML = '';
-
     if (!Array.isArray(productsData) || productsData.length === 0) {
       container.innerHTML = '<div class="no-data-msg">ពុំទាន់មានទិន្នន័យមុខទំនិញឡើយ</div>';
       return;
     }
-
     let filtered = productsData.filter(p => p && p.name && p.name.toString().toLowerCase().includes(kw));
-
     if (filtered.length === 0) {
       container.innerHTML = '<div class="no-data-msg">រកមិនឃើញមុខទំនិញឡើយ</div>';
       return;
     }
-
     filtered.forEach(p => {
       let priceVal = parseFloat(p.price) || 0;
-      container.innerHTML += `
-        <div class="list-item-ui">
-          <div class="item-icon-box">📦</div>
-          <div class="item-info">
-            <div class="item-title">${p.name}</div>
-            <div class="item-sub">${priceVal.toLocaleString()} ៛</div>
-          </div>
-        </div>
-      `;
+      container.innerHTML += `<div class="list-item-ui"><div class="item-icon-box">📦</div><div class="item-info"><div class="item-title">${p.name}</div><div class="item-sub">${priceVal.toLocaleString()} ៛</div></div></div>`;
     });
   }
 
@@ -532,54 +480,29 @@
     let kw = (document.getElementById('searchCustomer').value || '').toLowerCase().trim();
     let container = document.getElementById('customersListContainer');
     container.innerHTML = '';
-
     if (!Array.isArray(customersData) || customersData.length === 0) {
       container.innerHTML = '<div class="no-data-msg">ពុំទាន់មានទិន្នន័យអតិថិជនឡើយ</div>';
       return;
     }
-
     let filtered = customersData.filter(c => c && ((c.name && c.name.toString().toLowerCase().includes(kw)) || (c.phone && c.phone.toString().includes(kw))));
-
     if (filtered.length === 0) {
       container.innerHTML = '<div class="no-data-msg">រកមិនឃើញអតិថិជនឡើយ</div>';
       return;
     }
-
     filtered.forEach(c => {
       let prefix = c.name ? c.name.trim().substring(0, 2) : 'អ';
-      container.innerHTML += `
-        <div class="list-item-ui">
-          <div class="avatar-circle">${prefix}</div>
-          <div class="item-info">
-            <div class="item-title">${c.name}</div>
-            <div class="item-sub">${c.phone || 'គ្មានលេខទូរស័ព្ទ'}</div>
-          </div>
-        </div>
-      `;
+      container.innerHTML += `<div class="list-item-ui"><div class="avatar-circle">${prefix}</div><div class="item-info"><div class="item-title">${c.name}</div><div class="item-sub">${c.phone || 'គ្មានលេខទូរស័ព្ទ'}</div></div></div>`;
     });
   }
 
   function loadCustomers() {
-    fetch(`${SCRIPT_URL}?action=getCustomers`)
-      .then(res => res.json())
-      .then(list => {
-        customersData = Array.isArray(list) ? list : [];
-        let datalist = document.getElementById('customerListOptions');
-        datalist.innerHTML = '';
-        customersData.forEach(c => {
-          if (c && c.name) {
-            let opt = document.createElement('option');
-            opt.value = c.name;
-            datalist.appendChild(opt);
-          }
-        });
-        renderCustomers();
-      })
-      .catch(err => {
-        console.error("Error loading customers:", err);
-        customersData = [];
-        renderCustomers();
-      });
+    fetch(`${SCRIPT_URL}?action=getCustomers`).then(res => res.json()).then(list => {
+      customersData = Array.isArray(list) ? list : [];
+      let datalist = document.getElementById('customerListOptions');
+      datalist.innerHTML = '';
+      customersData.forEach(c => { if (c && c.name) { let opt = document.createElement('option'); opt.value = c.name; datalist.appendChild(opt); } });
+      renderCustomers();
+    }).catch(err => { console.error(err); customersData = []; renderCustomers(); });
   }
 
   function onCustomerSelect() {
@@ -593,28 +516,14 @@
   }
 
   function loadProducts(callback) {
-    fetch(`${SCRIPT_URL}?action=getItems`)
-      .then(res => res.json())
-      .then(list => {
-        productsData = Array.isArray(list) ? list : [];
-        let datalist = document.getElementById('productListOptions');
-        datalist.innerHTML = '';
-        productsData.forEach(p => {
-          if (p && p.name) {
-            let opt = document.createElement('option');
-            opt.value = p.name;
-            datalist.appendChild(opt);
-          }
-        });
-        renderProducts();
-        if (typeof callback === 'function') callback();
-      })
-      .catch(err => {
-        console.error("Error loading products:", err);
-        productsData = [];
-        renderProducts();
-        if (typeof callback === 'function') callback();
-      });
+    fetch(`${SCRIPT_URL}?action=getItems`).then(res => res.json()).then(list => {
+      productsData = Array.isArray(list) ? list : [];
+      let datalist = document.getElementById('productListOptions');
+      datalist.innerHTML = '';
+      productsData.forEach(p => { if (p && p.name) { let opt = document.createElement('option'); opt.value = p.name; datalist.appendChild(opt); } });
+      renderProducts();
+      if (typeof callback === 'function') callback();
+    }).catch(err => { console.error(err); productsData = []; renderProducts(); if (typeof callback === 'function') callback(); });
   }
 
   function onProductSelect(input) {
@@ -641,10 +550,7 @@
     tbody.appendChild(tr);
   }
 
-  function removeRow(btn) {
-    btn.closest('tr').remove();
-    calculateGrandTotal();
-  }
+  function removeRow(btn) { btn.closest('tr').remove(); calculateGrandTotal(); }
 
   function calculateRow(input) {
     let row = input.closest('tr');
@@ -685,32 +591,16 @@
   }
 
   function loadDashboard() {
-    fetch(`${SCRIPT_URL}?action=getDashboardData`)
-      .then(res => res.json())
-      .then(data => {
-        if (!data) data = {};
-        document.getElementById('dashSales').innerText = (data.totalSales || 0).toLocaleString() + " ៛";
-        document.getElementById('dashOrders').innerText = data.totalOrders || 0;
-
-        let container = document.getElementById('topProductsContainer');
-        container.innerHTML = '';
-        let topProds = Array.isArray(data.topProducts) ? data.topProducts : [];
-        if (topProds.length === 0) {
-          container.innerHTML = '<div class="no-data-msg">គ្មានទិន្នន័យលក់ទេ</div>';
-          return;
-        }
-        topProds.forEach(p => {
-          container.innerHTML += `
-            <div class="list-item-ui">
-              <div class="item-icon-box">🔥</div>
-              <div class="item-info">
-                <div class="item-title">${p.name}</div>
-                <div class="item-sub">លក់បានសរុប: ${p.qty}</div>
-              </div>
-            </div>
-          `;
-        });
-      });
+    fetch(`${SCRIPT_URL}?action=getDashboardData`).then(res => res.json()).then(data => {
+      if (!data) data = {};
+      document.getElementById('dashSales').innerText = (data.totalSales || 0).toLocaleString() + " ៛";
+      document.getElementById('dashOrders').innerText = data.totalOrders || 0;
+      let container = document.getElementById('topProductsContainer');
+      container.innerHTML = '';
+      let topProds = Array.isArray(data.topProducts) ? data.topProducts : [];
+      if (topProds.length === 0) { container.innerHTML = '<div class="no-data-msg">គ្មានទិន្នន័យលក់ទេ</div>'; return; }
+      topProds.forEach(p => { container.innerHTML += `<div class="list-item-ui"><div class="item-icon-box">🔥</div><div class="item-info"><div class="item-title">${p.name}</div><div class="item-sub">លក់បានសរុប: ${p.qty}</div></div></div>`; });
+    });
   }
 
   function saveData() {
@@ -721,13 +611,9 @@
       let price = parseFloat(row.querySelector('.item-price').value) || 0;
       let discount = parseFloat(row.querySelector('.item-discount').value) || 0;
       let amount = (qty * price) - discount;
-      if (prodName !== "") {
-        items.push({ name: prodName, qty: qty, price: price, discount: discount, amount: amount < 0 ? 0 : amount });
-      }
+      if (prodName !== "") { items.push({ name: prodName, qty: qty, price: price, discount: discount, amount: amount < 0 ? 0 : amount }); }
     });
-
     if (items.length === 0) { alert("សូមបញ្ចូលមុខទំនិញយ៉ាងហោចណាស់ 1!"); return; }
-
     let payload = {
       date: document.getElementById('date').value,
       cashier: document.getElementById('cashier').value,
@@ -736,31 +622,16 @@
       address: document.getElementById('address').value,
       items: items
     };
-
     let btnSave = document.getElementById('btnSave');
     btnSave.innerText = "SAVING...";
     btnSave.disabled = true;
-
-    fetch(SCRIPT_URL, {
-      method: "POST",
-      body: JSON.stringify({ action: "saveData", payload: payload })
-    })
-    .then(res => res.json())
-    .then(response => {
+    fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify({ action: "saveData", payload: payload }) })
+    .then(res => res.json()).then(response => {
       alert(typeof response === 'string' ? response : (response.message || "រក្សាទុកទិន្នន័យរួចរាល់!"));
-      document.getElementById('customerInput').value = '';
-      document.getElementById('phone').value = '';
-      document.getElementById('address').value = '';
-      resetFormRows();
-      loadProducts();
-      btnSave.innerText = "💾 SAVE DATA";
-      btnSave.disabled = false;
-    })
-    .catch(err => {
-      alert("មានបញ្ហាក្នុងការរក្សាទុកទិន្នន័យ!");
-      btnSave.innerText = "💾 SAVE DATA";
-      btnSave.disabled = false;
-    });
+      document.getElementById('customerInput').value = ''; document.getElementById('phone').value = ''; document.getElementById('address').value = '';
+      resetFormRows(); loadProducts();
+      btnSave.innerText = "💾 SAVE DATA"; btnSave.disabled = false;
+    }).catch(err => { alert("មានបញ្ហាក្នុងការរក្សាទុកទិន្នន័យ!"); btnSave.innerText = "💾 SAVE DATA"; btnSave.disabled = false; });
   }
 
   function saveNewCustomer() {
@@ -768,18 +639,10 @@
     let phone = document.getElementById('newCustPhone').value;
     let address = document.getElementById('newCustAddress').value;
     if (!name.trim()) return;
-
-    fetch(SCRIPT_URL, {
-      method: "POST",
-      body: JSON.stringify({ action: "addCustomer", payload: { name: name, phone: phone, address: address } })
-    })
-    .then(res => res.json())
-    .then(res => {
-      alert(res.message || "បានរក្សាទុក!");
-      closeModal('customerModal');
-      document.getElementById('newCustName').value = '';
-      document.getElementById('newCustPhone').value = '';
-      document.getElementById('newCustAddress').value = '';
+    fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify({ action: "addCustomer", payload: { name: name, phone: phone, address: address } }) })
+    .then(res => res.json()).then(res => {
+      alert(res.message || "បានរក្សាទុក!"); closeModal('customerModal');
+      document.getElementById('newCustName').value = ''; document.getElementById('newCustPhone').value = ''; document.getElementById('newCustAddress').value = '';
       loadCustomers();
     });
   }
@@ -788,18 +651,10 @@
     let name = document.getElementById('newProdName').value;
     let price = parseFloat(document.getElementById('newProdPrice').value) || 0;
     if (!name.trim()) return;
-
-    fetch(SCRIPT_URL, {
-      method: "POST",
-      body: JSON.stringify({ action: "addNewProduct", payload: { name: name, price: price } })
-    })
-    .then(res => res.json())
-    .then(res => {
-      alert(res.message || "បានរក្សាទុក!");
-      closeModal('productModal');
-      document.getElementById('newProdName').value = '';
-      document.getElementById('newProdPrice').value = '0';
-      loadProducts();
+    fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify({ action: "addNewProduct", payload: { name: name, price: price } }) })
+    .then(res => res.json()).then(res => {
+      alert(res.message || "បានរក្សាទុក!"); closeModal('productModal');
+      document.getElementById('newProdName').value = ''; document.getElementById('newProdPrice').value = '0'; loadProducts();
     });
   }
 
@@ -807,104 +662,47 @@
     let kw = encodeURIComponent(document.getElementById('searchKeyword').value.trim());
     let startDate = document.getElementById('searchStartDate').value;
     let endDate = document.getElementById('searchEndDate').value;
-    
     let btn = document.getElementById('btnSearchSubmit');
     let tbody = document.getElementById('searchResultsTable');
     let summary = document.getElementById('searchSummary');
-
-    btn.innerText = "កំពុងស្វែងរក...";
-    btn.disabled = true;
+    btn.innerText = "កំពុងស្វែងរក..."; btn.disabled = true;
     tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">កំពុងទាញយកទិន្នន័យ...</td></tr>';
     summary.innerText = "";
-
     fetch(`${SCRIPT_URL}?action=searchHistory&kw=${kw}&startDate=${startDate}&endDate=${endDate}`)
-      .then(res => res.json())
-      .then(res => {
-        btn.innerText = "ស្វែងរក";
-        btn.disabled = false;
-        tbody.innerHTML = '';
-
+      .then(res => res.json()).then(res => {
+        btn.innerText = "ស្វែងរក"; btn.disabled = false; tbody.innerHTML = '';
         if (!res.success || !Array.isArray(res.items) || res.items.length === 0) {
-          summary.innerText = res.message || "រកមិនឃើញទិន្នន័យទេ!";
-          summary.style.color = "#ff3b30";
-          return;
+          summary.innerText = res.message || "រកមិនឃើញទិន្នន័យទេ!"; summary.style.color = "#ff3b30"; return;
         }
-
-        summary.style.color = "#30d158";
-        summary.innerText = `អតិថិជន: ${res.customerName} (${res.customerPhone || 'គ្មានលេខ'}) | សរុប: ${res.totalSpent.toLocaleString()} ៛`;
-
+        summary.style.color = "#30d158"; summary.innerText = `អតិថិជន: ${res.customerName} (${res.customerPhone || 'គ្មានលេខ'}) | សរុប: ${res.totalSpent.toLocaleString()} ៛`;
         res.items.forEach(item => {
-          tbody.innerHTML += `
-            <tr>
-              <td>${item.date}</td>
-              <td>${item.customer}</td>
-              <td>${item.item}</td>
-              <td style="text-align:center;">${item.qty}</td>
-              <td style="text-align:right;">${item.amount.toLocaleString()} ៛</td>
-            </tr>
-          `;
+          tbody.innerHTML += `<tr><td>${item.date}</td><td>${item.customer}</td><td>${item.item}</td><td style="text-align:center;">${item.qty}</td><td style="text-align:right;">${item.amount.toLocaleString()} ៛</td></tr>`;
         });
-      })
-      .catch(err => {
-        btn.innerText = "ស្វែងរក";
-        btn.disabled = false;
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#ff3b30;">មានបញ្ហាក្នុងការភ្ជាប់ទៅកាន់ Server!</td></tr>';
-      });
+      }).catch(err => { btn.innerText = "ស្វែងរក"; btn.disabled = false; tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#ff3b30;">មានបញ្ហាក្នុងការភ្ជាប់!</td></tr>'; });
   }
 
-  /* មុខងារស្វែងរកប្រវត្តិសម្រាប់ភ្ញៀវ (Client Search Function) */
   function performClientSearch() {
     let kw = encodeURIComponent(document.getElementById('clientKeyword').value.trim());
     let startDate = document.getElementById('clientStartDate').value;
     let endDate = document.getElementById('clientEndDate').value;
-    
     let btn = document.getElementById('btnClientSearch');
     let tbody = document.getElementById('clientResultsTable');
     let summary = document.getElementById('clientSummary');
-
-    if (!document.getElementById('clientKeyword').value.trim()) {
-      alert("សូមបញ្ចូលឈ្មោះ ឬលេខទូរស័ព្ទដើម្បីស្វែងរក!");
-      return;
-    }
-
-    btn.innerText = "⏳ កំពុងស្វែងរក...";
-    btn.disabled = true;
+    if (!document.getElementById('clientKeyword').value.trim()) { alert("សូមបញ្ចូលឈ្មោះ ឬលេខទូរស័ព្ទដើម្បីស្វែងរក!"); return; }
+    btn.innerText = "⏳ កំពុងស្វែងរក..."; btn.disabled = true;
     tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 15px;">កំពុងទាញយកទិន្នន័យ...</td></tr>';
     summary.innerText = "";
-
     fetch(`${SCRIPT_URL}?action=searchHistory&kw=${kw}&startDate=${startDate}&endDate=${endDate}`)
-      .then(res => res.json())
-      .then(res => {
-        btn.innerText = "🔎 ស្វែងរកប្រវត្តិ";
-        btn.disabled = false;
-        tbody.innerHTML = '';
-
+      .then(res => res.json()).then(res => {
+        btn.innerText = "🔎 ស្វែងរកប្រវត្តិ"; btn.disabled = false; tbody.innerHTML = '';
         if (!res.success || !Array.isArray(res.items) || res.items.length === 0) {
-          summary.innerText = res.message || "រកមិនឃើញទិន្នន័យបញ្ជាទិញទេ!";
-          summary.style.color = "#ff3b30";
-          return;
+          summary.innerText = res.message || "រកមិនឃើញទិន្នន័យបញ្ជាទិញទេ!"; summary.style.color = "#ff3b30"; return;
         }
-
-        summary.style.color = "#30d158";
-        summary.innerText = `លោក/លោកស្រី៖ ${res.customerName} | ចំណាយសរុប៖ ${res.totalSpent.toLocaleString()} ៛`;
-
+        summary.style.color = "#30d158"; summary.innerText = `លោក/លោកស្រី៖ ${res.customerName} | ចំណាយសរុប៖ ${res.totalSpent.toLocaleString()} ៛`;
         res.items.forEach(item => {
-          tbody.innerHTML += `
-            <tr>
-              <td>${item.date}</td>
-              <td>${item.item}</td>
-              <td style="text-align:center;">${item.qty}</td>
-              <td style="text-align:right;">${item.price ? item.price.toLocaleString() + ' ៛' : '-'}</td>
-              <td style="text-align:right; color:#30d158;">${item.amount.toLocaleString()} ៛</td>
-            </tr>
-          `;
+          tbody.innerHTML += `<tr><td>${item.date}</td><td>${item.item}</td><td style="text-align:center;">${item.qty}</td><td style="text-align:right;">${item.price ? item.price.toLocaleString() + ' ៛' : '-'}</td><td style="text-align:right; color:#30d158;">${item.amount.toLocaleString()} ៛</td></tr>`;
         });
-      })
-      .catch(err => {
-        btn.innerText = "🔎 ស្វែងរកប្រវត្តិ";
-        btn.disabled = false;
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#ff3b30; padding:15px;">មានបញ្ហាក្នុងការភ្ជាប់ទៅកាន់ប្រព័ន្ធ!</td></tr>';
-      });
+      }).catch(err => { btn.innerText = "🔎 ស្វែងរកប្រវត្តិ"; btn.disabled = false; tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#ff3b30; padding:15px;">មានបញ្ហាក្នុងការភ្ជាប់ទៅកាន់ប្រព័ន្ធ!</td></tr>'; });
   }
 </script>
 
