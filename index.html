@@ -129,6 +129,9 @@
 
     .no-data-msg { text-align: center; padding: 20px; color: var(--sub-text); font-size: 14px; }
 
+    /* Style បន្ថែមសម្រាប់ Client Public View */
+    .client-card-box { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 15px; margin-bottom: 20px; }
+
     @media print {
       body { background: white !important; color: black !important; padding: 0; }
       .bottom-nav, .btn-action, .btn-add-item, .search-box-ui, .app-header-bar, .btn-add-header { display: none !important; }
@@ -265,6 +268,12 @@
         <div class="setting-title-ui">ស្វែងរកប្រវត្តិទិញរបស់អតិថិជន</div>
         <div>❯</div>
       </div>
+      <!-- បន្ថែមប៊ូតុង Copy Link សម្រាប់ផ្ញើជូនភ្ញៀវ -->
+      <div class="setting-row-ui" onclick="copyClientLink()">
+        <div class="setting-icon-ui" style="background: #30d158;">🔗</div>
+        <div class="setting-title-ui">ចម្លង Link ស្វែងរកសម្រាប់ភ្ញៀវ</div>
+        <div>📋</div>
+      </div>
     </div>
 
     <div class="settings-header-ui">ការកំណត់កម្មវិធី</div>
@@ -277,6 +286,52 @@
           <span class="slider"></span>
         </label>
       </div>
+    </div>
+  </div>
+
+  <!-- TAB 5: ទំព័រស្វែងរកសម្រាប់ភ្ញៀវ (CLIENT PUBLIC VIEW) -->
+  <div id="clientSearchTab" class="tab-content">
+    <div style="text-align: center; color: #0a84ff; font-size: 20px; font-weight: bold; margin: 15px 0 20px 0;">
+      🔍 ស្វែងរកប្រវត្តិបញ្ជាទិញទំនិញ
+    </div>
+
+    <div class="client-card-box">
+      <div style="display: flex; flex-direction: column; gap: 12px;">
+        <label style="font-size: 14px; color: var(--sub-text);">សូមបញ្ចូលលេខទូរស័ព្ទ ឬ ឈ្មោះរបស់អ្នក៖</label>
+        <input type="text" id="clientKeyword" class="form-input-ui" placeholder="ឧទាហរណ៍៖ 012345678" style="font-size: 16px;">
+
+        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+          <div style="flex: 1; min-width: 140px;">
+            <label style="font-size: 12px; color: var(--sub-text);">ចាប់ពីថ្ងៃទី៖</label>
+            <input type="date" id="clientStartDate" class="form-input-ui">
+          </div>
+          <div style="flex: 1; min-width: 140px;">
+            <label style="font-size: 12px; color: var(--sub-text);">ដល់ថ្ងៃទី៖</label>
+            <input type="date" id="clientEndDate" class="form-input-ui">
+          </div>
+        </div>
+
+        <button class="btn-action btn-search" id="btnClientSearch" onclick="performClientSearch()" style="width: 100%; padding: 12px; font-size: 16px; margin-top: 5px;">
+          🔎 ស្វែងរកប្រវត្តិ
+        </button>
+      </div>
+    </div>
+
+    <div id="clientSummary" style="font-weight: bold; color: #30d158; margin-bottom: 15px; text-align: center; font-size: 16px;"></div>
+
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>ថ្ងៃទី</th>
+            <th>មុខទំនិញ</th>
+            <th>ចំនួន</th>
+            <th>តម្លៃ/ឯកតា</th>
+            <th>សរុប</th>
+          </tr>
+        </thead>
+        <tbody id="clientResultsTable"></tbody>
+      </table>
     </div>
   </div>
 
@@ -334,7 +389,7 @@
   </div>
 </div>
 
-<!-- Modal ប្រវត្តិទិញ -->
+<!-- Modal ប្រវត្តិទិញ (សម្រាប់ Admin) -->
 <div id="historyModal" class="modal-ui">
   <div class="modal-content-ui">
     <h3>🔍 ស្វែងរកប្រវត្តិទិញ</h3>
@@ -370,8 +425,8 @@
   </div>
 </div>
 
-<!-- BOTTOM NAVIGATION BAR -->
-<div class="bottom-nav">
+<!-- BOTTOM NAVIGATION BAR (សម្រាប់ Admin ប៉ុណ្ណោះ) -->
+<div class="bottom-nav" id="adminBottomNav">
   <button class="bottom-nav-item" onclick="switchBottomTab('productTab', this)">
     <div class="nav-icon">📦</div>
     <span>ទំនិញ</span>
@@ -407,20 +462,40 @@
     document.querySelectorAll('.bottom-nav-item').forEach(b => b.classList.remove('active'));
 
     document.getElementById(tabId).classList.add('active');
-    btn.classList.add('active');
+    if(btn) btn.classList.add('active');
 
     const mainHeader = document.getElementById('mainHeader');
-    mainHeader.style.display = (tabId === 'invoiceTab') ? 'flex' : 'none';
+    mainHeader.style.display = (tabId === 'invoiceTab' || tabId === 'clientSearchTab') ? 'flex' : 'none';
   }
 
   function openModal(id) { document.getElementById(id).style.display = 'flex'; }
   function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
   window.onload = function() {
-    document.getElementById('date').valueAsDate = new Date();
-    loadCustomers();
-    loadProducts(function() { resetFormRows(); });
+    // ពិនិត្យមើលថាតើភ្ញៀវបើកតាម Link សម្រាប់ Client ដែរឬទេ? (?view=client)
+    const urlParams = new URLSearchParams(window.location.search);
+    const isClientView = urlParams.get('view') === 'client';
+
+    if (isClientView) {
+      // បើជា View របស់ភ្ញៀវ៖ លាក់ Menu Admin ទាំងអស់ ហើយបង្ហាញតែ Tab Client ស្វែងរក
+      document.getElementById('adminBottomNav').style.display = 'none';
+      switchBottomTab('clientSearchTab');
+    } else {
+      // បើជា View របស់ Admin ធម្មតា
+      document.getElementById('date').valueAsDate = new Date();
+      loadCustomers();
+      loadProducts(function() { resetFormRows(); });
+    }
   };
+
+  function copyClientLink() {
+    let clientUrl = window.location.origin + window.location.pathname + "?view=client";
+    navigator.clipboard.writeText(clientUrl).then(() => {
+      alert("បានចម្លង Link សម្រាប់ភ្ញៀវជោគជ័យ!\n" + clientUrl);
+    }).catch(err => {
+      prompt("សូមចម្លង Link នេះផ្ញើជូនភ្ញៀវ៖", clientUrl);
+    });
+  }
 
   function renderProducts() {
     let kw = (document.getElementById('searchProduct').value || '').toLowerCase().trim();
@@ -774,6 +849,61 @@
         btn.innerText = "ស្វែងរក";
         btn.disabled = false;
         tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#ff3b30;">មានបញ្ហាក្នុងការភ្ជាប់ទៅកាន់ Server!</td></tr>';
+      });
+  }
+
+  /* មុខងារស្វែងរកប្រវត្តិសម្រាប់ភ្ញៀវ (Client Search Function) */
+  function performClientSearch() {
+    let kw = encodeURIComponent(document.getElementById('clientKeyword').value.trim());
+    let startDate = document.getElementById('clientStartDate').value;
+    let endDate = document.getElementById('clientEndDate').value;
+    
+    let btn = document.getElementById('btnClientSearch');
+    let tbody = document.getElementById('clientResultsTable');
+    let summary = document.getElementById('clientSummary');
+
+    if (!document.getElementById('clientKeyword').value.trim()) {
+      alert("សូមបញ្ចូលឈ្មោះ ឬលេខទូរស័ព្ទដើម្បីស្វែងរក!");
+      return;
+    }
+
+    btn.innerText = "⏳ កំពុងស្វែងរក...";
+    btn.disabled = true;
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 15px;">កំពុងទាញយកទិន្នន័យ...</td></tr>';
+    summary.innerText = "";
+
+    fetch(`${SCRIPT_URL}?action=searchHistory&kw=${kw}&startDate=${startDate}&endDate=${endDate}`)
+      .then(res => res.json())
+      .then(res => {
+        btn.innerText = "🔎 ស្វែងរកប្រវត្តិ";
+        btn.disabled = false;
+        tbody.innerHTML = '';
+
+        if (!res.success || !Array.isArray(res.items) || res.items.length === 0) {
+          summary.innerText = res.message || "រកមិនឃើញទិន្នន័យបញ្ជាទិញទេ!";
+          summary.style.color = "#ff3b30";
+          return;
+        }
+
+        summary.style.color = "#30d158";
+        summary.innerText = `លោក/លោកស្រី៖ ${res.customerName} | ចំណាយសរុប៖ ${res.totalSpent.toLocaleString()} ៛`;
+
+        res.items.forEach(item => {
+          tbody.innerHTML += `
+            <tr>
+              <td>${item.date}</td>
+              <td>${item.item}</td>
+              <td style="text-align:center;">${item.qty}</td>
+              <td style="text-align:right;">${item.price ? item.price.toLocaleString() + ' ៛' : '-'}</td>
+              <td style="text-align:right; color:#30d158;">${item.amount.toLocaleString()} ៛</td>
+            </tr>
+          `;
+        });
+      })
+      .catch(err => {
+        btn.innerText = "🔎 ស្វែងរកប្រវត្តិ";
+        btn.disabled = false;
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#ff3b30; padding:15px;">មានបញ្ហាក្នុងការភ្ជាប់ទៅកាន់ប្រព័ន្ធ!</td></tr>';
       });
   }
 </script>
