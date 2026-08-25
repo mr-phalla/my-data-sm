@@ -246,7 +246,6 @@
           <option value="ស្រូវ">🌾 ស្រូវ</option>
           <option value="កៅស៊ូ">🪵 កៅស៊ូ</option>
           <option value="ស្វាយចន្ទី">🥜 ស្វាយចន្ទី</option>
-
           <option value="ផ្សេងៗ">📦 ផ្សេងៗ</option>
         </select>
       </div>
@@ -398,8 +397,7 @@
 </div>
 
 <script>
-  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzTJ3eiei-eFOwqotFQxNTggRz7mAMo32CJ2BRHC_GqGJTAcRJQaX_P4JG7ExNxpPk/exec";
-
+  // ប្រើប្រាស់ google.script.run ដោយផ្ទាល់ជំនួសឲ្យការ Call Fetch Web App URL ខាងក្រៅ
   let customersData = [];
   let productsData = [];
   let currentTotalAmount = 0;
@@ -518,13 +516,13 @@
   }
 
   function loadCustomers() {
-    fetch(`${SCRIPT_URL}?action=getCustomers`).then(res => res.json()).then(list => {
+    google.script.run.withSuccessHandler(function(list) {
       customersData = Array.isArray(list) ? list : [];
       let datalist = document.getElementById('customerListOptions');
       datalist.innerHTML = '';
       customersData.forEach(c => { if (c && c.name) { let opt = document.createElement('option'); opt.value = c.name; datalist.appendChild(opt); } });
       renderCustomers();
-    }).catch(err => { console.error(err); customersData = []; renderCustomers(); });
+    }).getCustomersData();
   }
 
   function onCustomerSelect() {
@@ -537,7 +535,6 @@
     }
   }
 
-  // មុខងារជ្រើសរើសអតិថិជនសម្រាប់ Tab ទិន្នផល
   function onYieldCustomerSelect() {
     let val = document.getElementById('yieldCustomerInput').value.trim();
     if (!Array.isArray(customersData)) return;
@@ -574,8 +571,7 @@
     btn.innerText = "SAVING...";
     btn.disabled = true;
 
-    fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify({ action: "saveYield", payload: payload }) })
-    .then(res => res.json()).then(response => {
+    google.script.run.withSuccessHandler(function(response) {
       alert(response.message || "រក្សាទុកទិន្នផលរួចរាល់!");
       document.getElementById('yieldCustomerInput').value = '';
       document.getElementById('yieldPhone').value = '';
@@ -583,22 +579,24 @@
       document.getElementById('yieldWeight').value = '';
       document.getElementById('yieldUnitPrice').value = '';
       document.getElementById('yieldTotalAmount').value = '$0.00';
-      btn.innerText = "🌾 រក្សាទុកទិន្នផល"; btn.disabled = false;
-    }).catch(err => { 
-      alert("បានរក្សាទុកទិន្នន័យក្នុងប្រព័ន្ធ!"); 
-      btn.innerText = "🌾 រក្សាទុកទិន្នផល"; btn.disabled = false; 
-    });
+      btn.innerText = "🌾 រក្សាទុកទិន្នផល"; 
+      btn.disabled = false;
+    }).withFailureHandler(function(err) {
+      alert("មានបញ្ហាក្នុងការរក្សាទុក៖ " + err);
+      btn.innerText = "🌾 រក្សាទុកទិន្នផល"; 
+      btn.disabled = false;
+    }).saveYieldData(payload);
   }
 
   function loadProducts(callback) {
-    fetch(`${SCRIPT_URL}?action=getItems`).then(res => res.json()).then(list => {
+    google.script.run.withSuccessHandler(function(list) {
       productsData = Array.isArray(list) ? list : [];
       let datalist = document.getElementById('productListOptions');
       datalist.innerHTML = '';
       productsData.forEach(p => { if (p && p.name) { let opt = document.createElement('option'); opt.value = p.name; datalist.appendChild(opt); } });
       renderProducts();
       if (typeof callback === 'function') callback();
-    }).catch(err => { console.error(err); productsData = []; renderProducts(); if (typeof callback === 'function') callback(); });
+    }).getItemsData();
   }
 
   function onProductSelect(input) {
@@ -666,7 +664,7 @@
   }
 
   function loadDashboard() {
-    fetch(`${SCRIPT_URL}?action=getDashboardData`).then(res => res.json()).then(data => {
+    google.script.run.withSuccessHandler(function(data) {
       if (!data) data = {};
       document.getElementById('dashSales').innerText = (data.totalSales || 0).toLocaleString() + " ៛";
       document.getElementById('dashOrders').innerText = data.totalOrders || 0;
@@ -675,7 +673,7 @@
       let topProds = Array.isArray(data.topProducts) ? data.topProducts : [];
       if (topProds.length === 0) { container.innerHTML = '<div class="no-data-msg">គ្មានទិន្នន័យលក់ទេ</div>'; return; }
       topProds.forEach(p => { container.innerHTML += `<div class="list-item-ui"><div class="item-icon-box">🔥</div><div class="item-info"><div class="item-title">${p.name}</div><div class="item-sub">លក់បានសរុប: ${p.qty}</div></div></div>`; });
-    });
+    }).getDashboardData();
   }
 
   function saveData() {
@@ -700,13 +698,13 @@
     let btnSave = document.getElementById('btnSave');
     btnSave.innerText = "SAVING...";
     btnSave.disabled = true;
-    fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify({ action: "saveData", payload: payload }) })
-    .then(res => res.json()).then(response => {
+
+    google.script.run.withSuccessHandler(function(response) {
       alert(typeof response === 'string' ? response : (response.message || "រក្សាទុកទិន្នន័យរួចរាល់!"));
       document.getElementById('customerInput').value = ''; document.getElementById('phone').value = ''; document.getElementById('address').value = '';
       resetFormRows(); loadProducts();
       btnSave.innerText = "💾 SAVE DATA"; btnSave.disabled = false;
-    }).catch(err => { alert("មានបញ្ហាក្នុងការរក្សាទុកទិន្នន័យ!"); btnSave.innerText = "💾 SAVE DATA"; btnSave.disabled = false; });
+    }).saveInvoiceData(payload);
   }
 
   function saveNewCustomer() {
@@ -714,27 +712,25 @@
     let phone = document.getElementById('newCustPhone').value;
     let address = document.getElementById('newCustAddress').value;
     if (!name.trim()) return;
-    fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify({ action: "addCustomer", payload: { name: name, phone: phone, address: address } }) })
-    .then(res => res.json()).then(res => {
+    google.script.run.withSuccessHandler(function(res) {
       alert(res.message || "បានរក្សាទុក!"); closeModal('customerModal');
       document.getElementById('newCustName').value = ''; document.getElementById('newCustPhone').value = ''; document.getElementById('newCustAddress').value = '';
       loadCustomers();
-    });
+    }).addNewCustomer({ name: name, phone: phone, address: address });
   }
 
   function saveNewProduct() {
     let name = document.getElementById('newProdName').value;
     let price = parseFloat(document.getElementById('newProdPrice').value) || 0;
     if (!name.trim()) return;
-    fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify({ action: "addNewProduct", payload: { name: name, price: price } }) })
-    .then(res => res.json()).then(res => {
+    google.script.run.withSuccessHandler(function(res) {
       alert(res.message || "បានរក្សាទុក!"); closeModal('productModal');
       document.getElementById('newProdName').value = ''; document.getElementById('newProdPrice').value = '0'; loadProducts();
-    });
+    }).addNewProduct({ name: name, price: price });
   }
 
   function performSearch() {
-    let kw = encodeURIComponent(document.getElementById('searchKeyword').value.trim());
+    let kw = document.getElementById('searchKeyword').value.trim();
     let startDate = document.getElementById('searchStartDate').value;
     let endDate = document.getElementById('searchEndDate').value;
     let btn = document.getElementById('btnSearchSubmit');
@@ -743,41 +739,41 @@
     btn.innerText = "កំពុងស្វែងរក..."; btn.disabled = true;
     tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">កំពុងទាញយកទិន្នន័យ...</td></tr>';
     summary.innerText = "";
-    fetch(`${SCRIPT_URL}?action=searchHistory&kw=${kw}&startDate=${startDate}&endDate=${endDate}`)
-      .then(res => res.json()).then(res => {
-        btn.innerText = "ស្វែងរក"; btn.disabled = false; tbody.innerHTML = '';
-        if (!res.success || !Array.isArray(res.items) || res.items.length === 0) {
-          summary.innerText = res.message || "រកមិនឃើញទិន្នន័យទេ!"; summary.style.color = "#ff3b30"; return;
-        }
-        summary.style.color = "#30d158"; summary.innerText = `អតិថិជន: ${res.customerName} (${res.customerPhone || 'គ្មានលេខ'}) | សរុប: ${res.totalSpent.toLocaleString()} ៛`;
-        res.items.forEach(item => {
-          tbody.innerHTML += `<tr><td>${item.date}</td><td>${item.customer}</td><td>${item.item}</td><td style="text-align:center;">${item.qty}</td><td style="text-align:right;">${item.amount.toLocaleString()} ៛</td></tr>`;
-        });
-      }).catch(err => { btn.innerText = "ស្វែងរក"; btn.disabled = false; tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#ff3b30;">មានបញ្ហាក្នុងការភ្ជាប់!</td></tr>'; });
+
+    google.script.run.withSuccessHandler(function(res) {
+      btn.innerText = "ស្វែងរក"; btn.disabled = false; tbody.innerHTML = '';
+      if (!res.success || !Array.isArray(res.items) || res.items.length === 0) {
+        summary.innerText = res.message || "រកមិនឃើញទិន្នន័យទេ!"; summary.style.color = "#ff3b30"; return;
+      }
+      summary.style.color = "#30d158"; summary.innerText = `អតិថិជន: ${res.customerName} (${res.customerPhone || 'គ្មានលេខ'}) | សរុប: ${res.totalSpent.toLocaleString()} ៛`;
+      res.items.forEach(item => {
+        tbody.innerHTML += `<tr><td>${item.date}</td><td>${item.customer}</td><td>${item.item}</td><td style="text-align:center;">${item.qty}</td><td style="text-align:right;">${item.amount.toLocaleString()} ៛</td></tr>`;
+      });
+    }).searchCustomerHistoryWebApp(kw, startDate, endDate);
   }
 
   function performClientSearch() {
-    let kw = encodeURIComponent(document.getElementById('clientKeyword').value.trim());
+    let kw = document.getElementById('clientKeyword').value.trim();
     let startDate = document.getElementById('clientStartDate').value;
     let endDate = document.getElementById('clientEndDate').value;
     let btn = document.getElementById('btnClientSearch');
     let tbody = document.getElementById('clientResultsTable');
     let summary = document.getElementById('clientSummary');
-    if (!document.getElementById('clientKeyword').value.trim()) { alert("សូមបញ្ចូលឈ្មោះ ឬលេខទូរស័ព្ទដើម្បីស្វែងរក!"); return; }
+    if (!kw) { alert("សូមបញ្ចូលឈ្មោះ ឬលេខទូរស័ព្ទដើម្បីស្វែងរក!"); return; }
     btn.innerText = "⏳ កំពុងស្វែងរក..."; btn.disabled = true;
     tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 15px;">កំពុងទាញយកទិន្នន័យ...</td></tr>';
     summary.innerText = "";
-    fetch(`${SCRIPT_URL}?action=searchHistory&kw=${kw}&startDate=${startDate}&endDate=${endDate}`)
-      .then(res => res.json()).then(res => {
-        btn.innerText = "🔎 ស្វែងរកប្រវត្តិ"; btn.disabled = false; tbody.innerHTML = '';
-        if (!res.success || !Array.isArray(res.items) || res.items.length === 0) {
-          summary.innerText = res.message || "រកមិនឃើញទិន្នន័យបញ្ជាទិញទេ!"; summary.style.color = "#ff3b30"; return;
-        }
-        summary.style.color = "#30d158"; summary.innerText = `លោក/លោកស្រី៖ ${res.customerName} | ចំណាយសរុប៖ ${res.totalSpent.toLocaleString()} ៛`;
-        res.items.forEach(item => {
-          tbody.innerHTML += `<tr><td>${item.date}</td><td>${item.item}</td><td style="text-align:center;">${item.qty}</td><td style="text-align:right;">${item.price ? item.price.toLocaleString() + ' ៛' : '-'}</td><td style="text-align:right; color:#30d158;">${item.amount.toLocaleString()} ៛</td></tr>`;
-        });
-      }).catch(err => { btn.innerText = "🔎 ស្វែងរកប្រវត្តិ"; btn.disabled = false; tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#ff3b30; padding:15px;">មានបញ្ហាក្នុងការភ្ជាប់ទៅកាន់ប្រព័ន្ធ!</td></tr>'; });
+
+    google.script.run.withSuccessHandler(function(res) {
+      btn.innerText = "🔎 ស្វែងរកប្រវត្តិ"; btn.disabled = false; tbody.innerHTML = '';
+      if (!res.success || !Array.isArray(res.items) || res.items.length === 0) {
+        summary.innerText = res.message || "រកមិនឃើញទិន្នន័យបញ្ជាទិញទេ!"; summary.style.color = "#ff3b30"; return;
+      }
+      summary.style.color = "#30d158"; summary.innerText = `លោក/លោកស្រី៖ ${res.customerName} | ចំណាយសរុប៖ ${res.totalSpent.toLocaleString()} ៛`;
+      res.items.forEach(item => {
+        tbody.innerHTML += `<tr><td>${item.date}</td><td>${item.item}</td><td style="text-align:center;">${item.qty}</td><td style="text-align:right;">${item.price ? item.price.toLocaleString() + ' ៛' : '-'}</td><td style="text-align:right; color:#30d158;">${item.amount.toLocaleString()} ៛</td></tr>`;
+      });
+    }).searchCustomerHistoryWebApp(kw, startDate, endDate);
   }
 </script>
 
