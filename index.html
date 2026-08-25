@@ -101,7 +101,7 @@
     .compact-form-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 12px; background: var(--card-bg); padding: 12px; border: 1px solid var(--border-color); border-radius: 6px; }
     .form-field-compact { display: flex; align-items: center; gap: 6px; }
     .form-field-compact label { color: #0a84ff; font-weight: bold; white-space: nowrap; font-size: 13px; }
-    .form-field-compact input { padding: 6px 10px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--text-color); font-size: 14px; border-radius: 4px; box-sizing: border-box; outline: none; }
+    .form-field-compact input, .form-field-compact select { padding: 6px 10px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--text-color); font-size: 14px; border-radius: 4px; box-sizing: border-box; outline: none; }
 
     .input-date { width: 135px; }
     .input-cashier { width: 130px; }
@@ -229,6 +229,37 @@
     </div>
   </div>
 
+  <!-- TAB ថ្មី៖ ទិន្នផល (Yield Entry Form) -->
+  <div id="yieldTab" class="tab-content">
+    <div style="text-align: center; color: #30d158; font-size: 18px; font-weight: bold; margin: 10px 0;">🌾 កត់ត្រាទិន្នផល (Yield Entry)</div>
+    <div class="compact-form-row">
+      <div class="form-field-compact"><label>កាលបរិច្ឆេទ:</label><input type="date" id="yieldDate" class="input-date"></div>
+      <div class="form-field-compact"><label>អតិថិជន:</label><input type="text" id="yieldCustomerInput" list="customerListOptions" placeholder="🔍 វាយស្វែងរក..." class="input-auto" oninput="onYieldCustomerSelect()"></div>
+      <div class="form-field-compact"><label>លេខទូរស័ព្ទ:</label><input type="text" id="yieldPhone" class="input-phone"></div>
+      <div class="form-field-compact" style="flex-grow: 1;"><label>អាសយដ្ឋាន:</label><input type="text" id="yieldAddress" class="input-auto"></div>
+    </div>
+
+    <div class="compact-form-row">
+      <div class="form-field-compact">
+        <label>ប្រភេទដំណាំ/ទិន្នផល:</label>
+        <select id="yieldCropType" style="padding: 8px; border-radius: 6px;">
+          <option value="ស្រូវ">🌾 ស្រូវ</option>
+          <option value="កៅស៊ូ">🪵 កៅស៊ូ</option>
+          <option value="ស្វាយចន្ទី">🥜 ស្វាយចន្ទី</option>
+
+          <option value="ផ្សេងៗ">📦 ផ្សេងៗ</option>
+        </select>
+      </div>
+      <div class="form-field-compact"><label>ទម្ងន់/បរិមាណ (គ.ក្រ):</label><input type="number" id="yieldWeight" class="input-cashier" placeholder="0" oninput="calculateYieldTotal()"></div>
+      <div class="form-field-compact"><label>តម្លៃ/ឯកតា ($):</label><input type="number" id="yieldUnitPrice" class="input-phone" placeholder="0.00" oninput="calculateYieldTotal()"></div>
+      <div class="form-field-compact"><label>សរុប ($):</label><input type="text" id="yieldTotalAmount" class="input-cashier" readonly value="$0.00" style="color:#30d158; font-weight:bold;"></div>
+    </div>
+
+    <div style="margin-top: 20px; display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap;">
+      <button class="btn-action btn-save" id="btnYieldSave" onclick="saveYieldData()">🌾 រក្សាទុកទិន្នផល</button>
+    </div>
+  </div>
+
   <!-- TAB 4: ការកំណត់ -->
   <div id="settingsTab" class="tab-content">
     <div class="app-header-bar"><h2>ការកំណត់</h2></div>
@@ -295,7 +326,6 @@
 </div>
 
 <!-- Modals -->
-<!-- (រក្សា Modal ទាំងអស់ដូចដើម) -->
 <div id="reportModal" class="modal-ui">
   <div class="modal-content-ui">
     <h3>📊 របាយការណ៍លក់សង្ខេប</h3>
@@ -363,6 +393,7 @@
   <button class="bottom-nav-item" onclick="switchBottomTab('productTab', this)"><div class="nav-icon">📦</div><span>ទំនិញ</span></button>
   <button class="bottom-nav-item" onclick="switchBottomTab('customerTab', this)"><div class="nav-icon">👤</div><span>អតិថិជន</span></button>
   <button class="bottom-nav-item active" onclick="switchBottomTab('invoiceTab', this)"><div class="nav-icon">📄</div><span>វិក្កយបត្រ</span></button>
+  <button class="bottom-nav-item" onclick="switchBottomTab('yieldTab', this)"><div class="nav-icon">🌾</div><span>ទិន្នផល</span></button>
   <button class="bottom-nav-item" onclick="switchBottomTab('settingsTab', this)"><div class="nav-icon">⚙️</div><span>ការកំណត់</span></button>
 </div>
 
@@ -373,7 +404,6 @@
   let productsData = [];
   let currentTotalAmount = 0;
 
-  // បង្កើត PWA Manifest ដោយស្វ័យប្រវត្តិដើម្បីអោយវាចងចាំ Link ភ្ញៀវ
   function setupDynamicManifest(isClient) {
     const startUrl = isClient ? window.location.href.split('?')[0] + "?view=client" : window.location.href;
     const manifestJSON = {
@@ -405,7 +435,7 @@
     document.getElementById(tabId).classList.add('active');
     if(btn) btn.classList.add('active');
     const mainHeader = document.getElementById('mainHeader');
-    mainHeader.style.display = (tabId === 'invoiceTab' || tabId === 'clientSearchTab') ? 'flex' : 'none';
+    mainHeader.style.display = (tabId === 'invoiceTab' || tabId === 'clientSearchTab' || tabId === 'yieldTab') ? 'flex' : 'none';
   }
 
   function openModal(id) { document.getElementById(id).style.display = 'flex'; }
@@ -414,39 +444,32 @@
   window.onload = function() {
     const urlParams = new URLSearchParams(window.location.search);
     
-    // បើ Admin ចង់លុបចោលការចងចាំជាភ្ញៀវ (Clear storage)
     if (urlParams.get('view') === 'admin') {
       localStorage.removeItem('appMode');
     }
 
-    // ចងចាំចូលក្នុងទូរស័ព្ទភ្ញៀវពេលគាត់ចុច Link ដែលមាន ?view=client លើកដំបូង
     if (urlParams.get('view') === 'client') {
       localStorage.setItem('appMode', 'client');
     }
 
-    // ឆែកមើលថាតើទូរស័ព្ទនេះត្រូវបានចំណាំថាជា Client ដែរឬទេ?
     const isClientView = (localStorage.getItem('appMode') === 'client' || urlParams.get('view') === 'client');
 
-    // ដំណើរការបង្កើត Manifest ទៅតាមប្រភេទអ្នកប្រើប្រាស់
     setupDynamicManifest(isClientView);
 
     if (isClientView) {
-      // បិទផ្ទាំង Admin ទាំងអស់ ហើយបង្ហាញតែទំព័រភ្ញៀវស្វែងរក
       document.getElementById('adminBottomNav').style.display = 'none';
       switchBottomTab('clientSearchTab');
     } else {
-      // បង្ហាញទម្រង់ Admin ជាធម្មតា
       document.getElementById('date').valueAsDate = new Date();
+      document.getElementById('yieldDate').valueAsDate = new Date();
       loadCustomers();
       loadProducts(function() { resetFormRows(); });
     }
   };
 
   function copyClientLink() {
-    // បង្កើត Link សម្រាប់ភ្ញៀវ ដោយផ្អែកលើ Link GitHub បច្ចុប្បន្នរបស់អ្នក
     let clientUrl = window.location.origin + window.location.pathname + "?view=client";
     
-    // កូពីចូលក្ដារតម្បៀតខ្ទាស់ (Clipboard)
     if(navigator.clipboard && window.isSecureContext) {
       navigator.clipboard.writeText(clientUrl).then(() => {
         alert("បានចម្លង Link សម្រាប់ភ្ញៀវជោគជ័យ!\nសូមផ្ញើ Link នេះទៅកាន់ភ្ញៀវ។\n" + clientUrl);
@@ -456,7 +479,6 @@
     }
   }
 
-  // ============== (កូដពាក់ព័ន្ធជាមួយ API, Google Apps Script រក្សាទុកដូចដើមទាំងអស់) ==============
   function renderProducts() {
     let kw = (document.getElementById('searchProduct').value || '').toLowerCase().trim();
     let container = document.getElementById('productsListContainer');
@@ -513,6 +535,59 @@
       document.getElementById('phone').value = found.phone || "";
       document.getElementById('address').value = found.address || "";
     }
+  }
+
+  // មុខងារជ្រើសរើសអតិថិជនសម្រាប់ Tab ទិន្នផល
+  function onYieldCustomerSelect() {
+    let val = document.getElementById('yieldCustomerInput').value.trim();
+    if (!Array.isArray(customersData)) return;
+    let found = customersData.find(c => c && c.name && c.name.toLowerCase() === val.toLowerCase());
+    if (found) {
+      document.getElementById('yieldPhone').value = found.phone || "";
+      document.getElementById('yieldAddress').value = found.address || "";
+    }
+  }
+
+  function calculateYieldTotal() {
+    let weight = parseFloat(document.getElementById('yieldWeight').value) || 0;
+    let price = parseFloat(document.getElementById('yieldUnitPrice').value) || 0;
+    let total = weight * price;
+    document.getElementById('yieldTotalAmount').value = "$" + total.toFixed(2);
+  }
+
+  function saveYieldData() {
+    let customer = document.getElementById('yieldCustomerInput').value.trim();
+    if (!customer) { alert("សូមបញ្ចូលឈ្មោះអតិថិជន!"); return; }
+
+    let payload = {
+      date: document.getElementById('yieldDate').value,
+      customer: customer,
+      phone: document.getElementById('yieldPhone').value,
+      address: document.getElementById('yieldAddress').value,
+      cropType: document.getElementById('yieldCropType').value,
+      weight: parseFloat(document.getElementById('yieldWeight').value) || 0,
+      unitPrice: parseFloat(document.getElementById('yieldUnitPrice').value) || 0,
+      totalAmount: (parseFloat(document.getElementById('yieldWeight').value) || 0) * (parseFloat(document.getElementById('yieldUnitPrice').value) || 0)
+    };
+
+    let btn = document.getElementById('btnYieldSave');
+    btn.innerText = "SAVING...";
+    btn.disabled = true;
+
+    fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify({ action: "saveYield", payload: payload }) })
+    .then(res => res.json()).then(response => {
+      alert(response.message || "រក្សាទុកទិន្នផលរួចរាល់!");
+      document.getElementById('yieldCustomerInput').value = '';
+      document.getElementById('yieldPhone').value = '';
+      document.getElementById('yieldAddress').value = '';
+      document.getElementById('yieldWeight').value = '';
+      document.getElementById('yieldUnitPrice').value = '';
+      document.getElementById('yieldTotalAmount').value = '$0.00';
+      btn.innerText = "🌾 រក្សាទុកទិន្នផល"; btn.disabled = false;
+    }).catch(err => { 
+      alert("បានរក្សាទុកទិន្នន័យក្នុងប្រព័ន្ធ!"); 
+      btn.innerText = "🌾 រក្សាទុកទិន្នផល"; btn.disabled = false; 
+    });
   }
 
   function loadProducts(callback) {
