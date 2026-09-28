@@ -378,6 +378,7 @@ async function saveNewProduct() {
   }
 }
 
+// ១. មុខងារស្វែងរកប្រវត្តិរបស់ Admin
 async function performSearch() {
   let kw = document.getElementById('searchKeyword').value.trim();
   let startDate = document.getElementById('searchStartDate').value;
@@ -391,20 +392,39 @@ async function performSearch() {
   summary.innerText = "";
 
   let query = db.from('sale-history').select('*');
-  if (startDate) query = query.gte('date', startDate);
-  if (endDate) query = query.lte('date', endDate);
   if (kw) query = query.or(`customer_name.ilike.%${kw}%,phone.ilike.%${kw}%`);
 
   const { data, error } = await query;
-  btn.innerText = "ស្វែងរក"; btn.disabled = false; tbody.innerHTML = '';
 
   if (error || !data || data.length === 0) {
+    btn.innerText = "ស្វែងរក"; btn.disabled = false; tbody.innerHTML = '';
     summary.innerText = "រកមិនឃើញទិន្នន័យទេ!"; summary.style.color = "#ff3b30"; return;
+  }
+
+  // ចម្រាញ់ទិន្នន័យតាមកាលបរិច្ឆេទដោយប្រើ JavaScript
+  let filteredData = data;
+  if (startDate || endDate) {
+    let start = startDate ? new Date(startDate) : new Date('1900-01-01');
+    start.setHours(0,0,0,0);
+    let end = endDate ? new Date(endDate) : new Date('2100-01-01');
+    end.setHours(23,59,59,999);
+
+    filteredData = data.filter(item => {
+      if (!item.date) return false;
+      let itemDate = new Date(item.date); // បំប្លែងទម្រង់ text ទៅជា Date
+      return itemDate >= start && itemDate <= end;
+    });
+  }
+
+  btn.innerText = "ស្វែងរក"; btn.disabled = false; tbody.innerHTML = '';
+
+  if (filteredData.length === 0) {
+    summary.innerText = "រកមិនឃើញទិន្នន័យក្នុងចន្លោះកាលបរិច្ឆេទនេះទេ!"; summary.style.color = "#ff3b30"; return;
   }
   
   let totalSpent = 0;
-  let cName = data[0].customer_name;
-  data.forEach(item => {
+  let cName = filteredData[0].customer_name;
+  filteredData.forEach(item => {
     totalSpent += item.Total || 0; 
     tbody.innerHTML += `<tr><td>${item.date || '-'}</td><td>${item.customer_name || '-'}</td><td>${item.item || '-'}</td><td class="text-center">${item.qty || 0}</td><td class="text-right">${(item.Total || 0).toLocaleString()} ៛</td></tr>`;
   });
@@ -413,6 +433,7 @@ async function performSearch() {
   summary.innerText = `អតិថិជន: ${cName} | សរុប: ${totalSpent.toLocaleString()} ៛`;
 }
 
+// ២. មុខងារស្វែងរកប្រវត្តិរបស់ Client (ភ្ញៀវ)
 async function performClientSearch() {
   let kw = document.getElementById('clientKeyword').value.trim();
   let startDate = document.getElementById('clientStartDate').value;
@@ -429,19 +450,38 @@ async function performClientSearch() {
   summary.innerText = "";
 
   let query = db.from('sale-history').select('*').or(`customer_name.ilike.%${kw}%,phone.ilike.%${kw}%`);
-  if (startDate) query = query.gte('date', startDate);
-  if (endDate) query = query.lte('date', endDate);
 
   const { data, error } = await query;
-  btn.innerText = "🔎 ស្វែងរក"; btn.disabled = false; tbody.innerHTML = '';
 
   if (error || !data || data.length === 0) {
+    btn.innerText = "🔎 ស្វែងរក"; btn.disabled = false; tbody.innerHTML = '';
     summary.innerText = "រកមិនឃើញទិន្នន័យបញ្ជាទិញទេ!"; summary.style.color = "#ff3b30"; return;
   }
 
+  // ចម្រាញ់ទិន្នន័យតាមកាលបរិច្ឆេទដោយប្រើ JavaScript
+  let filteredData = data;
+  if (startDate || endDate) {
+    let start = startDate ? new Date(startDate) : new Date('1900-01-01');
+    start.setHours(0,0,0,0);
+    let end = endDate ? new Date(endDate) : new Date('2100-01-01');
+    end.setHours(23,59,59,999);
+
+    filteredData = data.filter(item => {
+      if (!item.date) return false;
+      let itemDate = new Date(item.date);
+      return itemDate >= start && itemDate <= end;
+    });
+  }
+
+  btn.innerText = "🔎 ស្វែងរក"; btn.disabled = false; tbody.innerHTML = '';
+
+  if (filteredData.length === 0) {
+    summary.innerText = "រកមិនឃើញទិន្នន័យបញ្ជាទិញក្នុងចន្លោះកាលបរិច្ឆេទនេះទេ!"; summary.style.color = "#ff3b30"; return;
+  }
+
   let totalSpent = 0;
-  let cName = data[0].customer_name;
-  data.forEach(item => {
+  let cName = filteredData[0].customer_name;
+  filteredData.forEach(item => {
     totalSpent += item.Total || 0; 
     tbody.innerHTML += `<tr><td>${item.date || '-'}</td><td>${item.item || '-'}</td><td class="text-center">${item.qty || 0}</td><td class="text-right">${(item.price || 0).toLocaleString()} ៛</td><td class="text-right" style="color:#34c759; font-weight:600;">${(item.Total || 0).toLocaleString()} ៛</td></tr>`;
   });
