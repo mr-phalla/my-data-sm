@@ -4,7 +4,15 @@ const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let customersData = [];
 let productsData = [];
-let currentTotalAmount = 0;
+
+// --- មុខងារ Toast Notification ---
+function showToast(message, type = 'success') {
+  const toast = document.getElementById("toast");
+  if(!toast) return;
+  toast.innerText = message;
+  toast.className = "show " + type;
+  setTimeout(function(){ toast.className = toast.className.replace("show " + type, ""); }, 3000);
+}
 
 function switchTab(tabId, btnElement) {
   document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
@@ -14,8 +22,14 @@ function switchTab(tabId, btnElement) {
   if(btnElement) btnElement.classList.add('active');
 }
 
-function openModal(id) { document.getElementById(id).style.display = 'flex'; }
-function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+function openModal(id) { 
+  let modal = document.getElementById(id);
+  if(modal) modal.style.display = 'flex'; 
+}
+function closeModal(id) { 
+  let modal = document.getElementById(id);
+  if(modal) modal.style.display = 'none'; 
+}
 
 window.onload = function() {
   const urlParams = new URLSearchParams(window.location.search);
@@ -31,6 +45,7 @@ window.onload = function() {
     document.getElementById('date').valueAsDate = new Date();
     loadCustomers();
     loadProducts(function() { resetFormRows(); });
+    loadRecentHistory(); // ហៅទិន្នន័យប្រវត្តិបញ្ចូលថ្មីៗ
   }
 };
 
@@ -38,35 +53,45 @@ function copyClientLink() {
   let clientUrl = window.location.origin + window.location.pathname + "?view=client";
   if(navigator.clipboard && window.isSecureContext) {
     navigator.clipboard.writeText(clientUrl).then(() => {
-      alert("បានចម្លង Link សម្រាប់ភ្ញៀវជោគជ័យ!\nសូមផ្ញើ Link នេះទៅកាន់ភ្ញៀវ។\n" + clientUrl);
+      showToast("បានចម្លង Link លក់សម្រាប់ភ្ញៀវជោគជ័យ!");
     });
   } else {
     prompt("សូមចម្លង Link ខាងក្រោមនេះផ្ញើជូនភ្ញៀវ៖", clientUrl);
   }
 }
 
+// ទាញយកទិន្នន័យមុខទំនិញ
 async function loadProducts(callback) {
   const { data, error } = await db.from('products').select('*');
-  if (error) { console.error(error); productsData = []; } 
-  else {
+  if (error) { 
+    console.error(error); 
+    productsData = []; 
+  } else {
     productsData = data.map(p => ({
       name: p['Product Name'] || p.name, 
       price: parseFloat(String(p['Price'] || p.price).replace(/,/g, '')) || 0
     }));
+    
+    let datalist = document.getElementById('productListOptions');
+    if(datalist) {
+       datalist.innerHTML = '';
+       productsData.forEach(p => { 
+         if (p && p.name) { 
+           let opt = document.createElement('option'); 
+           opt.value = p.name; 
+           datalist.appendChild(opt); 
+         } 
+       });
+    }
+    renderProducts();
   }
-  
-  let datalist = document.getElementById('productListOptions');
-  datalist.innerHTML = '';
-  productsData.forEach(p => { 
-    if (p && p.name) { let opt = document.createElement('option'); opt.value = p.name; datalist.appendChild(opt); } 
-  });
-  renderProducts();
   if (typeof callback === 'function') callback();
 }
 
 function renderProducts() {
   let kw = (document.getElementById('searchProduct').value || '').toLowerCase().trim();
   let container = document.getElementById('productsListContainer');
+  if(!container) return;
   container.innerHTML = '';
   if (!Array.isArray(productsData) || productsData.length === 0) {
     container.innerHTML = '<div class="no-data-msg">ពុំទាន់មានទិន្នន័យមុខទំនិញឡើយ</div>'; return;
@@ -77,28 +102,38 @@ function renderProducts() {
   });
 }
 
+// ទាញយកទិន្នន័យអតិថិជន
 async function loadCustomers() {
   const { data, error } = await db.from('customer_name').select('*');
-  if (error) { console.error(error); customersData = []; } 
-  else {
+  if (error) { 
+    console.error(error); 
+    customersData = []; 
+  } else {
     customersData = data.map(c => ({
       name: c.name || c.customer_name,
       phone: c.phone || "",
       address: c.address || ""
     }));
+    
+    let datalist = document.getElementById('customerListOptions');
+    if(datalist) {
+       datalist.innerHTML = '';
+       customersData.forEach(c => { 
+         if (c && c.name) { 
+           let opt = document.createElement('option'); 
+           opt.value = c.name; 
+           datalist.appendChild(opt); 
+         } 
+       });
+    }
+    renderCustomers();
   }
-  
-  let datalist = document.getElementById('customerListOptions');
-  datalist.innerHTML = '';
-  customersData.forEach(c => { 
-    if (c && c.name) { let opt = document.createElement('option'); opt.value = c.name; datalist.appendChild(opt); } 
-  });
-  renderCustomers();
 }
 
 function renderCustomers() {
   let kw = (document.getElementById('searchCustomer').value || '').toLowerCase().trim();
   let container = document.getElementById('customersListContainer');
+  if(!container) return;
   container.innerHTML = '';
   let filtered = customersData.filter(c => c && ((c.name && c.name.toString().toLowerCase().includes(kw)) || (c.phone && c.phone.toString().includes(kw))));
   filtered.forEach(c => {
@@ -139,7 +174,12 @@ function addItemRow() {
   tbody.appendChild(tr);
 }
 
-function removeRow(btn) { btn.closest('tr').remove(); calculateGrandTotal(); }
+function removeRow(btn) { 
+  if(confirm("តើអ្នកពិតជាចង់លុបជួរនេះមែនទេ?")) {
+    btn.closest('tr').remove(); 
+    calculateGrandTotal(); 
+  }
+}
 
 function calculateRow(input) {
   let row = input.closest('tr');
@@ -161,7 +201,6 @@ function calculateGrandTotal() {
     let amount = (qty * price) - discount;
     if (amount > 0) total += amount;
   });
-  currentTotalAmount = total;
   document.getElementById('grandTotal').innerText = total.toLocaleString() + " ៛";
 }
 
@@ -171,6 +210,7 @@ function resetFormRows() {
   calculateGrandTotal();
 }
 
+// មុខងារបញ្ចូលទិន្នន័យវិក្កយបត្រថ្មី
 async function saveData() {
   let items = [];
   let dateVal = document.getElementById('date').value;
@@ -202,7 +242,7 @@ async function saveData() {
     }
   });
 
-  if (items.length === 0) { alert("សូមបញ្ចូលមុខទំនិញយ៉ាងហោចណាស់ 1!"); return; }
+  if (items.length === 0) { showToast("សូមបញ្ចូលមុខទំនិញយ៉ាងហោចណាស់ 1!", "error"); return; }
   
   let btnSave = document.getElementById('btnSave');
   btnSave.innerText = "SAVING..."; btnSave.disabled = true;
@@ -210,15 +250,100 @@ async function saveData() {
   const { error } = await db.from('sale-history').insert(items);
 
   if (error) {
-    alert("មានបញ្ហាក្នុងការរក្សាទុកទិន្នន័យ: " + error.message);
+    showToast("មានបញ្ហាក្នុងការរក្សាទុកទិន្នន័យ!", "error");
   } else {
-    alert("រក្សាទុកទិន្នន័យរួចរាល់!");
+    showToast("រក្សាទុកវិក្កយបត្ររួចរាល់!", "success");
     document.getElementById('customerInput').value = ''; 
     document.getElementById('phone').value = ''; 
     document.getElementById('address').value = '';
     resetFormRows(); 
+    loadRecentHistory();
   }
   btnSave.innerText = "💾 រក្សាទុក (Save)"; btnSave.disabled = false;
+}
+
+// --- មុខងារផ្នែកខាងស្តាំ (ប្រវត្តិបញ្ចូលទំនិញថ្មីៗ) ---
+async function loadRecentHistory() {
+  let container = document.getElementById('recentHistoryContainer');
+  if(!container) return;
+  container.innerHTML = '<div style="text-align:center; padding: 20px; color:#888;">កំពុងទាញយក...</div>';
+
+  const { data, error } = await db.from('sale-history').select('*').order('id', { ascending: false }).limit(15);
+  
+  if (error || !data || data.length === 0) {
+    container.innerHTML = '<div style="text-align:center; padding: 20px; color:#888;">គ្មានប្រវត្តិបញ្ចូលទេ</div>';
+    return;
+  }
+
+  container.innerHTML = '';
+  data.forEach(item => {
+    let amount = item.Total || 0;
+    container.innerHTML += `
+      <div class="recent-card">
+        <div class="recent-header">
+          <span>${item.date || ''}</span>
+          <span style="color:var(--mac-blue);">${item.customer_name || ''}</span>
+        </div>
+        <div class="recent-body">
+          <span style="width:50%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${item.item || ''}</span>
+          <span style="color:#34c759;">${amount.toLocaleString()} ៛</span>
+        </div>
+        <div class="recent-actions">
+          <button class="btn-action-sm btn-edit" onclick="openEditSale(${item.id}, '${item.item}', ${item.qty}, ${item.price}, ${item.Discount})">កែប្រែ</button>
+          <button class="btn-action-sm btn-delete" onclick="deleteSaleEntry(${item.id})">លុប</button>
+        </div>
+      </div>
+    `;
+  });
+}
+
+async function deleteSaleEntry(id) {
+  if(confirm("តើអ្នកពិតជាចង់លុបទិន្នន័យនេះចេញពី Database មែនទេ?")) {
+    const { error } = await db.from('sale-history').delete().eq('id', id);
+    if(error) {
+      showToast("មិនអាចលុបបានទេ!", "error");
+    } else {
+      showToast("លុបបានជោគជ័យ!", "success");
+      loadRecentHistory();
+    }
+  }
+}
+
+function openEditSale(id, item, qty, price, discount) {
+  document.getElementById('editSaleId').value = id;
+  document.getElementById('editSaleItem').value = item;
+  document.getElementById('editSaleQty').value = qty || 1;
+  document.getElementById('editSalePrice').value = price || 0;
+  document.getElementById('editSaleDiscount').value = discount || 0;
+  calculateEditTotal();
+  openModal('editSaleModal');
+}
+
+function calculateEditTotal() {
+  let qty = parseFloat(document.getElementById('editSaleQty').value) || 0;
+  let price = parseFloat(document.getElementById('editSalePrice').value) || 0;
+  let discount = parseFloat(document.getElementById('editSaleDiscount').value) || 0;
+  let total = (qty * price) - discount;
+  document.getElementById('editSaleTotal').value = (total < 0 ? 0 : total).toLocaleString() + " ៛";
+}
+
+async function saveEditedSale() {
+  let id = document.getElementById('editSaleId').value;
+  let qty = parseFloat(document.getElementById('editSaleQty').value) || 0;
+  let price = parseFloat(document.getElementById('editSalePrice').value) || 0;
+  let discount = parseFloat(document.getElementById('editSaleDiscount').value) || 0;
+  let total = (qty * price) - discount;
+  if(total < 0) total = 0;
+
+  const { error } = await db.from('sale-history').update({ qty: qty, price: price, Discount: discount, Total: total }).eq('id', id);
+  
+  if(error) {
+    showToast("មានបញ្ហាក្នុងការកែប្រែ!", "error");
+  } else {
+    showToast("កែប្រែជោគជ័យ!", "success");
+    closeModal('editSaleModal');
+    loadRecentHistory();
+  }
 }
 
 async function saveNewCustomer() {
@@ -229,8 +354,11 @@ async function saveNewCustomer() {
   
   const { error } = await db.from('customer_name').insert([{ customer_name: name, phone: phone, address: address }]);
   if (!error) {
-    alert("បានរក្សាទុកអតិថិជន!"); closeModal('customerModal');
-    document.getElementById('newCustName').value = ''; document.getElementById('newCustPhone').value = ''; document.getElementById('newCustAddress').value = '';
+    showToast("បានរក្សាទុកអតិថិជន!"); 
+    closeModal('customerModal');
+    document.getElementById('newCustName').value = ''; 
+    document.getElementById('newCustPhone').value = ''; 
+    document.getElementById('newCustAddress').value = '';
     loadCustomers();
   }
 }
@@ -242,8 +370,10 @@ async function saveNewProduct() {
 
   const { error } = await db.from('products').insert([{ "Product Name": name, "Price": price }]);
   if (!error) {
-    alert("បានរក្សាទុកមុខទំនិញ!"); closeModal('productModal');
-    document.getElementById('newProdName').value = ''; document.getElementById('newProdPrice').value = '0'; 
+    showToast("បានរក្សាទុកមុខទំនិញ!"); 
+    closeModal('productModal');
+    document.getElementById('newProdName').value = ''; 
+    document.getElementById('newProdPrice').value = '0'; 
     loadProducts();
   }
 }
@@ -279,6 +409,7 @@ async function performSearch() {
     tbody.innerHTML += `<tr><td>${item.date || '-'}</td><td>${item.customer_name || '-'}</td><td>${item.item || '-'}</td><td class="text-center">${item.qty || 0}</td><td class="text-right">${(item.Total || 0).toLocaleString()} ៛</td></tr>`;
   });
   
+  summary.style.color = "#34c759";
   summary.innerText = `អតិថិជន: ${cName} | សរុប: ${totalSpent.toLocaleString()} ៛`;
 }
 
@@ -291,7 +422,7 @@ async function performClientSearch() {
   let tbody = document.getElementById('clientResultsTable');
   let summary = document.getElementById('clientSummary');
   
-  if (!kw) { alert("សូមបញ្ចូលឈ្មោះ ឬលេខទូរស័ព្ទដើម្បីស្វែងរក!"); return; }
+  if (!kw) { showToast("សូមបញ្ចូលឈ្មោះ ឬលេខទូរស័ព្ទដើម្បីស្វែងរក!", "error"); return; }
   
   btn.innerText = "⏳ កំពុងស្វែងរក..."; btn.disabled = true;
   tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 15px;">កំពុងទាញយកទិន្នន័យ...</td></tr>';
