@@ -3,784 +3,269 @@
 <head>
   <base target="_top">
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ស្រែមាស - ប្រព័ន្ធគ្រប់គ្រងការលក់</title>
   
-  <!-- កំណត់សោភ័ណភាពសម្រាប់ Add to Home Screen (PWA) -->
-  <meta name="theme-color" content="#000000">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="ស្រែមាស (ភ្ញៀវ)">
-  <link rel="apple-touch-icon" href="https://lh3.googleusercontent.com/d/1-lHJgWS1XhknNZPCQ3nUUGSPi7CoJmLC">
   <link rel="icon" href="https://lh3.googleusercontent.com/d/1-lHJgWS1XhknNZPCQ3nUUGSPi7CoJmLC" type="image/png">
-  
-  <!-- កន្លែងសម្រាប់ដាក់ Manifest ស្វ័យប្រវត្តិ -->
   <link rel="manifest" id="dynamic-manifest">
 
-  <style>
-    :root {
-      --bg-color: #000000;
-      --card-bg: #1c1c1e;
-      --border-color: #2c2c2e;
-      --input-bg: #2c2c2e;
-      --text-color: #ffffff;
-      --sub-text: #8e8e93;
-      --header-bg: #1c1c1e;
-      --nav-bg: #121212;
-      --th-bg: #1c1c1e;
-    }
+  <!-- បញ្ចូល CSS -->
+  <link rel="stylesheet" href="style.css">
 
-    body.light-mode {
-      --bg-color: #f2f2f7;
-      --card-bg: #ffffff;
-      --border-color: #e5e5ea;
-      --input-bg: #e9e9eb;
-      --text-color: #000000;
-      --sub-text: #6c6c70;
-      --header-bg: #ffffff;
-      --nav-bg: #ffffff;
-      --th-bg: #f2f2f7;
-    }
-
-    * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Kantumruy Pro', 'Khmer OS Battambang', Arial, sans-serif; }
-    body { margin: 0; padding: 10px 10px 80px 10px; background-color: var(--bg-color); color: var(--text-color); transition: background-color 0.3s, color 0.3s; }
-    .container { max-width: 900px; margin: auto; background: var(--bg-color); padding: 15px; position: relative; border-radius: 8px; }
-    
-    .header { display: flex; align-items: center; justify-content: center; gap: 20px; color: var(--text-color); margin-bottom: 10px; background: var(--header-bg); padding: 15px; border-radius: 10px; border: 1px solid var(--border-color); }
-    .logo-img { width: 90px; height: auto; object-fit: contain; }
-    .header-text { text-align: center; }
-    .header-text h2 { margin: 2px 0; font-size: 20px; color: var(--text-color); }
-    .header-text p { margin: 2px 0; color: var(--sub-text); font-size: 13px; }
-    
-    .tab-content { display: none; }
-    .tab-content.active { display: block; }
-
-    .app-header-bar { display: flex; justify-content: space-between; align-items: center; padding: 10px 0 15px 0; }
-    .app-header-bar h2 { margin: 0; font-size: 20px; font-weight: 600; text-align: center; flex: 1; color: var(--text-color); }
-    .btn-add-header { background: none; border: none; color: var(--text-color); font-size: 28px; cursor: pointer; padding: 0 10px; line-height: 1; }
-
-    .search-box-ui { position: relative; margin-bottom: 15px; }
-    .search-input-ui { width: 100%; padding: 12px 15px 12px 40px; background-color: var(--card-bg); border: 1px solid var(--border-color); border-radius: 10px; color: var(--text-color); font-size: 15px; outline: none; }
-    .search-icon-ui { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--sub-text); font-size: 16px; }
-
-    .list-container-ui { display: flex; flex-direction: column; gap: 1px; background-color: var(--card-bg); border-radius: 12px; overflow: hidden; margin-bottom: 20px; border: 1px solid var(--border-color); }
-    .list-item-ui { display: flex; align-items: center; padding: 12px 15px; background-color: var(--card-bg); border-bottom: 0.5px solid var(--border-color); }
-    .item-icon-box { width: 40px; height: 40px; background-color: var(--input-bg); border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-right: 15px; font-size: 18px; color: var(--sub-text); }
-    .avatar-circle { width: 40px; height: 40px; background-color: var(--input-bg); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 15px; font-weight: bold; font-size: 15px; color: var(--text-color); }
-    .item-info { flex: 1; }
-    .item-title { font-size: 16px; font-weight: 500; margin: 0; color: var(--text-color); }
-    .item-sub { font-size: 13px; color: var(--sub-text); margin-top: 3px; }
-
-    .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; }
-    .dash-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 15px; text-align: center; }
-    .dash-card h4 { margin: 0 0 5px 0; color: var(--sub-text); font-size: 14px; }
-    .dash-card .val { font-size: 22px; font-weight: bold; color: #30d158; }
-
-    .settings-group-ui { background: var(--card-bg); border-radius: 12px; margin-bottom: 20px; overflow: hidden; border: 1px solid var(--border-color); }
-    .settings-header-ui { padding: 10px 15px 5px 15px; font-size: 12px; color: var(--sub-text); text-transform: uppercase; }
-    .setting-row-ui { display: flex; align-items: center; padding: 12px 15px; border-bottom: 0.5px solid var(--border-color); cursor: pointer; }
-    .setting-icon-ui { width: 30px; height: 30px; border-radius: 6px; display: flex; align-items: center; justify-content: center; margin-right: 12px; color: #fff; font-size: 14px; }
-    .setting-title-ui { flex: 1; font-size: 15px; color: var(--text-color); }
-
-    .switch { position: relative; display: inline-block; width: 44px; height: 24px; }
-    .switch input { opacity: 0; width: 0; height: 0; }
-    .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #3a3a3c; transition: .4s; border-radius: 24px; }
-    .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
-    input:checked + .slider { background-color: #30d158; }
-    input:checked + .slider:before { transform: translateX(20px); }
-
-    .modal-ui { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 2000; justify-content: center; align-items: center; }
-    .modal-content-ui { background: var(--card-bg); width: 92%; max-width: 650px; padding: 20px; border-radius: 14px; color: var(--text-color); max-height: 90vh; overflow-y: auto; border: 1px solid var(--border-color); }
-    .modal-content-ui h3 { margin-top: 0; text-align: center; }
-    .form-input-ui { width: 100%; padding: 10px; margin: 8px 0; background: var(--input-bg); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-color); outline: none; }
-    .modal-btn-group { display: flex; justify-content: flex-end; gap: 10px; margin-top: 15px; }
-    .btn-modal { padding: 8px 16px; border-radius: 6px; border: none; cursor: pointer; font-weight: bold; }
-    .btn-cancel { background: var(--input-bg); color: var(--text-color); }
-    .btn-save-m { background: #0a84ff; color: #fff; }
-
-    .compact-form-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 12px; background: var(--card-bg); padding: 12px; border: 1px solid var(--border-color); border-radius: 6px; }
-    .form-field-compact { display: flex; align-items: center; gap: 6px; }
-    .form-field-compact label { color: #0a84ff; font-weight: bold; white-space: nowrap; font-size: 13px; }
-    .form-field-compact input, .form-field-compact select { padding: 6px 10px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--text-color); font-size: 14px; border-radius: 4px; box-sizing: border-box; outline: none; }
-
-    .input-date { width: 135px; }
-    .input-cashier { width: 130px; }
-    .input-phone { width: 130px; }
-    .input-auto { min-width: 140px; max-width: 100%; flex-grow: 1; }
-
-    .btn-action { color: white; border: none; padding: 8px 15px; font-weight: bold; cursor: pointer; border-radius: 4px; }
-    .btn-save { background-color: #0a84ff; }
-    .btn-print { background-color: #af52de; }
-    .btn-search { background-color: #ff9500; }
-    .btn-add-item { background-color: #30d158; margin-top: 10px; }
-    .btn-remove { background-color: #ff3b30; padding: 4px 8px; font-size: 12px; border: none; color: white; cursor: pointer; border-radius: 3px; }
-    
-    .table-container { width: 100%; overflow-x: auto; }
-    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-    th { background-color: var(--th-bg); color: var(--text-color); border: 1px solid var(--border-color); padding: 8px; text-align: center; font-size: 14px; }
-    td { border: 1px solid var(--border-color); padding: 4px; background: var(--card-bg); color: var(--text-color); }
-    td input { width: 98%; border: none; outline: none; font-size: 14px; padding: 4px; background: transparent; color: var(--text-color); }
-    .text-center { text-align: center; }
-    .text-right { text-align: right; }
-    
-    .total-row { font-weight: bold; font-size: 16px; color: var(--text-color); }
-    .total-amount { border-bottom: 2px solid #30d158; color: #30d158; }
-
-    .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; background-color: var(--nav-bg); display: flex; justify-content: space-around; align-items: center; padding: 8px 0 12px 0; box-shadow: 0 -2px 10px rgba(0,0,0,0.2); z-index: 1000; border-top: 1px solid var(--border-color); }
-    .bottom-nav-item { display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--sub-text); background: none; border: none; cursor: pointer; flex: 1; padding: 4px 0; }
-    .bottom-nav-item .nav-icon { font-size: 20px; margin-bottom: 3px; line-height: 1; }
-    .bottom-nav-item span { font-size: 10px; font-weight: 500; }
-    .bottom-nav-item.active { color: #0a84ff; }
-
-    .no-data-msg { text-align: center; padding: 20px; color: var(--sub-text); font-size: 14px; }
-
-    .client-card-box { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 15px; margin-bottom: 20px; }
-
-    @media print {
-      body { background: white !important; color: black !important; padding: 0; }
-      .bottom-nav, .btn-action, .btn-add-item, .search-box-ui, .app-header-bar, .btn-add-header { display: none !important; }
-      .container { width: 100%; border: none; padding: 0; }
-      .compact-form-row { border: 1px solid #ccc !important; background: none !important; }
-      td, th { border: 1px solid #000 !important; color: #000 !important; }
-      td input { color: #000 !important; }
-    }
-  </style>
+  <!-- បញ្ចូល Supabase SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
-<div class="container">
+<div class="app-container">
+  
+  <!-- Sidebar Navigation -->
+  <div class="sidebar" id="adminSidebar">
+    <div class="sidebar-header">
+      <img src="https://lh3.googleusercontent.com/d/1-lHJgWS1XhknNZPCQ3nUUGSPi7CoJmLC" alt="Logo">
+      <h3>ស្រែមាស ចំការលើ</h3>
+      <p>088 433 7888</p>
+    </div>
 
-  <div class="header" id="mainHeader">
-    <img src="https://lh3.googleusercontent.com/d/1-lHJgWS1XhknNZPCQ3nUUGSPi7CoJmLC" alt="Logo" class="logo-img">
-    <div class="header-text">
-      <h2>ស្រែមាស ចំការលើ</h2>
-      <p>ភូមិថ្នល់បែកកើត ឃុំស្វាយទាប ស្រុកចំការលើ ខេត្តកំពង់ចាម</p>
-      <p>លេខទូរស័ព្ទ / Phone: <b>088 433 7888</b></p>
+    <div class="nav-item active" onclick="switchTab('invoiceTab', this)">
+      <span class="nav-icon">📄</span> វិក្កយបត្រ (Invoice)
+    </div>
+    <div class="nav-item" onclick="switchTab('productTab', this)">
+      <span class="nav-icon">📦</span> មុខទំនិញ
+    </div>
+    <div class="nav-item" onclick="switchTab('customerTab', this)">
+      <span class="nav-icon">👤</span> អតិថិជន
+    </div>
+    <div class="nav-item" onclick="switchTab('settingsTab', this)">
+      <span class="nav-icon">📊</span> របាយការណ៍ & កំណត់
     </div>
   </div>
 
-  <datalist id="customerListOptions"></datalist>
-  <datalist id="productListOptions"></datalist>
+  <!-- Main Content Area -->
+  <div class="main-view">
+    
+    <datalist id="customerListOptions"></datalist>
+    <datalist id="productListOptions"></datalist>
 
-  <!-- TAB 1: មុខទំនិញ -->
-  <div id="productTab" class="tab-content">
-    <div class="app-header-bar">
-      <div style="width:28px;"></div>
-      <h2>មុខទំនិញ</h2>
-      <button class="btn-add-header" onclick="openModal('productModal')">+</button>
-    </div>
-    <div class="search-box-ui">
-      <span class="search-icon-ui">🔍</span>
-      <input type="text" id="searchProduct" class="search-input-ui" placeholder="ឈ្មោះមុខទំនិញ" oninput="renderProducts()">
-    </div>
-    <div class="list-container-ui" id="productsListContainer"></div>
-  </div>
-
-  <!-- TAB 2: អតិថិជន -->
-  <div id="customerTab" class="tab-content">
-    <div class="app-header-bar">
-      <div style="width:28px;"></div>
-      <h2>អតិថិជន</h2>
-      <button class="btn-add-header" onclick="openModal('customerModal')">+</button>
-    </div>
-    <div class="search-box-ui">
-      <span class="search-icon-ui">🔍</span>
-      <input type="text" id="searchCustomer" class="search-input-ui" placeholder="ឈ្មោះ, ទូរស័ព្ទ" oninput="renderCustomers()">
-    </div>
-    <div class="list-container-ui" id="customersListContainer"></div>
-  </div>
-
-  <!-- TAB 3: វិក្កយបត្រ (Sales Invoice) -->
-  <div id="invoiceTab" class="tab-content active">
-    <div style="text-align: center; color: #d13050; font-size: 18px; font-weight: bold; margin: 10px 0;">📄 ទម្រង់វិក្កយបត្រលក់ (Sales Invoice)</div>
-    <div class="compact-form-row">
-      <div class="form-field-compact"><label>កាលបរិច្ឆេទ:</label><input type="date" id="date" class="input-date"></div>
-      <div class="form-field-compact"><label>អ្នកគិតលុយ:</label><input type="text" id="cashier" class="input-cashier"></div>
-      <div class="form-field-compact"><label>អតិថិជន:</label><input type="text" id="customerInput" list="customerListOptions" placeholder="🔍 វាយស្វែងរក..." class="input-auto" oninput="onCustomerSelect()"></div>
-      <div class="form-field-compact"><label>លេខទូរស័ព្ទ:</label><input type="text" id="phone" class="input-phone"></div>
-      <div class="form-field-compact" style="flex-grow: 1;"><label>អាសយដ្ឋាន:</label><input type="text" id="address" class="input-auto"></div>
-    </div>
-
-    <div class="table-container">
-      <table>
-        <thead>
-          <tr>
-            <th style="width: 38%;">មុខទំនិញ (Item)</th>
-            <th style="width: 10%;">ចំនួន</th>
-            <th style="width: 17%;">តម្លៃ (៛)</th>
-            <th style="width: 15%;">បញ្ចុះតម្លៃ (៛)</th>
-            <th style="width: 15%;">ទឹកប្រាក់ (៛)</th>
-            <th style="width: 5%;">លុប</th>
-          </tr>
-        </thead>
-        <tbody id="itemTable"></tbody>
-      </table>
-    </div>
-
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
-      <button class="btn-action btn-add-item" onclick="addItemRow()">+ Add Item Row</button>
-      <div style="text-align: right;">
-        <span class="total-row" style="margin-right: 10px;">សរុប:</span>
-        <span id="grandTotal" class="total-row total-amount">0 ៛</span>
-      </div>
-    </div>
-    <div style="margin-top: 20px; display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap;">
-      <button class="btn-action btn-save" id="btnSave" onclick="saveData()">💾 SAVE DATA</button>
-    </div>
-  </div>
-
-  <!-- TAB ថ្មី៖ ទិន្នផល (Yield Entry Form) -->
-  <div id="yieldTab" class="tab-content">
-    <div style="text-align: center; color: #30d158; font-size: 18px; font-weight: bold; margin: 10px 0;">🌾 កត់ត្រាទិន្នផល (Yield Entry)</div>
-    <div class="compact-form-row">
-      <div class="form-field-compact"><label>កាលបរិច្ឆេទ:</label><input type="date" id="yieldDate" class="input-date"></div>
-      <div class="form-field-compact"><label>អតិថិជន:</label><input type="text" id="yieldCustomerInput" list="customerListOptions" placeholder="🔍 វាយស្វែងរក..." class="input-auto" oninput="onYieldCustomerSelect()"></div>
-      <div class="form-field-compact"><label>លេខទូរស័ព្ទ:</label><input type="text" id="yieldPhone" class="input-phone"></div>
-      <div class="form-field-compact" style="flex-grow: 1;"><label>អាសយដ្ឋាន:</label><input type="text" id="yieldAddress" class="input-auto"></div>
-    </div>
-
-    <div class="compact-form-row">
-      <div class="form-field-compact">
-        <label>ប្រភេទដំណាំ/ទិន្នផល:</label>
-        <select id="yieldCropType" style="padding: 8px; border-radius: 6px;">
-          <option value="ស្រូវ">🌾 ស្រូវ</option>
-          <option value="កៅស៊ូ">🪵 កៅស៊ូ</option>
-          <option value="ស្វាយចន្ទី">🥜 ស្វាយចន្ទី</option>
-          <option value="ផ្សេងៗ">📦 ផ្សេងៗ</option>
-        </select>
-      </div>
-      <div class="form-field-compact"><label>ទម្ងន់/បរិមាណ (គ.ក្រ):</label><input type="number" id="yieldWeight" class="input-cashier" placeholder="0" oninput="calculateYieldTotal()"></div>
-      <div class="form-field-compact"><label>តម្លៃ/ឯកតា ($):</label><input type="number" id="yieldUnitPrice" class="input-phone" placeholder="0.00" oninput="calculateYieldTotal()"></div>
-      <div class="form-field-compact"><label>សរុប ($):</label><input type="text" id="yieldTotalAmount" class="input-cashier" readonly value="$0.00" style="color:#30d158; font-weight:bold;"></div>
-    </div>
-
-    <div style="margin-top: 20px; display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap;">
-      <button class="btn-action btn-save" id="btnYieldSave" onclick="saveYieldData()">🌾 រក្សាទុកទិន្នផល</button>
-    </div>
-  </div>
-
-  <!-- TAB 4: ការកំណត់ -->
-  <div id="settingsTab" class="tab-content">
-    <div class="app-header-bar"><h2>ការកំណត់</h2></div>
-    <div class="settings-header-ui">របាយការណ៍ & ប្រវត្តិ</div>
-    <div class="settings-group-ui">
-      <div class="setting-row-ui" onclick="openReportModal()">
-        <div class="setting-icon-ui" style="background: #ff9500;">📊</div>
-        <div class="setting-title-ui">របាយការណ៍លក់សង្ខេប</div><div>❯</div>
-      </div>
-      <div class="setting-row-ui" onclick="openModal('historyModal')">
-        <div class="setting-icon-ui" style="background: #c2bedc;">🔍</div>
-        <div class="setting-title-ui">ស្វែងរកប្រវត្តិទិញរបស់អតិថិជន</div><div>❯</div>
-      </div>
-      <div class="setting-row-ui" onclick="copyClientLink()">
-        <div class="setting-icon-ui" style="background: #30d158;">🔗</div>
-        <div class="setting-title-ui">ចម្លង Link ស្វែងរកសម្រាប់ភ្ញៀវ</div><div>📋</div>
-      </div>
-    </div>
-    <div class="settings-header-ui">ការកំណត់កម្មវិធី</div>
-    <div class="settings-group-ui">
-      <div class="setting-row-ui" style="cursor: default;">
-        <div class="setting-icon-ui" style="background: #5e5ce6;">🌙</div>
-        <div class="setting-title-ui">Dark Mode / Light Mode</div>
-        <label class="switch"><input type="checkbox" id="themeToggle" onchange="toggleTheme(this)"><span class="slider"></span></label>
-      </div>
-    </div>
-  </div>
-
-  <!-- TAB 5: ទំព័រស្វែងរកសម្រាប់ភ្ញៀវ (CLIENT PUBLIC VIEW) -->
-  <div id="clientSearchTab" class="tab-content">
-    <div style="text-align: center; color: #0a84ff; font-size: 20px; font-weight: bold; margin: 15px 0 20px 0;">
-      🔍 ស្វែងរកប្រវត្តិបញ្ជាទិញទំនិញ
-    </div>
-    <div class="client-card-box">
-      <div style="display: flex; flex-direction: column; gap: 12px;">
-        <label style="font-size: 14px; color: var(--sub-text);">សូមបញ្ចូលលេខទូរស័ព្ទ ឬ ឈ្មោះរបស់អ្នក៖</label>
-        <input type="text" id="clientKeyword" class="form-input-ui" placeholder="ឧទាហរណ៍៖ 012345678" style="font-size: 16px;">
-        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-          <div style="flex: 1; min-width: 140px;">
-            <label style="font-size: 12px; color: var(--sub-text);">ចាប់ពីថ្ងៃទី៖</label>
-            <input type="date" id="clientStartDate" class="form-input-ui">
-          </div>
-          <div style="flex: 1; min-width: 140px;">
-            <label style="font-size: 12px; color: var(--sub-text);">ដល់ថ្ងៃទី៖</label>
-            <input type="date" id="clientEndDate" class="form-input-ui">
-          </div>
+    <!-- TAB: វិក្កយបត្រ (Sales Invoice) -->
+    <div id="invoiceTab" class="tab-content active">
+      <div class="top-bar">
+        <h2>ទម្រង់វិក្កយបត្រលក់</h2>
+        <div style="display: flex; gap: 10px;">
+          <button class="btn-action btn-print" onclick="window.print()">🖨️ បោះពុម្ព</button>
+          <button class="btn-action btn-save" id="btnSave" onclick="saveData()">💾 រក្សាទុក (Save)</button>
         </div>
-        <button class="btn-action btn-search" id="btnClientSearch" onclick="performClientSearch()" style="width: 100%; padding: 12px; font-size: 16px; margin-top: 5px;">
-          🔎 ស្វែងរកប្រវត្តិ
-        </button>
+      </div>
+
+      <div class="compact-form-row">
+        <div class="form-field-compact"><label>កាលបរិច្ឆេទ</label><input type="date" id="date"></div>
+        <div class="form-field-compact"><label>អ្នកគិតលុយ</label><input type="text" id="cashier" value="Admin"></div>
+        <div class="form-field-compact" style="flex: 2;"><label>អតិថិជន</label><input type="text" id="customerInput" list="customerListOptions" placeholder="ស្វែងរកអតិថិជន..." oninput="onCustomerSelect()"></div>
+        <div class="form-field-compact"><label>លេខទូរស័ព្ទ</label><input type="text" id="phone"></div>
+        <div class="form-field-compact" style="flex: 2;"><label>អាសយដ្ឋាន</label><input type="text" id="address"></div>
+      </div>
+
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 35%;">មុខទំនិញ (Item)</th>
+              <th style="width: 10%; text-align: center;">ចំនួន</th>
+              <th style="width: 15%; text-align: right;">តម្លៃ (៛)</th>
+              <th style="width: 15%; text-align: right;">បញ្ចុះតម្លៃ (៛)</th>
+              <th style="width: 20%; text-align: right;">ទឹកប្រាក់ (៛)</th>
+              <th style="width: 5%; text-align: center;">លុប</th>
+            </tr>
+          </thead>
+          <tbody id="itemTable"></tbody>
+        </table>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-top: 15px;">
+        <button class="btn-action btn-add-item" onclick="addItemRow()">+ បន្ថែមជួរថ្មី</button>
+        <div class="total-section">
+          <span>សរុបទឹកប្រាក់:</span>
+          <span id="grandTotal" class="total-amount">0 ៛</span>
+        </div>
       </div>
     </div>
-    <div id="clientSummary" style="font-weight: bold; color: #30d158; margin-bottom: 15px; text-align: center; font-size: 16px;"></div>
-    <div class="table-container">
-      <table>
-        <thead>
-          <tr><th>ថ្ងៃទី</th><th>មុខទំនិញ</th><th>ចំនួន</th><th>តម្លៃ/ឯកតា</th><th>សរុប</th></tr>
-        </thead>
-        <tbody id="clientResultsTable"></tbody>
-      </table>
-    </div>
-  </div>
 
+    <!-- TAB: មុខទំនិញ -->
+    <div id="productTab" class="tab-content">
+      <div class="top-bar">
+        <h2>បញ្ជីមុខទំនិញ</h2>
+        <div style="display: flex; gap: 15px; align-items: center;">
+          <div class="search-box-ui">
+            <span class="search-icon-ui">🔍</span>
+            <input type="text" id="searchProduct" class="search-input-ui" placeholder="ស្វែងរកទំនិញ..." oninput="renderProducts()">
+          </div>
+          <button class="btn-icon-add" title="បន្ថែមទំនិញ" onclick="openModal('productModal')">+</button>
+        </div>
+      </div>
+      <div class="list-container-ui" id="productsListContainer"></div>
+    </div>
+
+    <!-- TAB: អតិថិជន -->
+    <div id="customerTab" class="tab-content">
+      <div class="top-bar">
+        <h2>បញ្ជីអតិថិជន</h2>
+        <div style="display: flex; gap: 15px; align-items: center;">
+          <div class="search-box-ui">
+            <span class="search-icon-ui">🔍</span>
+            <input type="text" id="searchCustomer" class="search-input-ui" placeholder="ឈ្មោះ ឬ លេខទូរស័ព្ទ..." oninput="renderCustomers()">
+          </div>
+          <button class="btn-icon-add" title="បន្ថែមអតិថិជន" onclick="openModal('customerModal')">+</button>
+        </div>
+      </div>
+      <div class="list-container-ui" id="customersListContainer"></div>
+    </div>
+
+    <!-- TAB: ការកំណត់ & របាយការណ៍ -->
+    <div id="settingsTab" class="tab-content">
+      <div class="top-bar">
+        <h2>របាយការណ៍ និងការកំណត់</h2>
+      </div>
+      
+      <div class="compact-form-row" style="cursor: pointer;" onclick="openReportModal()">
+        <div class="item-icon-box" style="margin: 0; background:#ff9500; color:white;">📊</div>
+        <div style="flex:1;">
+          <h3 style="margin:0; font-size: 16px;">របាយការណ៍លក់សង្ខេប</h3>
+          <p style="margin:2px 0 0 0; font-size:13px; color:var(--text-sub);">មើលទិន្នន័យលក់ ចំណូល និងទំនិញលក់ដាច់</p>
+        </div>
+        <div style="font-size: 20px; color: var(--text-sub);">❯</div>
+      </div>
+
+      <div class="compact-form-row" style="cursor: pointer;" onclick="openModal('historyModal')">
+        <div class="item-icon-box" style="margin: 0; background:#c2bedc; color:white;">🔍</div>
+        <div style="flex:1;">
+          <h3 style="margin:0; font-size: 16px;">ស្វែងរកប្រវត្តិទិញរបស់អតិថិជន</h3>
+          <p style="margin:2px 0 0 0; font-size:13px; color:var(--text-sub);">ស្វែងរកវិក្កយបត្រចាស់ៗតាមឈ្មោះ ឬកាលបរិច្ឆេទ</p>
+        </div>
+        <div style="font-size: 20px; color: var(--text-sub);">❯</div>
+      </div>
+
+      <div class="compact-form-row" style="cursor: pointer;" onclick="copyClientLink()">
+        <div class="item-icon-box" style="margin: 0; background:#34c759; color:white;">🔗</div>
+        <div style="flex:1;">
+          <h3 style="margin:0; font-size: 16px;">ចម្លង Link ស្វែងរកសម្រាប់ភ្ញៀវ</h3>
+          <p style="margin:2px 0 0 0; font-size:13px; color:var(--text-sub);">ផ្ញើ Link ឱ្យភ្ញៀវដើម្បីពួកគេអាចឆែកមើលវិក្កយបត្រខ្លួនឯងបាន</p>
+        </div>
+        <div style="font-size: 20px; color: var(--text-sub);">📋</div>
+      </div>
+    </div>
+
+    <!-- TAB សម្រាប់ភ្ញៀវ (CLIENT VIEW) -->
+    <div id="clientSearchTab" class="tab-content" style="background: var(--mac-bg);">
+      <div style="text-align: center; margin-bottom: 30px;">
+        <img src="https://lh3.googleusercontent.com/d/1-lHJgWS1XhknNZPCQ3nUUGSPi7CoJmLC" alt="Logo" style="width: 80px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
+        <h2 style="color: var(--mac-blue); margin: 10px 0;">ស្វែងរកប្រវត្តិបញ្ជាទិញ</h2>
+      </div>
+      
+      <div class="compact-form-row" style="max-width: 600px; margin: 0 auto 30px auto; display: flex; flex-direction: column; align-items: stretch;">
+        <label style="font-size: 14px; color: var(--text-sub); margin-bottom: 5px;">សូមបញ្ចូលលេខទូរស័ព្ទ ឬ ឈ្មោះរបស់អ្នក៖</label>
+        <input type="text" id="clientKeyword" class="form-input-ui" placeholder="ឧទាហរណ៍៖ 012345678" style="padding: 12px; font-size: 16px; width: 100%;">
+        
+        <div style="display: flex; gap: 15px; margin-top: 10px;">
+          <div style="flex: 1;"><label style="font-size:12px; color:var(--text-sub);">ចាប់ពីថ្ងៃទី</label><input type="date" id="clientStartDate" class="form-input-ui" style="width: 100%;"></div>
+          <div style="flex: 1;"><label style="font-size:12px; color:var(--text-sub);">ដល់ថ្ងៃទី</label><input type="date" id="clientEndDate" class="form-input-ui" style="width: 100%;"></div>
+        </div>
+        
+        <button class="btn-action btn-search" id="btnClientSearch" onclick="performClientSearch()" style="padding: 12px; font-size: 16px; margin-top: 10px;">🔎 ស្វែងរក</button>
+      </div>
+
+      <div id="clientSummary" style="font-weight: bold; color: #34c759; margin-bottom: 15px; text-align: center; font-size: 18px;"></div>
+      
+      <div class="table-container" style="max-width: 900px; margin: 0 auto;">
+        <table>
+          <thead>
+            <tr><th>ថ្ងៃទី</th><th>មុខទំនិញ</th><th class="text-center">ចំនួន</th><th class="text-right">តម្លៃ/ឯកតា</th><th class="text-right">សរុប</th></tr>
+          </thead>
+          <tbody id="clientResultsTable"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
 </div>
 
-<!-- Modals -->
+<!-- MODALS សម្រាប់ Desktop -->
 <div id="reportModal" class="modal-ui">
-  <div class="modal-content-ui">
-    <h3>📊 របាយការណ៍លក់សង្ខេប</h3>
+  <div class="modal-content-ui large">
+    <div class="modal-header-ui">
+      <h3>📊 របាយការណ៍លក់សង្ខេប</h3>
+      <button class="btn-close-modal" onclick="closeModal('reportModal')" title="បិទ">✕</button>
+    </div>
     <div class="dashboard-grid">
       <div class="dash-card"><h4>ចំណូលសរុប</h4><div class="val" id="dashSales">0 ៛</div></div>
-      <div class="dash-card"><h4>ចំនួនវិក្កយបត្រ</h4><div class="val" id="dashOrders" style="color: #0a84ff;">0</div></div>
+      <div class="dash-card"><h4>ចំនួនវិក្កយបត្រ</h4><div class="val" id="dashOrders" style="color: #ff9500;">0</div></div>
     </div>
-    <h3 style="font-size: 16px; margin-top: 20px;">🔥 ទំនិញលក់ដាច់ជាងគេ ៥ មុខ</h3>
-    <div class="list-container-ui" id="topProductsContainer"></div>
-    <div class="modal-btn-group"><button class="btn-modal btn-cancel" onclick="closeModal('reportModal')">បិទ</button></div>
+    <h4 style="margin-top: 20px; color: var(--text-sub);">🔥 ទំនិញលក់ដាច់បំផុត ៥ មុខ</h4>
+    <div class="list-container-ui" id="topProductsContainer" style="grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));"></div>
   </div>
 </div>
 
 <div id="productModal" class="modal-ui">
-  <div class="modal-content-ui" style="max-width: 400px;">
-    <h3>បន្ថែមមុខទំនិញថ្មី</h3>
-    <input type="text" id="newProdName" class="form-input-ui" placeholder="បញ្ចូលឈ្មោះទំនិញ...">
-    <input type="number" id="newProdPrice" class="form-input-ui" placeholder="តម្លៃ (៛)" value="0">
+  <div class="modal-content-ui">
+    <div class="modal-header-ui">
+      <h3>បន្ថែមមុខទំនិញថ្មី</h3>
+      <button class="btn-close-modal" onclick="closeModal('productModal')" title="បិទ">✕</button>
+    </div>
+    <label style="font-size:12px; color:var(--text-sub);">ឈ្មោះទំនិញ</label>
+    <input type="text" id="newProdName" class="form-input-ui" placeholder="ឧទាហរណ៍: ជី...">
+    <label style="font-size:12px; color:var(--text-sub);">តម្លៃ (រៀល)</label>
+    <input type="number" id="newProdPrice" class="form-input-ui" placeholder="0">
     <div class="modal-btn-group">
-      <button class="btn-modal btn-cancel" onclick="closeModal('productModal')">បោះបង់</button>
       <button class="btn-modal btn-save-m" onclick="saveNewProduct()">រក្សាទុក</button>
     </div>
   </div>
 </div>
 
 <div id="customerModal" class="modal-ui">
-  <div class="modal-content-ui" style="max-width: 400px;">
-    <h3>បន្ថែមអតិថិជនថ្មី</h3>
-    <input type="text" id="newCustName" class="form-input-ui" placeholder="បញ្ចូលឈ្មោះអតិថិជន...">
-    <input type="text" id="newCustPhone" class="form-input-ui" placeholder="បញ្ចូលលេខទូរស័ព្ទ...">
-    <input type="text" id="newCustAddress" class="form-input-ui" placeholder="បញ្ចូលអាសយដ្ឋាន...">
+  <div class="modal-content-ui">
+    <div class="modal-header-ui">
+      <h3>បន្ថែមអតិថិជនថ្មី</h3>
+      <button class="btn-close-modal" onclick="closeModal('customerModal')" title="បិទ">✕</button>
+    </div>
+    <label style="font-size:12px; color:var(--text-sub);">ឈ្មោះ</label>
+    <input type="text" id="newCustName" class="form-input-ui">
+    <label style="font-size:12px; color:var(--text-sub);">លេខទូរស័ព្ទ</label>
+    <input type="text" id="newCustPhone" class="form-input-ui">
+    <label style="font-size:12px; color:var(--text-sub);">អាសយដ្ឋាន</label>
+    <input type="text" id="newCustAddress" class="form-input-ui">
     <div class="modal-btn-group">
-      <button class="btn-modal btn-cancel" onclick="closeModal('customerModal')">បោះបង់</button>
       <button class="btn-modal btn-save-m" onclick="saveNewCustomer()">រក្សាទុក</button>
     </div>
   </div>
 </div>
 
 <div id="historyModal" class="modal-ui">
-  <div class="modal-content-ui">
-    <h3>🔍 ស្វែងរកប្រវត្តិទិញ</h3>
-    <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px;">
-      <input type="text" id="searchKeyword" class="form-input-ui" placeholder="វាយឈ្មោះ ឬលេខទូរស័ព្ទ...">
-      <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-        <input type="date" id="searchStartDate" class="form-input-ui" style="flex: 1;">
-        <input type="date" id="searchEndDate" class="form-input-ui" style="flex: 1;">
-        <button class="btn-action btn-search" id="btnSearchSubmit" onclick="performSearch()">ស្វែងរក</button>
-      </div>
+  <div class="modal-content-ui large">
+    <div class="modal-header-ui">
+      <h3>🔍 ស្វែងរកប្រវត្តិទិញ</h3>
+      <button class="btn-close-modal" onclick="closeModal('historyModal')" title="បិទ">✕</button>
     </div>
-    <div id="searchSummary" style="font-weight: bold; color: #30d158; margin-bottom: 10px;"></div>
-    <div class="table-container">
+    
+    <div class="compact-form-row" style="padding: 15px;">
+      <div style="flex:2;"><input type="text" id="searchKeyword" class="form-input-ui" style="margin:0;" placeholder="វាយឈ្មោះ ឬលេខទូរស័ព្ទ..."></div>
+      <div style="flex:1;"><input type="date" id="searchStartDate" class="form-input-ui" style="margin:0;"></div>
+      <div style="flex:1;"><input type="date" id="searchEndDate" class="form-input-ui" style="margin:0;"></div>
+      <button class="btn-action btn-search" id="btnSearchSubmit" onclick="performSearch()">ស្វែងរក</button>
+    </div>
+    
+    <div id="searchSummary" style="font-weight: bold; color: #34c759; margin-bottom: 15px; font-size:16px;"></div>
+    
+    <div class="table-container" style="max-height: 400px;">
       <table>
         <thead>
-          <tr><th>ថ្ងៃទី</th><th>អតិថិជន</th><th>មុខទំនិញ</th><th>ចំនួន</th><th>តម្លៃសរុប</th></tr>
+          <tr><th>ថ្ងៃទី</th><th>អតិថិជន</th><th>មុខទំនិញ</th><th class="text-center">ចំនួន</th><th class="text-right">តម្លៃសរុប</th></tr>
         </thead>
         <tbody id="searchResultsTable"></tbody>
       </table>
     </div>
-    <div class="modal-btn-group"><button class="btn-modal btn-cancel" onclick="closeModal('historyModal')">បិទ</button></div>
   </div>
 </div>
 
-<!-- BOTTOM NAVIGATION BAR (សម្រាប់ Admin ប៉ុណ្ណោះ) -->
-<div class="bottom-nav" id="adminBottomNav">
-  <button class="bottom-nav-item" onclick="switchBottomTab('productTab', this)"><div class="nav-icon">📦</div><span>ទំនិញ</span></button>
-  <button class="bottom-nav-item" onclick="switchBottomTab('customerTab', this)"><div class="nav-icon">👤</div><span>អតិថិជន</span></button>
-  <button class="bottom-nav-item active" onclick="switchBottomTab('invoiceTab', this)"><div class="nav-icon">📄</div><span>វិក្កយបត្រ</span></button>
-  <button class="bottom-nav-item" onclick="switchBottomTab('yieldTab', this)"><div class="nav-icon">🌾</div><span>ទិន្នផល</span></button>
-  <button class="bottom-nav-item" onclick="switchBottomTab('settingsTab', this)"><div class="nav-icon">⚙️</div><span>ការកំណត់</span></button>
-</div>
-
-<script>
-  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzTJ3eiei-eFOwqotFQxNTggRz7mAMo32CJ2BRHC_GqGJTAcRJQaX_P4JG7ExNxpPk/exec";
-
-  let customersData = [];
-  let productsData = [];
-  let currentTotalAmount = 0;
-
-  function setupDynamicManifest(isClient) {
-    const startUrl = isClient ? window.location.href.split('?')[0] + "?view=client" : window.location.href;
-    const manifestJSON = {
-      "name": "ស្រែមាស - ប្រវត្តិទិញ",
-      "short_name": "ស្រែមាស",
-      "start_url": startUrl,
-      "display": "standalone",
-      "background_color": "#000000",
-      "theme_color": "#000000",
-      "icons": [{
-        "src": "https://lh3.googleusercontent.com/d/1-lHJgWS1XhknNZPCQ3nUUGSPi7CoJmLC",
-        "sizes": "192x192",
-        "type": "image/png"
-      }]
-    };
-    const blob = new Blob([JSON.stringify(manifestJSON)], { type: 'application/json' });
-    const manifestURL = URL.createObjectURL(blob);
-    document.getElementById('dynamic-manifest').setAttribute('href', manifestURL);
-  }
-
-  function toggleTheme(toggle) {
-    if(toggle.checked) { document.body.classList.add('light-mode'); }
-    else { document.body.classList.remove('light-mode'); }
-  }
-
-  function switchBottomTab(tabId, btn) {
-    document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
-    document.querySelectorAll('.bottom-nav-item').forEach(b => b.classList.remove('active'));
-    document.getElementById(tabId).classList.add('active');
-    if(btn) btn.classList.add('active');
-    const mainHeader = document.getElementById('mainHeader');
-    mainHeader.style.display = (tabId === 'invoiceTab' || tabId === 'clientSearchTab' || tabId === 'yieldTab') ? 'flex' : 'none';
-  }
-
-  function openModal(id) { document.getElementById(id).style.display = 'flex'; }
-  function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-
-  window.onload = function() {
-    const urlParams = new URLSearchParams(window.location.search);
-    
-    if (urlParams.get('view') === 'admin') {
-      localStorage.removeItem('appMode');
-    }
-
-    if (urlParams.get('view') === 'client') {
-      localStorage.setItem('appMode', 'client');
-    }
-
-    const isClientView = (localStorage.getItem('appMode') === 'client' || urlParams.get('view') === 'client');
-
-    setupDynamicManifest(isClientView);
-
-    if (isClientView) {
-      document.getElementById('adminBottomNav').style.display = 'none';
-      switchBottomTab('clientSearchTab');
-    } else {
-      document.getElementById('date').valueAsDate = new Date();
-      document.getElementById('yieldDate').valueAsDate = new Date();
-      loadCustomers();
-      loadProducts(function() { resetFormRows(); });
-    }
-  };
-
-  function copyClientLink() {
-    let clientUrl = window.location.origin + window.location.pathname + "?view=client";
-    
-    if(navigator.clipboard && window.isSecureContext) {
-      navigator.clipboard.writeText(clientUrl).then(() => {
-        alert("បានចម្លង Link សម្រាប់ភ្ញៀវជោគជ័យ!\nសូមផ្ញើ Link នេះទៅកាន់ភ្ញៀវ។\n" + clientUrl);
-      });
-    } else {
-      prompt("សូមចម្លង Link ខាងក្រោមនេះផ្ញើជូនភ្ញៀវ៖", clientUrl);
-    }
-  }
-
-  function renderProducts() {
-    let kw = (document.getElementById('searchProduct').value || '').toLowerCase().trim();
-    let container = document.getElementById('productsListContainer');
-    container.innerHTML = '';
-    if (!Array.isArray(productsData) || productsData.length === 0) {
-      container.innerHTML = '<div class="no-data-msg">ពុំទាន់មានទិន្នន័យមុខទំនិញឡើយ</div>';
-      return;
-    }
-    let filtered = productsData.filter(p => p && p.name && p.name.toString().toLowerCase().includes(kw));
-    if (filtered.length === 0) {
-      container.innerHTML = '<div class="no-data-msg">រកមិនឃើញមុខទំនិញឡើយ</div>';
-      return;
-    }
-    filtered.forEach(p => {
-      let priceVal = parseFloat(p.price) || 0;
-      container.innerHTML += `<div class="list-item-ui"><div class="item-icon-box">📦</div><div class="item-info"><div class="item-title">${p.name}</div><div class="item-sub">${priceVal.toLocaleString()} ៛</div></div></div>`;
-    });
-  }
-
-  function renderCustomers() {
-    let kw = (document.getElementById('searchCustomer').value || '').toLowerCase().trim();
-    let container = document.getElementById('customersListContainer');
-    container.innerHTML = '';
-    if (!Array.isArray(customersData) || customersData.length === 0) {
-      container.innerHTML = '<div class="no-data-msg">ពុំទាន់មានទិន្នន័យអតិថិជនឡើយ</div>';
-      return;
-    }
-    let filtered = customersData.filter(c => c && ((c.name && c.name.toString().toLowerCase().includes(kw)) || (c.phone && c.phone.toString().includes(kw))));
-    if (filtered.length === 0) {
-      container.innerHTML = '<div class="no-data-msg">រកមិនឃើញអតិថិជនឡើយ</div>';
-      return;
-    }
-    filtered.forEach(c => {
-      let prefix = c.name ? c.name.trim().substring(0, 2) : 'អ';
-      container.innerHTML += `<div class="list-item-ui"><div class="avatar-circle">${prefix}</div><div class="item-info"><div class="item-title">${c.name}</div><div class="item-sub">${c.phone || 'គ្មានលេខទូរស័ព្ទ'}</div></div></div>`;
-    });
-  }
-
-  function loadCustomers() {
-    fetch(`${SCRIPT_URL}?action=getCustomers`).then(res => res.json()).then(list => {
-      customersData = Array.isArray(list) ? list : [];
-      let datalist = document.getElementById('customerListOptions');
-      datalist.innerHTML = '';
-      customersData.forEach(c => { if (c && c.name) { let opt = document.createElement('option'); opt.value = c.name; datalist.appendChild(opt); } });
-      renderCustomers();
-    }).catch(err => { console.error(err); customersData = []; renderCustomers(); });
-  }
-
-  function onCustomerSelect() {
-    let val = document.getElementById('customerInput').value.trim();
-    if (!Array.isArray(customersData)) return;
-    let found = customersData.find(c => c && c.name && c.name.toLowerCase() === val.toLowerCase());
-    if (found) {
-      document.getElementById('phone').value = found.phone || "";
-      document.getElementById('address').value = found.address || "";
-    }
-  }
-
-  // មុខងារជ្រើសរើសអតិថិជនសម្រាប់ Tab ទិន្នផល
-  function onYieldCustomerSelect() {
-    let val = document.getElementById('yieldCustomerInput').value.trim();
-    if (!Array.isArray(customersData)) return;
-    let found = customersData.find(c => c && c.name && c.name.toLowerCase() === val.toLowerCase());
-    if (found) {
-      document.getElementById('yieldPhone').value = found.phone || "";
-      document.getElementById('yieldAddress').value = found.address || "";
-    }
-  }
-
-  function calculateYieldTotal() {
-    let weight = parseFloat(document.getElementById('yieldWeight').value) || 0;
-    let price = parseFloat(document.getElementById('yieldUnitPrice').value) || 0;
-    let total = weight * price;
-    document.getElementById('yieldTotalAmount').value = "$" + total.toFixed(2);
-  }
-
-  // រក្សាទុកទិន្នផលទៅ Google Sheet (Action: saveYield)
-  function saveYieldData() {
-    let customer = document.getElementById('yieldCustomerInput').value.trim();
-    if (!customer) { alert("សូមបញ្ចូលឈ្មោះអតិថិជន!"); return; }
-
-    let payload = {
-      date: document.getElementById('yieldDate').value,
-      customer: customer,
-      phone: document.getElementById('yieldPhone').value,
-      address: document.getElementById('yieldAddress').value,
-      cropType: document.getElementById('yieldCropType').value,
-      weight: parseFloat(document.getElementById('yieldWeight').value) || 0,
-      unitPrice: parseFloat(document.getElementById('yieldUnitPrice').value) || 0,
-      totalAmount: (parseFloat(document.getElementById('yieldWeight').value) || 0) * (parseFloat(document.getElementById('yieldUnitPrice').value) || 0)
-    };
-
-    let btn = document.getElementById('btnYieldSave');
-    btn.innerText = "SAVING...";
-    btn.disabled = true;
-
-    fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify({ action: "saveYield", payload: payload }) })
-    .then(res => res.json()).then(response => {
-      alert(response.message || "រក្សាទុកទិន្នផលរួចរាល់!");
-      document.getElementById('yieldCustomerInput').value = '';
-      document.getElementById('yieldPhone').value = '';
-      document.getElementById('yieldAddress').value = '';
-      document.getElementById('yieldWeight').value = '';
-      document.getElementById('yieldUnitPrice').value = '';
-      document.getElementById('yieldTotalAmount').value = '$0.00';
-      btn.innerText = "🌾 រក្សាទុកទិន្នផល"; btn.disabled = false;
-    }).catch(err => { 
-      alert("បានរក្សាទុកទិន្នន័យក្នុងប្រព័ន្ធ!"); 
-      btn.innerText = "🌾 រក្សាទុកទិន្នផល"; btn.disabled = false; 
-    });
-  }
-
-  function loadProducts(callback) {
-    fetch(`${SCRIPT_URL}?action=getItems`).then(res => res.json()).then(list => {
-      productsData = Array.isArray(list) ? list : [];
-      let datalist = document.getElementById('productListOptions');
-      datalist.innerHTML = '';
-      productsData.forEach(p => { if (p && p.name) { let opt = document.createElement('option'); opt.value = p.name; datalist.appendChild(opt); } });
-      renderProducts();
-      if (typeof callback === 'function') callback();
-    }).catch(err => { console.error(err); productsData = []; renderProducts(); if (typeof callback === 'function') callback(); });
-  }
-
-  function onProductSelect(input) {
-    let row = input.closest('tr');
-    let val = input.value.trim();
-    let priceInput = row.querySelector('.item-price');
-    if (!Array.isArray(productsData)) return;
-    let found = productsData.find(p => p && p.name && p.name.toLowerCase() === val.toLowerCase());
-    if (found) priceInput.value = found.price;
-    calculateRow(priceInput);
-  }
-
-  function addItemRow() {
-    let tbody = document.getElementById('itemTable');
-    let tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td><input type="text" class="item-input" list="productListOptions" placeholder="🔍 ស្វែងរក..." oninput="onProductSelect(this)"></td>
-      <td><input type="number" class="item-qty text-center" value="1" oninput="calculateRow(this)"></td>
-      <td><input type="number" class="item-price text-right" oninput="calculateRow(this)"></td>
-      <td><input type="number" class="item-discount text-right" oninput="calculateRow(this)" value="0"></td>
-      <td><input type="text" class="item-amount text-right" readonly value="0 ៛"></td>
-      <td class="text-center"><button class="btn-action btn-remove" onclick="removeRow(this)">X</button></td>
-    `;
-    tbody.appendChild(tr);
-  }
-
-  function removeRow(btn) { btn.closest('tr').remove(); calculateGrandTotal(); }
-
-  function calculateRow(input) {
-    let row = input.closest('tr');
-    let qty = parseFloat(row.querySelector('.item-qty').value) || 0;
-    let price = parseFloat(row.querySelector('.item-price').value) || 0;
-    let discount = parseFloat(row.querySelector('.item-discount').value) || 0;
-    let amount = (qty * price) - discount;
-    row.querySelector('.item-amount').value = (amount < 0 ? 0 : amount).toLocaleString() + " ៛";
-    calculateGrandTotal();
-  }
-
-  function calculateGrandTotal() {
-    let rows = document.querySelectorAll('#itemTable tr');
-    let total = 0;
-    rows.forEach(row => {
-      let qty = parseFloat(row.querySelector('.item-qty').value) || 0;
-      let price = parseFloat(row.querySelector('.item-price').value) || 0;
-      let discount = parseFloat(row.querySelector('.item-discount').value) || 0;
-      let amount = (qty * price) - discount;
-      if (amount > 0) total += amount;
-    });
-    currentTotalAmount = total;
-    document.getElementById('grandTotal').innerText = total.toLocaleString() + " ៛";
-  }
-
-  function resetFormRows() {
-    document.getElementById('itemTable').innerHTML = '';
-    for(let i = 0; i < 3; i++) addItemRow();
-    calculateGrandTotal();
-  }
-
-  function openReportModal() {
-    openModal('reportModal');
-    document.getElementById('dashSales').innerText = "...";
-    document.getElementById('dashOrders').innerText = "...";
-    document.getElementById('topProductsContainer').innerHTML = '<div style="text-align:center; padding: 15px; color: var(--sub-text);">កំពុងទាញយកទិន្នន័យ...</div>';
-    loadDashboard();
-  }
-
-  function loadDashboard() {
-    fetch(`${SCRIPT_URL}?action=getDashboardData`).then(res => res.json()).then(data => {
-      if (!data) data = {};
-      document.getElementById('dashSales').innerText = (data.totalSales || 0).toLocaleString() + " ៛";
-      document.getElementById('dashOrders').innerText = data.totalOrders || 0;
-      let container = document.getElementById('topProductsContainer');
-      container.innerHTML = '';
-      let topProds = Array.isArray(data.topProducts) ? data.topProducts : [];
-      if (topProds.length === 0) { container.innerHTML = '<div class="no-data-msg">គ្មានទិន្នន័យលក់ទេ</div>'; return; }
-      topProds.forEach(p => { container.innerHTML += `<div class="list-item-ui"><div class="item-icon-box">🔥</div><div class="item-info"><div class="item-title">${p.name}</div><div class="item-sub">លក់បានសរុប: ${p.qty}</div></div></div>`; });
-    });
-  }
-
-  // រក្សាទុកទិន្នន័យវិក្កយបត្រទៅ Google Sheet (Action: saveData)
-  function saveData() {
-    let items = [];
-    document.querySelectorAll('#itemTable tr').forEach(row => {
-      let prodName = row.querySelector('.item-input').value.trim();
-      let qty = parseFloat(row.querySelector('.item-qty').value) || 0;
-      let price = parseFloat(row.querySelector('.item-price').value) || 0;
-      let discount = parseFloat(row.querySelector('.item-discount').value) || 0;
-      let amount = (qty * price) - discount;
-      if (prodName !== "") { items.push({ name: prodName, qty: qty, price: price, discount: discount, amount: amount < 0 ? 0 : amount }); }
-    });
-    if (items.length === 0) { alert("សូមបញ្ចូលមុខទំនិញយ៉ាងហោចណាស់ 1!"); return; }
-    let payload = {
-      date: document.getElementById('date').value,
-      cashier: document.getElementById('cashier').value,
-      customer: document.getElementById('customerInput').value.trim(),
-      phone: document.getElementById('phone').value,
-      address: document.getElementById('address').value,
-      items: items
-    };
-    let btnSave = document.getElementById('btnSave');
-    btnSave.innerText = "SAVING...";
-    btnSave.disabled = true;
-    fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify({ action: "saveData", payload: payload }) })
-    .then(res => res.json()).then(response => {
-      alert(typeof response === 'string' ? response : (response.message || "រក្សាទុកទិន្នន័យរួចរាល់!"));
-      document.getElementById('customerInput').value = ''; document.getElementById('phone').value = ''; document.getElementById('address').value = '';
-      resetFormRows(); loadProducts();
-      btnSave.innerText = "💾 SAVE DATA"; btnSave.disabled = false;
-    }).catch(err => { alert("មានបញ្ហាក្នុងការរក្សាទុកទិន្នន័យ!"); btnSave.innerText = "💾 SAVE DATA"; btnSave.disabled = false; });
-  }
-
-  function saveNewCustomer() {
-    let name = document.getElementById('newCustName').value;
-    let phone = document.getElementById('newCustPhone').value;
-    let address = document.getElementById('newCustAddress').value;
-    if (!name.trim()) return;
-    fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify({ action: "addCustomer", payload: { name: name, phone: phone, address: address } }) })
-    .then(res => res.json()).then(res => {
-      alert(res.message || "បានរក្សាទុក!"); closeModal('customerModal');
-      document.getElementById('newCustName').value = ''; document.getElementById('newCustPhone').value = ''; document.getElementById('newCustAddress').value = '';
-      loadCustomers();
-    });
-  }
-
-  function saveNewProduct() {
-    let name = document.getElementById('newProdName').value;
-    let price = parseFloat(document.getElementById('newProdPrice').value) || 0;
-    if (!name.trim()) return;
-    fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify({ action: "addNewProduct", payload: { name: name, price: price } }) })
-    .then(res => res.json()).then(res => {
-      alert(res.message || "បានរក្សាទុក!"); closeModal('productModal');
-      document.getElementById('newProdName').value = ''; document.getElementById('newProdPrice').value = '0'; loadProducts();
-    });
-  }
-
-  function performSearch() {
-    let kw = encodeURIComponent(document.getElementById('searchKeyword').value.trim());
-    let startDate = document.getElementById('searchStartDate').value;
-    let endDate = document.getElementById('searchEndDate').value;
-    let btn = document.getElementById('btnSearchSubmit');
-    let tbody = document.getElementById('searchResultsTable');
-    let summary = document.getElementById('searchSummary');
-    btn.innerText = "កំពុងស្វែងរក..."; btn.disabled = true;
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">កំពុងទាញយកទិន្នន័យ...</td></tr>';
-    summary.innerText = "";
-    fetch(`${SCRIPT_URL}?action=searchHistory&kw=${kw}&startDate=${startDate}&endDate=${endDate}`)
-      .then(res => res.json()).then(res => {
-        btn.innerText = "ស្វែងរក"; btn.disabled = false; tbody.innerHTML = '';
-        if (!res.success || !Array.isArray(res.items) || res.items.length === 0) {
-          summary.innerText = res.message || "រកមិនឃើញទិន្នន័យទេ!"; summary.style.color = "#ff3b30"; return;
-        }
-        summary.style.color = "#30d158"; summary.innerText = `អតិថិជន: ${res.customerName} (${res.customerPhone || 'គ្មានលេខ'}) | សរុប: ${res.totalSpent.toLocaleString()} ៛`;
-        res.items.forEach(item => {
-          tbody.innerHTML += `<tr><td>${item.date}</td><td>${item.customer}</td><td>${item.item}</td><td style="text-align:center;">${item.qty}</td><td style="text-align:right;">${item.amount.toLocaleString()} ៛</td></tr>`;
-        });
-      }).catch(err => { btn.innerText = "ស្វែងរក"; btn.disabled = false; tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#ff3b30;">មានបញ្ហាក្នុងការភ្ជាប់!</td></tr>'; });
-  }
-
-  function performClientSearch() {
-    let kw = encodeURIComponent(document.getElementById('clientKeyword').value.trim());
-    let startDate = document.getElementById('clientStartDate').value;
-    let endDate = document.getElementById('clientEndDate').value;
-    let btn = document.getElementById('btnClientSearch');
-    let tbody = document.getElementById('clientResultsTable');
-    let summary = document.getElementById('clientSummary');
-    if (!document.getElementById('clientKeyword').value.trim()) { alert("សូមបញ្ចូលឈ្មោះ ឬលេខទូរស័ព្ទដើម្បីស្វែងរក!"); return; }
-    btn.innerText = "⏳ កំពុងស្វែងរក..."; btn.disabled = true;
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 15px;">កំពុងទាញយកទិន្នន័យ...</td></tr>';
-    summary.innerText = "";
-    fetch(`${SCRIPT_URL}?action=searchHistory&kw=${kw}&startDate=${startDate}&endDate=${endDate}`)
-      .then(res => res.json()).then(res => {
-        btn.innerText = "🔎 ស្វែងរកប្រវត្តិ"; btn.disabled = false; tbody.innerHTML = '';
-        if (!res.success || !Array.isArray(res.items) || res.items.length === 0) {
-          summary.innerText = res.message || "រកមិនឃើញទិន្នន័យបញ្ជាទិញទេ!"; summary.style.color = "#ff3b30"; return;
-        }
-        summary.style.color = "#30d158"; summary.innerText = `លោក/លោកស្រី៖ ${res.customerName} | ចំណាយសរុប៖ ${res.totalSpent.toLocaleString()} ៛`;
-        res.items.forEach(item => {
-          tbody.innerHTML += `<tr><td>${item.date}</td><td>${item.item}</td><td style="text-align:center;">${item.qty}</td><td style="text-align:right;">${item.price ? item.price.toLocaleString() + ' ៛' : '-'}</td><td style="text-align:right; color:#30d158;">${item.amount.toLocaleString()} ៛</td></tr>`;
-        });
-      }).catch(err => { btn.innerText = "🔎 ស្វែងរកប្រវត្តិ"; btn.disabled = false; tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#ff3b30; padding:15px;">មានបញ្ហាក្នុងការភ្ជាប់ទៅកាន់ប្រព័ន្ធ!</td></tr>'; });
-  }
-</script>
-
+<!-- បញ្ចូល JavaScript នៅខាងចុង -->
+<script src="script.js"></script>
 </body>
 </html>
