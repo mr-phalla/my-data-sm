@@ -8,14 +8,13 @@
   
   <link rel="icon" href="https://lh3.googleusercontent.com/d/1-lHJgWS1XhknNZPCQ3nUUGSPi7CoJmLC" type="image/png">
   <link rel="manifest" id="dynamic-manifest">
-
-  <!-- បញ្ចូល CSS -->
   <link rel="stylesheet" href="style.css">
-
-  <!-- បញ្ចូល Supabase SDK -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
+
+<!-- ផ្ទាំងលោតជូនដំណឹង (Toast Notification) -->
+<div id="toast">សារជូនដំណឹង</div>
 
 <div class="app-container">
   
@@ -47,46 +46,64 @@
     <datalist id="customerListOptions"></datalist>
     <datalist id="productListOptions"></datalist>
 
-    <!-- TAB: វិក្កយបត្រ (Sales Invoice) -->
-    <div id="invoiceTab" class="tab-content active">
-      <div class="top-bar">
-        <h2>ទម្រង់វិក្កយបត្រលក់</h2>
-        <div style="display: flex; gap: 10px;">
-          <button class="btn-action btn-print" onclick="window.print()">🖨️ បោះពុម្ព</button>
-          <button class="btn-action btn-save" id="btnSave" onclick="saveData()">💾 រក្សាទុក (Save)</button>
+    <!-- TAB: វិក្កយបត្រ (Sales Invoice) - រចនាសម្ព័ន្ធថ្មីចែកជា ២ ផ្នែក -->
+    <div id="invoiceTab" class="tab-content active" style="padding: 20px 30px;">
+      <div class="invoice-split-layout">
+        
+        <!-- ផ្នែកខាងឆ្វេង៖ ទម្រង់បញ្ចូលទិន្នន័យ -->
+        <div class="invoice-left">
+          <div class="top-bar">
+            <h2>បញ្ចូលវិក្ក័យបត្រលក់</h2>
+            <div style="display: flex; gap: 10px;">
+              <button class="btn-action btn-print" onclick="window.print()">🖨️ បោះពុម្ព</button>
+              <button class="btn-action btn-save" id="btnSave" onclick="saveData()">💾 រក្សាទុក (Save)</button>
+            </div>
+          </div>
+
+          <div class="compact-form-row">
+            <div class="form-field-compact"><label>កាលបរិច្ឆេទ</label><input type="date" id="date"></div>
+            <div class="form-field-compact"><label>អ្នកគិតលុយ</label><input type="text" id="cashier" value="Admin"></div>
+            <div class="form-field-compact" style="flex: 2;"><label>អតិថិជន</label><input type="text" id="customerInput" list="customerListOptions" placeholder="ស្វែងរកអតិថិជន..." oninput="onCustomerSelect()"></div>
+            <div class="form-field-compact"><label>លេខទូរស័ព្ទ</label><input type="text" id="phone"></div>
+            <div class="form-field-compact" style="flex: 2;"><label>អាសយដ្ឋាន</label><input type="text" id="address"></div>
+          </div>
+
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th style="width: 35%;">មុខទំនិញ (Item)</th>
+                  <th style="width: 10%; text-align: center;">ចំនួន</th>
+                  <th style="width: 15%; text-align: right;">តម្លៃ (៛)</th>
+                  <th style="width: 15%; text-align: right;">បញ្ចុះតម្លៃ (៛)</th>
+                  <th style="width: 20%; text-align: right;">ទឹកប្រាក់ (៛)</th>
+                  <th style="width: 5%; text-align: center;">លុប</th>
+                </tr>
+              </thead>
+              <tbody id="itemTable"></tbody>
+            </table>
+          </div>
+
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-top: 15px;">
+            <button class="btn-action btn-add-item" onclick="addItemRow()">+ បន្ថែមជួរថ្មី</button>
+            <div class="total-section">
+              <span>សរុបទឹកប្រាក់:</span>
+              <span id="grandTotal" class="total-amount">0 ៛</span>
+            </div>
+          </div>
         </div>
-      </div>
 
-      <div class="compact-form-row">
-        <div class="form-field-compact"><label>កាលបរិច្ឆេទ</label><input type="date" id="date"></div>
-        <div class="form-field-compact"><label>អ្នកគិតលុយ</label><input type="text" id="cashier" value="Admin"></div>
-        <div class="form-field-compact" style="flex: 2;"><label>អតិថិជន</label><input type="text" id="customerInput" list="customerListOptions" placeholder="ស្វែងរកអតិថិជន..." oninput="onCustomerSelect()"></div>
-        <div class="form-field-compact"><label>លេខទូរស័ព្ទ</label><input type="text" id="phone"></div>
-        <div class="form-field-compact" style="flex: 2;"><label>អាសយដ្ឋាន</label><input type="text" id="address"></div>
-      </div>
-
-      <div class="table-container">
-        <table>
-          <thead>
-            <tr>
-              <th style="width: 35%;">មុខទំនិញ (Item)</th>
-              <th style="width: 10%; text-align: center;">ចំនួន</th>
-              <th style="width: 15%; text-align: right;">តម្លៃ (៛)</th>
-              <th style="width: 15%; text-align: right;">បញ្ចុះតម្លៃ (៛)</th>
-              <th style="width: 20%; text-align: right;">ទឹកប្រាក់ (៛)</th>
-              <th style="width: 5%; text-align: center;">លុប</th>
-            </tr>
-          </thead>
-          <tbody id="itemTable"></tbody>
-        </table>
-      </div>
-
-      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-top: 15px;">
-        <button class="btn-action btn-add-item" onclick="addItemRow()">+ បន្ថែមជួរថ្មី</button>
-        <div class="total-section">
-          <span>សរុបទឹកប្រាក់:</span>
-          <span id="grandTotal" class="total-amount">0 ៛</span>
+        <!-- ផ្នែកខាងស្តាំ៖ ប្រវត្តិបញ្ចូលទំនិញថ្មីៗ -->
+        <div class="invoice-right">
+          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--mac-border); padding-bottom: 10px; margin-bottom: 15px;">
+            <h3 style="margin: 0; font-size: 16px; color: var(--mac-blue);">🕒 ប្រវត្តិបញ្ចូលថ្មីៗ</h3>
+            <button onclick="loadRecentHistory()" style="background:none; border:none; cursor:pointer; color:var(--text-sub);" title="Refresh">🔄</button>
+          </div>
+          <div id="recentHistoryContainer" style="overflow-y: auto; flex: 1; padding-right: 5px;">
+            <!-- ទិន្នន័យនឹងត្រូវ Generate នៅទីនេះដោយ JavaScript -->
+          </div>
         </div>
+
       </div>
     </div>
 
@@ -188,22 +205,50 @@
   </div>
 </div>
 
-<!-- MODALS សម្រាប់ Desktop -->
-<div id="reportModal" class="modal-ui">
-  <div class="modal-content-ui large">
+<!-- Modals ... (រក្សាទុក Modal ដូចដើម ប៉ុន្តែថែម Edit Modal មួយទៀត) -->
+<div id="editSaleModal" class="modal-ui">
+  <div class="modal-content-ui">
     <div class="modal-header-ui">
-      <h3>📊 របាយការណ៍លក់សង្ខេប</h3>
-      <button class="btn-close-modal" onclick="closeModal('reportModal')" title="បិទ">✕</button>
+      <h3>✏️ កែប្រែទិន្នន័យបញ្ចូល</h3>
+      <button class="btn-close-modal" onclick="closeModal('editSaleModal')" title="បិទ">✕</button>
     </div>
-    <div class="dashboard-grid">
-      <div class="dash-card"><h4>ចំណូលសរុប</h4><div class="val" id="dashSales">0 ៛</div></div>
-      <div class="dash-card"><h4>ចំនួនវិក្កយបត្រ</h4><div class="val" id="dashOrders" style="color: #ff9500;">0</div></div>
+    
+    <input type="hidden" id="editSaleId">
+    
+    <label style="font-size:12px; color:var(--text-sub);">មុខទំនិញ</label>
+    <input type="text" id="editSaleItem" class="form-input-ui" readonly style="background: rgba(0,0,0,0.05); color: #666;">
+    
+    <div style="display:flex; gap:10px;">
+      <div style="flex:1;">
+        <label style="font-size:12px; color:var(--text-sub);">ចំនួន</label>
+        <input type="number" id="editSaleQty" class="form-input-ui" oninput="calculateEditTotal()">
+      </div>
+      <div style="flex:1;">
+        <label style="font-size:12px; color:var(--text-sub);">តម្លៃ/ឯកតា</label>
+        <input type="number" id="editSalePrice" class="form-input-ui" oninput="calculateEditTotal()">
+      </div>
     </div>
-    <h4 style="margin-top: 20px; color: var(--text-sub);">🔥 ទំនិញលក់ដាច់បំផុត ៥ មុខ</h4>
-    <div class="list-container-ui" id="topProductsContainer" style="grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));"></div>
+
+    <div style="display:flex; gap:10px;">
+      <div style="flex:1;">
+        <label style="font-size:12px; color:var(--text-sub);">បញ្ចុះតម្លៃ</label>
+        <input type="number" id="editSaleDiscount" class="form-input-ui" oninput="calculateEditTotal()">
+      </div>
+      <div style="flex:1;">
+        <label style="font-size:12px; color:var(--text-sub);">សរុប</label>
+        <input type="text" id="editSaleTotal" class="form-input-ui" readonly style="color:#34c759; font-weight:bold;">
+      </div>
+    </div>
+
+    <div class="modal-btn-group">
+      <button class="btn-modal btn-save-m" onclick="saveEditedSale()">រក្សាទុកការកែប្រែ</button>
+    </div>
   </div>
 </div>
 
+<!-- Copy Modal ចាស់ៗពីកូដមុនមកដាក់ទីនេះ (reportModal, productModal, customerModal, historyModal) -->
+<!-- ខ្ញុំរំលងការសរសេរ Modal ជាន់គ្នាដើម្បីកុំឱ្យវែងពេក អ្នកអាចចម្លងពីកូដចាស់មកដាក់នៅទីនេះបាន -->
+<!-- ឧទាហរណ៍: -->
 <div id="productModal" class="modal-ui">
   <div class="modal-content-ui">
     <div class="modal-header-ui">
@@ -214,9 +259,7 @@
     <input type="text" id="newProdName" class="form-input-ui" placeholder="ឧទាហរណ៍: ជី...">
     <label style="font-size:12px; color:var(--text-sub);">តម្លៃ (រៀល)</label>
     <input type="number" id="newProdPrice" class="form-input-ui" placeholder="0">
-    <div class="modal-btn-group">
-      <button class="btn-modal btn-save-m" onclick="saveNewProduct()">រក្សាទុក</button>
-    </div>
+    <div class="modal-btn-group"><button class="btn-modal btn-save-m" onclick="saveNewProduct()">រក្សាទុក</button></div>
   </div>
 </div>
 
@@ -232,9 +275,7 @@
     <input type="text" id="newCustPhone" class="form-input-ui">
     <label style="font-size:12px; color:var(--text-sub);">អាសយដ្ឋាន</label>
     <input type="text" id="newCustAddress" class="form-input-ui">
-    <div class="modal-btn-group">
-      <button class="btn-modal btn-save-m" onclick="saveNewCustomer()">រក្សាទុក</button>
-    </div>
+    <div class="modal-btn-group"><button class="btn-modal btn-save-m" onclick="saveNewCustomer()">រក្សាទុក</button></div>
   </div>
 </div>
 
@@ -244,28 +285,37 @@
       <h3>🔍 ស្វែងរកប្រវត្តិទិញ</h3>
       <button class="btn-close-modal" onclick="closeModal('historyModal')" title="បិទ">✕</button>
     </div>
-    
     <div class="compact-form-row" style="padding: 15px;">
       <div style="flex:2;"><input type="text" id="searchKeyword" class="form-input-ui" style="margin:0;" placeholder="វាយឈ្មោះ ឬលេខទូរស័ព្ទ..."></div>
       <div style="flex:1;"><input type="date" id="searchStartDate" class="form-input-ui" style="margin:0;"></div>
       <div style="flex:1;"><input type="date" id="searchEndDate" class="form-input-ui" style="margin:0;"></div>
       <button class="btn-action btn-search" id="btnSearchSubmit" onclick="performSearch()">ស្វែងរក</button>
     </div>
-    
     <div id="searchSummary" style="font-weight: bold; color: #34c759; margin-bottom: 15px; font-size:16px;"></div>
-    
     <div class="table-container" style="max-height: 400px;">
       <table>
-        <thead>
-          <tr><th>ថ្ងៃទី</th><th>អតិថិជន</th><th>មុខទំនិញ</th><th class="text-center">ចំនួន</th><th class="text-right">តម្លៃសរុប</th></tr>
-        </thead>
+        <thead><tr><th>ថ្ងៃទី</th><th>អតិថិជន</th><th>មុខទំនិញ</th><th class="text-center">ចំនួន</th><th class="text-right">តម្លៃសរុប</th></tr></thead>
         <tbody id="searchResultsTable"></tbody>
       </table>
     </div>
   </div>
 </div>
 
-<!-- បញ្ចូល JavaScript នៅខាងចុង -->
+<div id="reportModal" class="modal-ui">
+  <div class="modal-content-ui large">
+    <div class="modal-header-ui">
+      <h3>📊 របាយការណ៍លក់សង្ខេប</h3>
+      <button class="btn-close-modal" onclick="closeModal('reportModal')" title="បិទ">✕</button>
+    </div>
+    <div class="dashboard-grid">
+      <div class="dash-card"><h4>ចំណូលសរុប</h4><div class="val" id="dashSales">0 ៛</div></div>
+      <div class="dash-card"><h4>ចំនួនវិក្កយបត្រ</h4><div class="val" id="dashOrders" style="color: #ff9500;">0</div></div>
+    </div>
+    <h4 style="margin-top: 20px; color: var(--text-sub);">🔥 ទំនិញលក់ដាច់បំផុត ៥ មុខ</h4>
+    <div class="list-container-ui" id="topProductsContainer" style="grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));"></div>
+  </div>
+</div>
+
 <script src="script.js"></script>
 </body>
 </html>
