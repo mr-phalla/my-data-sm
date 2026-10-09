@@ -238,30 +238,25 @@
     <!-- TAB: វិក្កយបត្រ (Invoice) -->
     <section id="invoiceTab" class="tab-content print-section">
       <div class="page-heading no-print">
-        <div><h1>វិក្កយបត្រថ្មី (New Sale)</h1><p class="muted">បញ្ចូលការលក់ និងកំណត់ស្ថានភាពបង់ប្រាក់។</p></div>
-        <div class="heading-actions">
-          <button class="btn secondary" onclick="window.print()"><i class='bx bx-printer'></i> បោះពុម្ព</button>
-          <button class="btn primary" id="btnSave" onclick="saveData()"><i class='bx bx-save'></i> រក្សាទុកការលក់</button>
+      <div><h1>វិក្កយបត្រថ្មី (New Sale)</h1><p class="muted">បញ្ចូលការលក់ និងកំណត់ស្ថានភាពបង់ប្រាក់។</p></div>
+    </div>
+
+    <div class="print-only print-header">
+      <h2 style="margin: 0; font-size: 24px;">StockFlow - ស្រែមាស ចំការលើ</h2>
+      <p style="margin: 5px 0;">ទូរស័ព្ទ: 088 433 7888</p>
+      <h3 style="margin: 15px 0; border-bottom: 2px solid #000; display: inline-block;">វិក្កយបត្រ (INVOICE)</h3>
+    </div>
+
+    <div class="dashboard-grid-main invoice-layout">
+      <div class="panel print-full-width">
+        <div class="form-grid mb-4">
+          <label>កាលបរិច្ឆេទ<input type="date" id="date" class="form-input"></label>
+          <label>ស្ថានភាព<select id="paymentStatus" class="form-input"><option value="Paid">✅ ទូទាត់រួច (Paid)</option><option value="Unpaid">⏳ ជំពាក់ (Unpaid)</option></select></label>
+          <label>អ្នកគិតលុយ<input type="text" id="cashier" value="Admin" class="form-input"></label>
+          <label class="span-2">អតិថិជន<input type="text" id="customerInput" list="customerListOptions" placeholder="ស្វែងរកអតិថិជន..." oninput="onCustomerSelect()" class="form-input"></label>
+          <label>លេខទូរស័ព្ទ<input type="text" id="phone" class="form-input"></label>
+          <label class="span-3">អាសយដ្ឋាន<input type="text" id="address" class="form-input"></label>
         </div>
-      </div>
-
-      <div class="print-only print-header">
-        <h2 style="margin: 0; font-size: 24px;">StockFlow - ស្រែមាស ចំការលើ</h2>
-        <p style="margin: 5px 0;">ទូរស័ព្ទ: 088 433 7888</p>
-        <h3 style="margin: 15px 0; border-bottom: 2px solid #000; display: inline-block;">វិក្កយបត្រ (INVOICE)</h3>
-      </div>
-
-      <div class="dashboard-grid-main invoice-layout">
-        <div class="panel print-full-width">
-          <div class="form-grid mb-4">
-            <label>កាលបរិច្ឆេទ<input type="date" id="date" class="form-input"></label>
-            <label>ស្ថានភាព<select id="paymentStatus" class="form-input"><option value="Paid">✅ ទូទាត់រួច (Paid)</option><option value="Unpaid">⏳ ជំពាក់ (Unpaid)</option></select></label>
-            <label>អ្នកគិតលុយ<input type="text" id="cashier" value="Admin" class="form-input"></label>
-            <label class="span-2">អតិថិជន<input type="text" id="customerInput" list="customerListOptions" placeholder="ស្វែងរកអតិថិជន..." oninput="onCustomerSelect()" class="form-input"></label>
-            <label>លេខទូរស័ព្ទ<input type="text" id="phone" class="form-input"></label>
-            <label class="span-3">អាសយដ្ឋាន<input type="text" id="address" class="form-input"></label>
-            <label class="span-3">កំណត់ចំណាំ (Invoice Note)<input type="text" id="invoiceNote" class="form-input" placeholder="ឧ. អតិថិជនសុំជំពាក់សិន ស្អែកឲ្យលុយ, បញ្ចុះតម្លៃ..."></label>
-          </div>
 
           <div class="table-scroll border-top pt-3">
             <table class="data-table">
@@ -275,18 +270,26 @@
           <div class="flex-between mt-4 border-top pt-4 align-start flex-mobile-col">
             <button class="btn secondary no-print mb-mobile" onclick="addItemRow()"><i class='bx bx-plus'></i> បន្ថែមជួរថ្មី</button>
             
-            <div style="display: flex; gap: 20px; align-items: flex-end; flex-wrap: wrap; justify-content: flex-end;">
-                <div style="text-align: right;" class="no-print">
-                    <label class="muted block mb-1">ប្រាក់ទទួល (៛)</label>
-                    <input type="number" id="cashReceived" class="form-input" style="width: 140px; font-weight:bold; font-size: 16px;" placeholder="0" oninput="calculateChange()">
+            <div> <!-- ប្រអប់ខ្ចប់ផ្នែកខាងស្តាំ -->
+                <div style="display: flex; gap: 20px; align-items: flex-end; flex-wrap: wrap; justify-content: flex-end;">
+                    <div style="text-align: right;" class="no-print">
+                        <label class="muted block mb-1">ប្រាក់ទទួល (៛)</label>
+                        <input type="number" id="cashReceived" class="form-input" style="width: 140px; font-weight:bold; font-size: 16px;" placeholder="0" oninput="calculateChange()">
+                    </div>
+                    <div style="text-align: right;" class="no-print">
+                        <label class="muted block mb-1">ប្រាក់អាប់ (៛)</label>
+                        <input type="text" id="cashChange" class="form-input" style="width: 140px; color: var(--danger); font-weight:bold; font-size: 16px;" readonly value="0 ៛">
+                    </div>
+                    <div style="text-align: right; min-width: 150px;">
+                        <span class="muted" style="font-size: 13px;">សរុបទឹកប្រាក់</span>
+                        <strong id="grandTotal" style="display: block; font-size: 28px; color: var(--text); margin-top: 4px;">0 ៛</strong>
+                    </div>
                 </div>
-                <div style="text-align: right;" class="no-print">
-                    <label class="muted block mb-1">ប្រាក់អាប់ (៛)</label>
-                    <input type="text" id="cashChange" class="form-input" style="width: 140px; color: var(--danger); font-weight:bold; font-size: 16px;" readonly value="0 ៛">
-                </div>
-                <div style="text-align: right; min-width: 150px;">
-                    <span class="muted" style="font-size: 13px;">សរុបទឹកប្រាក់</span>
-                    <strong id="grandTotal" style="display: block; font-size: 28px; color: var(--text); margin-top: 4px;">0 ៛</strong>
+                
+                <!-- ប៊ូតុងដែលបានប្តូរទីតាំងមកខាងក្រោម (តម្រឹមស្តាំ) -->
+                <div class="no-print" style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px;">
+                    <button class="btn secondary" onclick="window.print()"><i class='bx bx-printer'></i> បោះពុម្ព</button>
+                    <button class="btn primary" id="btnSave" onclick="saveData()"><i class='bx bx-save'></i> រក្សាទុកការលក់</button>
                 </div>
             </div>
           </div>
