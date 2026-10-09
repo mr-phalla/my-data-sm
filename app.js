@@ -61,24 +61,70 @@ function openTab(tabId) {
 function openModal(id) { document.getElementById(id).classList.add('open'); }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 
-// --- មុខងារ Role (Admin/Sales) ---
-window.applyRole = function() {
-    let role = document.getElementById('userRole').value;
-    let adminEls = document.querySelectorAll('.admin-only');
+function togglePasswordVisibility() {
+    let passInput = document.getElementById('loginPass');
+    if (passInput.type === "password") { passInput.type = "text"; } else { passInput.type = "password"; }
+}
+
+// --- មុខងារ Login (ផ្ទៀងផ្ទាត់ជាមួយ Supabase Auth) ---
+window.executeLogin = async function() {
+    let user = document.getElementById('loginUser').value.trim();
+    let pass = document.getElementById('loginPass').value.trim();
     
-    if (role === 'sales') {
-        adminEls.forEach(el => el.style.display = 'none');
-        document.getElementById('cashier').value = 'Sales Rep';
-        openTab('invoiceTab'); // បើក Tab លក់ឱ្យ Sales ពេលប្តូរ Role
+    // ប្តូរ UI ប៊ូតុងពេលកំពុង Login
+    let btn = document.querySelector('.btn-login');
+    let originalBtnText = btn.innerHTML;
+    btn.innerHTML = "Log in ... <i class='bx bx-loader-alt bx-spin'></i>";
+    btn.disabled = true;
+
+    // ផ្ទៀងផ្ទាត់ដោយផ្ទាល់ជាមួយ Supabase Server
+    const { data, error } = await db.auth.signInWithPassword({
+        email: user,
+        password: pass
+    });
+
+    if (error) {
+        showToast("Email ឬ Password មិនត្រឹមត្រូវទេ!", "error");
+        btn.innerHTML = originalBtnText;
+        btn.disabled = false;
     } else {
-        adminEls.forEach(el => el.style.display = '');
-        document.getElementById('cashier').value = 'Admin';
+        document.getElementById('customLoginModal').style.display = 'none';
+        document.getElementById('appShell').style.display = 'flex';
+        
+        document.getElementById('date').valueAsDate = new Date();
+        refreshAllData();
+        showToast("ចូលគណនីបានជោគជ័យ!", "success");
+        
+        btn.innerHTML = originalBtnText;
+        btn.disabled = false;
     }
-    
-    performSearch();
-    loadRecentHistory();
 };
 
+window.handleLogout = async function() {
+    if(confirm("តើអ្នកចង់ចាកចេញពីប្រព័ន្ធមែនទេ?")) {
+        await db.auth.signOut(); // ផ្តាច់គណនីពី Server
+        document.getElementById('customLoginModal').style.display = 'flex';
+        document.getElementById('appShell').style.display = 'none';
+        document.getElementById('loginPass').value = '';
+    }
+};
+
+window.onload = async function() {
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get('view') === 'client') {
+    document.getElementById('customLoginModal').style.display = 'none';
+    document.getElementById('adminSidebar').style.display = 'none';
+    document.getElementById('topbar').style.display = 'none';
+    document.getElementById('appShell').style.display = 'flex';
+    document.getElementById('mainView').style.marginLeft = '0';
+    document.getElementById('mainView').style.padding = '0';
+    document.getElementById('mainView').style.width = '100%';
+    openTab('clientSearchTab');
+  } else {
+      // បើកកម្មវិធីដំបូងគឺបង្ហាញផ្ទាំង Login មុនគេជានិច្ច
+      document.getElementById('customLoginModal').style.display = 'flex';
+  }
+};
 window.onload = async function() {
   const urlParams = new URLSearchParams(window.location.search);
   if (urlParams.get('view') === 'client') localStorage.setItem('appMode', 'client');
@@ -93,12 +139,9 @@ window.onload = async function() {
     openTab('clientSearchTab');
   } else {
     document.getElementById('date').valueAsDate = new Date();
-    await loadSalesData(); // ទាញទិន្នន័យលក់ជាមុនសិន
     await loadCustomers();
     await loadProducts(() => resetFormRows());
-    loadDashboard();
-    performSearch();
-    loadRecentHistory();
+    await refreshAllData();
   }
 };
 
@@ -134,9 +177,9 @@ window.handleCopyBtn = function(btn) {
     );
 };
 
-// --- Data Fetchers ---
 async function loadSalesData() {
-    const { data, error } = await db.from('sale-history').select('*').order('id', { ascending: false }).limit(5000);
+    // បន្ថែម .limit(200) ដើម្បីទាញយកតែ ២០០ វិក្កយបត្រចុងក្រោយ ធ្វើឲ្យ App ដើរលឿនមិនស៊ី RAM
+    const { data, error } = await db.from('sale-history').select('*').order('id', { ascending: false }).limit(200);
     if (!error) salesData = data || [];
 }
 
@@ -170,13 +213,10 @@ async function loadCustomers() {
 }
 
 function exportToCSV() {
-  let role = document.getElementById('userRole').value;
-  let exportData = role === 'sales' ? salesData.filter(s => s.cashier === document.getElementById('cashier').value) : salesData;
-  if(!exportData || exportData.length === 0) { showToast("គ្មានទិន្នន័យសម្រាប់ Export", "error"); return; }
-  
+  if(!salesData || salesData.length === 0) { showToast("គ្មានទិន្នន័យសម្រាប់ Export", "error"); return; }
   let csvContent = "data:text/csv;charset=utf-8,\uFEFF"; 
   csvContent += "លេខវិក្កយបត្រ,ថ្ងៃទី,អតិថិជន,មុខទំនិញ,ចំនួន,តម្លៃ/ឯកតា,បញ្ចុះតម្លៃ,សរុបទឹកប្រាក់,ស្ថានភាព\r\n";
-  exportData.forEach(row => {
+  salesData.forEach(row => {
     let inv = `INV-${String(row.id).padStart(4, '0')}`;
     let arr = [ inv, row.date || "", row.customer_name || "Walk-in", row.item || "", row.qty || 0, row.price || 0, row.Discount || 0, row.Total || 0, row.status || "Paid" ];
     let rowStr = arr.map(e => `"${String(e).replace(/"/g, '""')}"`).join(",");
@@ -275,9 +315,14 @@ function removeRow(btn) { if(confirm("តើអ្នកពិតជាចង់
 
 function calculateRow(input) {
   let row = input.closest('tr');
+  
+  // ទប់ស្កាត់កុំឲ្យវាយលេខអវិជ្ជមាន (បើវាយលេខដក វានឹងលោតមកលេខ ០ វិញ)
+  if(input.value < 0) input.value = 0; 
+  
   let qty = parseFloat(row.querySelector('.item-qty').value) || 0; 
   let price = parseFloat(row.querySelector('.item-price').value) || 0; 
   let discount = parseFloat(row.querySelector('.item-discount').value) || 0;
+  
   let amount = (qty * price) - discount; 
   row.querySelector('.item-amount').value = money(Math.max(0, amount));
   calculateGrandTotal();
@@ -291,6 +336,11 @@ function calculateGrandTotal() {
     let discount = parseFloat(row.querySelector('.item-discount').value) || 0;
     let amount = (qty * price) - discount; if (amount > 0) total += amount;
   });
+
+  // បូកថ្លៃដឹកជញ្ជូន
+  let deliveryFee = parseFloat(document.getElementById('deliveryFee').value) || 0;
+  total += deliveryFee;
+
   currentGrandTotalValue = total; 
   document.getElementById('grandTotal').innerText = money(total);
   calculateChange();
@@ -307,6 +357,7 @@ function resetFormRows() {
   document.getElementById('itemTable').innerHTML = ''; for(let i = 0; i < 3; i++) addItemRow();
   document.getElementById('cashReceived').value = ''; document.getElementById('cashChange').value = '0 ៛';
   calculateGrandTotal();
+  if(document.getElementById('invoiceNote')) document.getElementById('invoiceNote').value = '';
 }
 
 // --- CRUD Operations ---
@@ -314,7 +365,12 @@ async function saveData() {
   let items = [];
   let dateVal = document.getElementById('date').value; let cashierVal = document.getElementById('cashier').value;
   let customerVal = document.getElementById('customerInput').value.trim(); let phoneVal = document.getElementById('phone').value; let addressVal = document.getElementById('address').value;
+
   let statusVal = document.getElementById('paymentStatus') ? document.getElementById('paymentStatus').value : 'Paid';
+  let methodVal = document.getElementById('paymentMethod') ? document.getElementById('paymentMethod').value : 'ABA';
+  let deliveryServiceVal = document.getElementById('deliveryService') ? document.getElementById('deliveryService').value.trim() : '';
+  let deliveryFeeVal = parseFloat(document.getElementById('deliveryFee').value) || 0;
+  let noteVal = document.getElementById('invoiceNote') ? document.getElementById('invoiceNote').value.trim() : '';
 
   document.querySelectorAll('#itemTable tr').forEach(row => {
     let prodName = row.querySelector('.item-input').value.trim();
@@ -322,7 +378,16 @@ async function saveData() {
     let price = parseFloat(row.querySelector('.item-price').value) || 0; 
     let discount = parseFloat(row.querySelector('.item-discount').value) || 0;
     let amount = (qty * price) - discount;
-    if (prodName !== "") { items.push({ date: dateVal, cashier: cashierVal, customer_name: customerVal, phone: phoneVal, address: addressVal, item: prodName, qty: qty, price: price, Discount: discount, Total: Math.max(0, amount), status: statusVal }); }
+
+    if (prodName !== "") { 
+        items.push({ 
+            date: dateVal, cashier: cashierVal, customer_name: customerVal, 
+            phone: phoneVal, address: addressVal, item: prodName, qty: qty, 
+            price: price, Discount: discount, Total: Math.max(0, amount), 
+            status: statusVal, note: noteVal, payment_method: methodVal, 
+            delivery_service: deliveryServiceVal, delivery_fee: deliveryFeeVal 
+        }); 
+    }
   });
 
   if (items.length === 0) { showToast("សូមបញ្ចូលមុខទំនិញយ៉ាងហោចណាស់ 1!", "error"); return; }
@@ -334,6 +399,9 @@ async function saveData() {
   } else {
     showToast("រក្សាទុកជោគជ័យ!", "success");
     document.getElementById('customerInput').value = ''; document.getElementById('phone').value = ''; document.getElementById('address').value = '';
+    if(document.getElementById('invoiceNote')) document.getElementById('invoiceNote').value = '';
+    if(document.getElementById('deliveryService')) document.getElementById('deliveryService').value = '';
+    if(document.getElementById('deliveryFee')) document.getElementById('deliveryFee').value = '0';
     resetFormRows(); 
     await refreshAllData(); 
   }
@@ -379,18 +447,13 @@ function loadRecentHistory() {
   let container = document.getElementById('recentHistoryContainer');
   if(!container) return;
 
-  // Filter for Sales role
-  let role = document.getElementById('userRole') ? document.getElementById('userRole').value : 'admin';
-  let cashierName = document.getElementById('cashier').value;
-  let displayData = role === 'sales' ? salesData.filter(s => s.cashier === cashierName) : salesData;
-
-  if (!displayData || displayData.length === 0) {
+  if (!salesData || salesData.length === 0) {
     container.innerHTML = '<div class="text-center muted pt-4 pb-4">គ្មានប្រវត្តិបញ្ចូលទេ</div>';
     return;
   }
 
   let html = '';
-  displayData.slice(0, 15).forEach(item => {
+  salesData.slice(0, 15).forEach(item => {
     let invNo = `INV-${String(item.id).padStart(4, '0')}`;
     let safeItemName = encodeURIComponent(item.item || '');
     
@@ -422,24 +485,35 @@ function loadRecentHistory() {
   container.innerHTML = html;
 }
 
-// --- History Search & Edit ---
-function performSearch() {
-  let kw = document.getElementById('searchKeyword').value.trim().toLowerCase();
-  let startDate = document.getElementById('searchStartDate').value; let endDate = document.getElementById('searchEndDate').value;
-  let tbody = document.getElementById('searchResultsTable'); let summary = document.getElementById('searchSummary');
+// --- History Search & Edit (ប្រើ Query ផ្ទាល់ទៅ DB ធានាភាពត្រឹមត្រូវ) ---
+async function performSearch() {
+  let kw = document.getElementById('searchKeyword').value.trim();
+  let startDate = document.getElementById('searchStartDate').value; 
+  let endDate = document.getElementById('searchEndDate').value;
+  let tbody = document.getElementById('searchResultsTable'); 
+  let summary = document.getElementById('searchSummary');
+  let btn = document.getElementById('btnSearchSubmit');
   if(!tbody) return;
 
-  // Filter based on role
-  let role = document.getElementById('userRole') ? document.getElementById('userRole').value : 'admin';
-  let cashierName = document.getElementById('cashier').value;
-  let filteredData = role === 'sales' ? salesData.filter(s => s.cashier === cashierName) : salesData;
+  btn.innerHTML = "កំពុងស្វែងរក..."; btn.disabled = true;
+  tbody.innerHTML = '<tr><td colspan="7" class="text-center muted pt-4 pb-4">កំពុងទាញយកទិន្នន័យ...</td></tr>';
+  summary.innerText = "";
 
-  if(kw) filteredData = filteredData.filter(s => (s.customer_name||'').toLowerCase().includes(kw) || (s.phone||'').includes(kw));
-  
+  let query = db.from('sale-history').select('*').order('id', { ascending: false });
+  if (kw) query = query.or(`customer_name.ilike.%${kw}%,phone.ilike.%${kw}%`);
+
+  const { data, error } = await query;
+
+  if (error || !data || data.length === 0) {
+    btn.innerHTML = "ស្វែងរក"; btn.disabled = false; tbody.innerHTML = '<tr><td colspan="7" class="text-center muted pt-4 pb-4">រកមិនឃើញទិន្នន័យទេ</td></tr>';
+    summary.innerText = "រកមិនឃើញទិន្នន័យទេ!"; summary.style.color = "var(--danger)"; return;
+  }
+
+  let filteredData = data;
   if (startDate || endDate) {
     let start = startDate ? new Date(startDate) : new Date('1970-01-01'); start.setHours(0,0,0,0);
     let end = endDate ? new Date(endDate) : new Date('2100-01-01'); end.setHours(23,59,59,999);
-    filteredData = filteredData.filter(item => { if (!item.date) return false; let itemDate = new Date(item.date); return itemDate >= start && itemDate <= end; });
+    filteredData = data.filter(item => { if (!item.date) return false; let itemDate = new Date(item.date); return itemDate >= start && itemDate <= end; });
   }
 
   let totalSpent = 0; let html = '';
@@ -450,9 +524,6 @@ function performSearch() {
     let safeCusName = encodeURIComponent(item.customer_name || '');
     let safePhone = encodeURIComponent(item.phone || '');
     let safeAddr = encodeURIComponent(item.address || '');
-    
-    // Hide Delete button if user is sales rep
-    let deleteBtn = role === 'admin' ? `<button class="btn outline small" style="color:var(--danger); border-color:var(--danger);" onclick="deleteSaleEntry(${item.id})"><i class='bx bx-trash'></i></button>` : '';
 
     html += `<tr>
         <td class="muted">${item.date || '-'}</td>
@@ -464,14 +535,15 @@ function performSearch() {
         <td style="white-space: nowrap;">
             <button class="btn outline small" data-cname="${safeCusName}" data-phone="${safePhone}" data-addr="${safeAddr}" data-item="${safeItemName}" data-qty="${item.qty}" data-price="${item.price}" data-discount="${item.Discount}" onclick="handleCopyBtn(this)" title="ចម្លងវិក្កយបត្រ"><i class='bx bx-copy'></i></button>
             <button class="btn outline small" data-id="${item.id}" data-item="${safeItemName}" data-qty="${item.qty}" data-price="${item.price}" data-discount="${item.Discount}" data-status="${esc(item.status || 'Paid')}" onclick="handleEditBtn(this)"><i class='bx bx-edit'></i></button>
-            ${deleteBtn}
+            <button class="btn outline small" style="color:var(--danger); border-color:var(--danger);" onclick="deleteSaleEntry(${item.id})"><i class='bx bx-trash'></i></button>
         </td>
     </tr>`;
   });
 
   tbody.innerHTML = html || '<tr><td colspan="7" class="text-center muted pt-4 pb-4">គ្មានទិន្នន័យក្នុងចន្លោះកាលបរិច្ឆេទនេះទេ</td></tr>';
+  btn.innerHTML = "ស្វែងរក"; btn.disabled = false;
   if (filteredData.length > 0) { 
-      let cName = kw ? (filteredData[0].customer_name || 'ទាំងអស់') : 'ទាំងអស់';
+      let cName = kw ? filteredData[0].customer_name : 'ទាំងអស់';
       summary.style.color = "var(--primary)"; summary.innerText = `លទ្ធផល: ${cName} | សរុបទឹកប្រាក់: ${money(totalSpent)}`; 
   } else { 
       summary.style.color = "var(--danger)"; summary.innerText = "គ្មានទិន្នន័យក្នុងចន្លោះកាលបរិច្ឆេទនេះទេ!"; 
@@ -530,15 +602,26 @@ function duplicateSale(cName, phone, addr, item, qty, price, discount) {
     document.getElementById('itemTable').innerHTML = ''; addItemRow(item, qty, price, discount); openTab('invoiceTab'); showToast("បានចម្លងទិន្នន័យទៅវិក្កយបត្រថ្មី!", "success");
 }
 
-function viewCustomer(cName) {
-    let cSales = salesData.filter(s => s.customer_name === cName);
-    let totalSpent = cSales.reduce((sum, s) => sum + (s.Total || 0), 0);
-    let lastDate = cSales.length > 0 ? cSales[0].date : '-';
-    document.getElementById('modalCusName').innerText = cName; document.getElementById('modalCusOrders').innerText = cSales.length; document.getElementById('modalCusSpent').innerText = money(totalSpent); document.getElementById('modalCusLastDate').innerText = lastDate;
+async function viewCustomer(cName) {
     openModal('customerDetailModal');
+    document.getElementById('modalCusName').innerText = cName; 
+    document.getElementById('modalCusOrders').innerText = '...'; 
+    document.getElementById('modalCusSpent').innerText = 'កំពុងទាញយក...'; 
+    document.getElementById('modalCusLastDate').innerText = '...';
+    
+    // បាញ់យកទិន្នន័យពី DB ផ្ទាល់ដើម្បីធានាការបូកលុយត្រឹមត្រូវ ១០០%
+    const { data, error } = await db.from('sale-history').select('Total, date').eq('customer_name', cName).order('id', { ascending: false });
+    
+    if(!error && data) {
+        let totalSpent = data.reduce((sum, s) => sum + (s.Total || 0), 0);
+        let lastDate = data.length > 0 ? data[0].date : '-';
+        document.getElementById('modalCusOrders').innerText = data.length; 
+        document.getElementById('modalCusSpent').innerText = money(totalSpent); 
+        document.getElementById('modalCusLastDate').innerText = lastDate;
+    }
 }
 
-// --- Dashboard Chart (Admin Only) ---
+// --- Dashboard Chart ---
 function setChartFilter(type) {
     let startInput = document.getElementById('chartStartDate'); let endInput = document.getElementById('chartEndDate');
     let today = new Date(); let start = new Date(); let end = new Date();
@@ -553,8 +636,6 @@ function setChartFilter(type) {
 }
 
 let salesChartInstance = null;
-let hourlyChartInstance = null; // អថេរសម្រាប់ក្រាហ្វិកម៉ោងលក់ដាច់
-
 function updateChart() {
   const startDate = document.getElementById('chartStartDate').value; const endDate = document.getElementById('chartEndDate').value;
   let filteredData = salesData;
@@ -577,49 +658,22 @@ function updateChart() {
   if(document.getElementById('dateRangeLabelSales')) document.getElementById('dateRangeLabelSales').innerHTML = `<i class='bx bx-calendar'></i> ${dateLabel}`;
   if(document.getElementById('dateRangeLabelOrders')) document.getElementById('dateRangeLabelOrders').innerHTML = `<i class='bx bx-calendar'></i> ${dateLabel}`;
 
-  // 1. ក្រាហ្វិកខ្សែ (ចំណូលសរុបប្រចាំថ្ងៃ)
   const groupedByDate = {};
   filteredData.forEach(item => { const dateStr = item.date || 'មិនស្គាល់'; groupedByDate[dateStr] = (groupedByDate[dateStr] || 0) + (item.Total || 0); });
   const sortedDates = Object.keys(groupedByDate).sort((a,b) => new Date(a) - new Date(b));
   const chartValues = sortedDates.map(date => groupedByDate[date]);
 
-  const ctx = document.getElementById('salesChart');
+  const ctx = document.getElementById('salesChart'); if(!ctx) return;
+  if(salesChartInstance) salesChartInstance.destroy();
+
   const isDarkMode = document.body.classList.contains('dark-mode');
   const gridColor = isDarkMode ? '#334155' : '#e2e8f0'; const textColor = isDarkMode ? '#94a3b8' : '#64748b';
 
-  if(ctx) {
-      if(salesChartInstance) salesChartInstance.destroy();
-      salesChartInstance = new Chart(ctx, {
-        type: 'line',
-        data: { labels: sortedDates.length > 0 ? sortedDates : ['គ្មានទិន្នន័យ'], datasets: [{ label: 'ចំណូលសរុប (៛)', data: chartValues.length > 0 ? chartValues : [0], borderColor: '#4f46e5', backgroundColor: 'rgba(79, 70, 229, 0.1)', borderWidth: 2, fill: true, tension: 0.3, pointBackgroundColor: '#4f46e5' }] },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: gridColor }, ticks: { color: textColor, callback: value => Number(value).toLocaleString() + ' ៛' } }, x: { grid: { display: false }, ticks: { color: textColor } } } }
-      });
-  }
-
-  // 2. ក្រាហ្វិកសសរ (ម៉ោងដែលលក់ដាច់បំផុត)
-  const hourlyCtx = document.getElementById('hourlySalesChart');
-  if(hourlyCtx) {
-      if(hourlyChartInstance) hourlyChartInstance.destroy();
-      
-      let hourlyData = new Array(13).fill(0); // 6ព្រឹក ដល់ 6ល្ងាច (13 ម៉ោង)
-      filteredData.forEach(item => {
-          let h = 10; 
-          if(item.created_at) { h = new Date(item.created_at).getHours(); } 
-          else { h = (item.id % 9) + 8; } // Mock លេខម៉ោងសម្រាប់ទិន្នន័យចាស់ៗដែលអត់មានម៉ោង
-          
-          let idx = h - 6;
-          if(idx >= 0 && idx <= 12) { hourlyData[idx] += (item.Total || 0); }
-      });
-
-      hourlyChartInstance = new Chart(hourlyCtx, {
-          type: 'bar',
-          data: {
-              labels: ['6 ព្រឹក', '7 ព្រឹក', '8 ព្រឹក', '9 ព្រឹក', '10 ព្រឹក', '11 ព្រឹក', '12 ថ្ងៃ', '1 រសៀល', '2 រសៀល', '3 រសៀល', '4 រសៀល', '5 ល្ងាច', '6 ល្ងាច'],
-              datasets: [{ label: 'ចំណូល (៛)', data: hourlyData, backgroundColor: '#8b5cf6', borderRadius: 4 }]
-          },
-          options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: gridColor }, ticks: { color: textColor, callback: value => Number(value).toLocaleString() } }, x: { grid: { display: false }, ticks: { color: textColor } } } }
-      });
-  }
+  salesChartInstance = new Chart(ctx, {
+    type: 'line',
+    data: { labels: sortedDates.length > 0 ? sortedDates : ['គ្មានទិន្នន័យ'], datasets: [{ label: 'ចំណូលសរុប (៛)', data: chartValues.length > 0 ? chartValues : [0], borderColor: '#4f46e5', backgroundColor: 'rgba(79, 70, 229, 0.1)', borderWidth: 2, fill: true, tension: 0.3, pointBackgroundColor: '#4f46e5' }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: gridColor }, ticks: { color: textColor, callback: value => Number(value).toLocaleString() + ' ៛' } }, x: { grid: { display: false }, ticks: { color: textColor } } } }
+  });
 }
 
 function loadDashboard() {
@@ -669,4 +723,93 @@ function loadDashboard() {
   }
   
   if(!document.getElementById('chartStartDate').value) setChartFilter('thisMonth'); else updateChart();
+}
+
+// --- មុខងាររបាយការណ៍បិទបញ្ជីប្រចាំថ្ងៃ (Telegram Report) ---
+window.generateDailyReport = function() {
+    if (!salesData || salesData.length === 0) {
+        showToast("កំពុងទាញយកទិន្នន័យ...", "error"); return;
+    }
+
+    let today = formatDateForInput(new Date());
+    let todaysSales = salesData.filter(s => s.date === today);
+    
+    if(todaysSales.length === 0) {
+        showToast("ថ្ងៃនេះមិនទាន់មានការលក់ទេ!", "error");
+        return;
+    }
+
+    let totalAmount = 0; let totalPaid = 0; let totalUnpaid = 0;
+
+    todaysSales.forEach(s => {
+        totalAmount += (s.Total || 0);
+        if(s.status === 'Unpaid') { totalUnpaid += (s.Total || 0); } 
+        else { totalPaid += (s.Total || 0); }
+    });
+
+    let reportText = `📊 របាយការណ៍លក់ប្រចាំថ្ងៃ: ${today}\n`;
+    reportText += `--------------------------\n`;
+    reportText += `🔹 វិក្កយបត្រសរុប: ${todaysSales.length} វិក្កយបត្រ\n`;
+    reportText += `💵 លក់បានសរុប: ${money(totalAmount)}\n`;
+    reportText += `✅ ទទួលប្រាក់ជាក់ស្តែង: ${money(totalPaid)}\n`;
+    if (totalUnpaid > 0) reportText += `⏳ ភ្ញៀវជំពាក់: ${money(totalUnpaid)}\n`;
+    reportText += `--------------------------\n`;
+    reportText += `រៀបចំដោយ: ${document.getElementById('cashier').value || 'Admin'}`;
+
+    if(navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(reportText).then(() => {
+            showToast("បានចម្លងរបាយការណ៍ (Copy រួចរាល់) លោកអ្នកអាច Paste ចូល Telegram បាន!", "success");
+        });
+    } else {
+        prompt("សូម Copy អត្ថបទខាងក្រោមរួច Paste ក្នុង Telegram:", reportText);
+    }
+};
+// --- Keyboard Shortcuts សម្រាប់ជំនួយការងារឲ្យលឿន ---
+document.addEventListener('keydown', function(event) {
+    // ពិនិត្យមើលថាតើកំពុងបើកផ្ទាំង វិក្កយបត្រ (New Sale) ដែរឬទេ
+    const isInvoiceTab = document.getElementById('invoiceTab').classList.contains('active');
+    
+    if (isInvoiceTab) {
+        // ចុច Alt + N សម្រាប់ថែមជួរថ្មី
+        if (event.altKey && (event.key === 'n' || event.key === 'N')) {
+            event.preventDefault();
+            addItemRow();
+            showToast("បានបន្ថែមជួរទំនិញថ្មី", "success");
+        }
+        
+        // ចុច Ctrl + Enter (ឬ Cmd + Enter លើ Mac) សម្រាប់ Save លុយ
+        if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
+            event.preventDefault();
+            if(!document.getElementById('btnSave').disabled) {
+                saveData();
+            }
+        }
+    }
+});
+// --- មុខងារទាញយកវិក្កយបត្រជារូបភាព ---
+window.downloadInvoiceImage = function() {
+    let invoiceElement = document.querySelector('.invoice-layout .panel'); // យកតែផ្ទាំងវិក្កយបត្រខាងឆ្វេង
+
+    // លាក់ប៊ូតុង "លុប" "បូក" ស្វែងរក ដែលមិនចង់ឲ្យជាប់ក្នុងរូបភាពជាបណ្តោះអាសន្ន
+    let noPrintElements = invoiceElement.querySelectorAll('.no-print');
+    noPrintElements.forEach(el => el.style.display = 'none');
+
+    showToast("កំពុងរៀបចំរូបភាព...", "success");
+
+    html2canvas(invoiceElement, { 
+        scale: 2, // គុណភាពរូបភាពច្បាស់ (High Res)
+        backgroundColor: "#ffffff",
+        useCORS: true
+    }).then(canvas => {
+        // បង្ហាញប៊ូតុងត្រឡប់មកវិញ
+        noPrintElements.forEach(el => el.style.display = '');
+
+        // ទាញយករូប
+        let link = document.createElement('a');
+        let cusName = document.getElementById('customerInput').value.trim() || 'Invoice';
+        link.download = `${cusName}_StockFlow.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+        showToast("ទាញយករូបភាពជោគជ័យ!", "success");
+    });
 }
