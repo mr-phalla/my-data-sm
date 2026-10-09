@@ -71,13 +71,11 @@ window.executeLogin = async function() {
     let user = document.getElementById('loginUser').value.trim();
     let pass = document.getElementById('loginPass').value.trim();
     
-    // ប្តូរ UI ប៊ូតុងពេលកំពុង Login
     let btn = document.querySelector('.btn-login');
     let originalBtnText = btn.innerHTML;
     btn.innerHTML = "Log in ... <i class='bx bx-loader-alt bx-spin'></i>";
     btn.disabled = true;
 
-    // ផ្ទៀងផ្ទាត់ដោយផ្ទាល់ជាមួយ Supabase Server
     const { data, error } = await db.auth.signInWithPassword({
         email: user,
         password: pass
@@ -102,7 +100,7 @@ window.executeLogin = async function() {
 
 window.handleLogout = async function() {
     if(confirm("តើអ្នកចង់ចាកចេញពីប្រព័ន្ធមែនទេ?")) {
-        await db.auth.signOut(); // ផ្តាច់គណនីពី Server
+        await db.auth.signOut(); 
         document.getElementById('customLoginModal').style.display = 'flex';
         document.getElementById('appShell').style.display = 'none';
         document.getElementById('loginPass').value = '';
@@ -121,10 +119,10 @@ window.onload = async function() {
     document.getElementById('mainView').style.width = '100%';
     openTab('clientSearchTab');
   } else {
-      // បើកកម្មវិធីដំបូងគឺបង្ហាញផ្ទាំង Login មុនគេជានិច្ច
       document.getElementById('customLoginModal').style.display = 'flex';
   }
 };
+
 window.onload = async function() {
   const urlParams = new URLSearchParams(window.location.search);
   if (urlParams.get('view') === 'client') localStorage.setItem('appMode', 'client');
@@ -153,7 +151,6 @@ async function refreshAllData() {
     loadRecentHistory();
 }
 
-// --- មុខងារសុវត្ថិភាពសម្រាប់ប៊ូតុងកែប្រែ (Data Attributes) ---
 window.handleEditBtn = function(btn) {
     openEditSale(
         btn.getAttribute('data-id'),
@@ -178,7 +175,6 @@ window.handleCopyBtn = function(btn) {
 };
 
 async function loadSalesData() {
-    // បន្ថែម .limit(200) ដើម្បីទាញយកតែ ២០០ វិក្កយបត្រចុងក្រោយ ធ្វើឲ្យ App ដើរលឿនមិនស៊ី RAM
     const { data, error } = await db.from('sale-history').select('*').order('id', { ascending: false }).limit(200);
     if (!error) salesData = data || [];
 }
@@ -236,7 +232,6 @@ function copyClientLink() {
   } else { prompt("Copy this link:", clientUrl); }
 }
 
-// --- Render Table Views ---
 function renderProducts() {
   let kw = (document.getElementById('searchProduct').value || '').toLowerCase().trim();
   let tbody = document.getElementById('productsTableBody'); if(!tbody) return;
@@ -282,7 +277,6 @@ function renderCustomers() {
   tbody.innerHTML = html;
 }
 
-// --- Invoice Entry Logic ---
 function onCustomerSelect() {
   let val = document.getElementById('customerInput').value.trim();
   let found = customersData.find(c => c && c.name && c.name.toLowerCase() === val.toLowerCase());
@@ -315,35 +309,13 @@ function removeRow(btn) { if(confirm("តើអ្នកពិតជាចង់
 
 function calculateRow(input) {
   let row = input.closest('tr');
-  
-  // ទប់ស្កាត់កុំឲ្យវាយលេខអវិជ្ជមាន (បើវាយលេខដក វានឹងលោតមកលេខ ០ វិញ)
   if(input.value < 0) input.value = 0; 
-  
   let qty = parseFloat(row.querySelector('.item-qty').value) || 0; 
   let price = parseFloat(row.querySelector('.item-price').value) || 0; 
   let discount = parseFloat(row.querySelector('.item-discount').value) || 0;
-  
   let amount = (qty * price) - discount; 
   row.querySelector('.item-amount').value = money(Math.max(0, amount));
   calculateGrandTotal();
-}
-
-function calculateGrandTotal() {
-  let rows = document.querySelectorAll('#itemTable tr'); let total = 0;
-  rows.forEach(row => {
-    let qty = parseFloat(row.querySelector('.item-qty').value) || 0; 
-    let price = parseFloat(row.querySelector('.item-price').value) || 0; 
-    let discount = parseFloat(row.querySelector('.item-discount').value) || 0;
-    let amount = (qty * price) - discount; if (amount > 0) total += amount;
-  });
-
-  // បូកថ្លៃដឹកជញ្ជូន
-  let deliveryFee = parseFloat(document.getElementById('deliveryFee').value) || 0;
-  total += deliveryFee;
-
-  currentGrandTotalValue = total; 
-  document.getElementById('grandTotal').innerText = money(total);
-  calculateChange();
 }
 
 function calculateChange() {
@@ -353,24 +325,33 @@ function calculateChange() {
     changeEl.value = (received === 0 || change < 0) ? "0 ៛" : money(change);
 }
 
+// -------------------------------------------------------------
+// លុបមុខងារដែលស្ទួនចេញ ហើយរក្សាទុកតែទម្រង់ដើមនេះមួយប៉ុណ្ណោះ
+// -------------------------------------------------------------
+function calculateGrandTotal() {
+  let rows = document.querySelectorAll('#itemTable tr'); let total = 0;
+  rows.forEach(row => {
+    let qty = parseFloat(row.querySelector('.item-qty').value) || 0; 
+    let price = parseFloat(row.querySelector('.item-price').value) || 0; 
+    let discount = parseFloat(row.querySelector('.item-discount').value) || 0;
+    let amount = (qty * price) - discount; if (amount > 0) total += amount;
+  });
+  currentGrandTotalValue = total; 
+  document.getElementById('grandTotal').innerText = money(total);
+  calculateChange();
+}
+
 function resetFormRows() {
   document.getElementById('itemTable').innerHTML = ''; for(let i = 0; i < 3; i++) addItemRow();
   document.getElementById('cashReceived').value = ''; document.getElementById('cashChange').value = '0 ៛';
   calculateGrandTotal();
-  if(document.getElementById('invoiceNote')) document.getElementById('invoiceNote').value = '';
 }
 
-// --- CRUD Operations ---
 async function saveData() {
   let items = [];
   let dateVal = document.getElementById('date').value; let cashierVal = document.getElementById('cashier').value;
   let customerVal = document.getElementById('customerInput').value.trim(); let phoneVal = document.getElementById('phone').value; let addressVal = document.getElementById('address').value;
-
   let statusVal = document.getElementById('paymentStatus') ? document.getElementById('paymentStatus').value : 'Paid';
-  let methodVal = document.getElementById('paymentMethod') ? document.getElementById('paymentMethod').value : 'ABA';
-  let deliveryServiceVal = document.getElementById('deliveryService') ? document.getElementById('deliveryService').value.trim() : '';
-  let deliveryFeeVal = parseFloat(document.getElementById('deliveryFee').value) || 0;
-  let noteVal = document.getElementById('invoiceNote') ? document.getElementById('invoiceNote').value.trim() : '';
 
   document.querySelectorAll('#itemTable tr').forEach(row => {
     let prodName = row.querySelector('.item-input').value.trim();
@@ -378,16 +359,7 @@ async function saveData() {
     let price = parseFloat(row.querySelector('.item-price').value) || 0; 
     let discount = parseFloat(row.querySelector('.item-discount').value) || 0;
     let amount = (qty * price) - discount;
-
-    if (prodName !== "") { 
-        items.push({ 
-            date: dateVal, cashier: cashierVal, customer_name: customerVal, 
-            phone: phoneVal, address: addressVal, item: prodName, qty: qty, 
-            price: price, Discount: discount, Total: Math.max(0, amount), 
-            status: statusVal, note: noteVal, payment_method: methodVal, 
-            delivery_service: deliveryServiceVal, delivery_fee: deliveryFeeVal 
-        }); 
-    }
+    if (prodName !== "") { items.push({ date: dateVal, cashier: cashierVal, customer_name: customerVal, phone: phoneVal, address: addressVal, item: prodName, qty: qty, price: price, Discount: discount, Total: Math.max(0, amount), status: statusVal }); }
   });
 
   if (items.length === 0) { showToast("សូមបញ្ចូលមុខទំនិញយ៉ាងហោចណាស់ 1!", "error"); return; }
@@ -399,14 +371,12 @@ async function saveData() {
   } else {
     showToast("រក្សាទុកជោគជ័យ!", "success");
     document.getElementById('customerInput').value = ''; document.getElementById('phone').value = ''; document.getElementById('address').value = '';
-    if(document.getElementById('invoiceNote')) document.getElementById('invoiceNote').value = '';
-    if(document.getElementById('deliveryService')) document.getElementById('deliveryService').value = '';
-    if(document.getElementById('deliveryFee')) document.getElementById('deliveryFee').value = '0';
     resetFormRows(); 
     await refreshAllData(); 
   }
   btnSave.innerHTML = "<i class='bx bx-save'></i> រក្សាទុកការលក់"; btnSave.disabled = false;
 }
+// -------------------------------------------------------------
 
 async function deleteSaleEntry(id) {
   if(confirm("តើអ្នកពិតជាចង់លុបទិន្នន័យនេះមែនទេ?")) {
@@ -442,7 +412,6 @@ function calculateEditTotal() {
   document.getElementById('editSaleTotal').value = money(Math.max(0, (qty * price) - discount));
 }
 
-// --- ប្រវត្តិបញ្ចូលថ្មីៗ (ផ្នែកខាងស្តាំ Invoice) ---
 function loadRecentHistory() {
   let container = document.getElementById('recentHistoryContainer');
   if(!container) return;
@@ -485,7 +454,6 @@ function loadRecentHistory() {
   container.innerHTML = html;
 }
 
-// --- History Search & Edit (ប្រើ Query ផ្ទាល់ទៅ DB ធានាភាពត្រឹមត្រូវ) ---
 async function performSearch() {
   let kw = document.getElementById('searchKeyword').value.trim();
   let startDate = document.getElementById('searchStartDate').value; 
@@ -584,19 +552,20 @@ async function performClientSearch() {
   tbody.innerHTML = html; summary.style.color = "var(--success)"; summary.innerText = `លោក/លោកស្រី៖ ${cName} | ចំណាយសរុប៖ ${money(totalSpent)}`;
 }
 
-// --- មុខងារបន្ទាប់បន្សំផ្សេងៗ ---
 async function saveNewCustomer() {
   let name = document.getElementById('newCustName').value; let phone = document.getElementById('newCustPhone').value; let address = document.getElementById('newCustAddress').value;
   if (!name.trim()) return;
   const { error } = await db.from('customer_name').insert([{ customer_name: name, phone: phone, address: address }]);
   if (!error) { showToast("Customer Added!"); closeModal('customerModal'); loadCustomers(); }
 }
+
 async function saveNewProduct() {
   let name = document.getElementById('newProdName').value; let price = parseFloat(document.getElementById('newProdPrice').value) || 0;
   if (!name.trim()) return;
   const { error } = await db.from('products').insert([{ "Product Name": name, "Price": price }]);
   if (!error) { showToast("Product Added!"); closeModal('productModal'); loadProducts(); }
 }
+
 function duplicateSale(cName, phone, addr, item, qty, price, discount) {
     document.getElementById('customerInput').value = cName || ""; document.getElementById('phone').value = phone || ""; document.getElementById('address').value = addr || "";
     document.getElementById('itemTable').innerHTML = ''; addItemRow(item, qty, price, discount); openTab('invoiceTab'); showToast("បានចម្លងទិន្នន័យទៅវិក្កយបត្រថ្មី!", "success");
@@ -609,7 +578,6 @@ async function viewCustomer(cName) {
     document.getElementById('modalCusSpent').innerText = 'កំពុងទាញយក...'; 
     document.getElementById('modalCusLastDate').innerText = '...';
     
-    // បាញ់យកទិន្នន័យពី DB ផ្ទាល់ដើម្បីធានាការបូកលុយត្រឹមត្រូវ ១០០%
     const { data, error } = await db.from('sale-history').select('Total, date').eq('customer_name', cName).order('id', { ascending: false });
     
     if(!error && data) {
@@ -621,7 +589,6 @@ async function viewCustomer(cName) {
     }
 }
 
-// --- Dashboard Chart ---
 function setChartFilter(type) {
     let startInput = document.getElementById('chartStartDate'); let endInput = document.getElementById('chartEndDate');
     let today = new Date(); let start = new Date(); let end = new Date();
@@ -725,7 +692,6 @@ function loadDashboard() {
   if(!document.getElementById('chartStartDate').value) setChartFilter('thisMonth'); else updateChart();
 }
 
-// --- មុខងាររបាយការណ៍បិទបញ្ជីប្រចាំថ្ងៃ (Telegram Report) ---
 window.generateDailyReport = function() {
     if (!salesData || salesData.length === 0) {
         showToast("កំពុងទាញយកទិន្នន័យ...", "error"); return;
@@ -764,20 +730,15 @@ window.generateDailyReport = function() {
         prompt("សូម Copy អត្ថបទខាងក្រោមរួច Paste ក្នុង Telegram:", reportText);
     }
 };
-// --- Keyboard Shortcuts សម្រាប់ជំនួយការងារឲ្យលឿន ---
+
 document.addEventListener('keydown', function(event) {
-    // ពិនិត្យមើលថាតើកំពុងបើកផ្ទាំង វិក្កយបត្រ (New Sale) ដែរឬទេ
     const isInvoiceTab = document.getElementById('invoiceTab').classList.contains('active');
-    
     if (isInvoiceTab) {
-        // ចុច Alt + N សម្រាប់ថែមជួរថ្មី
         if (event.altKey && (event.key === 'n' || event.key === 'N')) {
             event.preventDefault();
             addItemRow();
             showToast("បានបន្ថែមជួរទំនិញថ្មី", "success");
         }
-        
-        // ចុច Ctrl + Enter (ឬ Cmd + Enter លើ Mac) សម្រាប់ Save លុយ
         if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
             event.preventDefault();
             if(!document.getElementById('btnSave').disabled) {
@@ -786,30 +747,3 @@ document.addEventListener('keydown', function(event) {
         }
     }
 });
-// --- មុខងារទាញយកវិក្កយបត្រជារូបភាព ---
-window.downloadInvoiceImage = function() {
-    let invoiceElement = document.querySelector('.invoice-layout .panel'); // យកតែផ្ទាំងវិក្កយបត្រខាងឆ្វេង
-
-    // លាក់ប៊ូតុង "លុប" "បូក" ស្វែងរក ដែលមិនចង់ឲ្យជាប់ក្នុងរូបភាពជាបណ្តោះអាសន្ន
-    let noPrintElements = invoiceElement.querySelectorAll('.no-print');
-    noPrintElements.forEach(el => el.style.display = 'none');
-
-    showToast("កំពុងរៀបចំរូបភាព...", "success");
-
-    html2canvas(invoiceElement, { 
-        scale: 2, // គុណភាពរូបភាពច្បាស់ (High Res)
-        backgroundColor: "#ffffff",
-        useCORS: true
-    }).then(canvas => {
-        // បង្ហាញប៊ូតុងត្រឡប់មកវិញ
-        noPrintElements.forEach(el => el.style.display = '');
-
-        // ទាញយករូប
-        let link = document.createElement('a');
-        let cusName = document.getElementById('customerInput').value.trim() || 'Invoice';
-        link.download = `${cusName}_StockFlow.png`;
-        link.href = canvas.toDataURL('image/png');
-        link.click();
-        showToast("ទាញយករូបភាពជោគជ័យ!", "success");
-    });
-}
