@@ -180,13 +180,15 @@
 
     <datalist id="customerListOptions"></datalist>
     <datalist id="productListOptions"></datalist>
-
+    
     <!-- TAB: Dashboard -->
     <section id="dashboardTab" class="tab-content active">
       <div class="page-heading">
         <div><h1>Sales Analytics</h1><p class="muted">ទិន្នន័យលក់ និងការវិភាគអតិថិជន។</p></div>
-        <button class="btn primary" onclick="generateDailyReport()" style="margin-right: 10px;"><i class='bx bxl-telegram'></i> ចម្លងរបាយការណ៍ថ្ងៃនេះ</button>
-        <button class="btn secondary" onclick="exportToCSV()"><i class='bx bx-export'></i> Export Data</button>
+        <div class="heading-actions">
+            <button class="btn primary" onclick="generateDailyReport()" style="background: #2AABEE; color: white;"><i class='bx bxl-telegram'></i> ចម្លងរបាយការណ៍ថ្ងៃនេះ</button>
+            <button class="btn secondary" onclick="exportToCSV()"><i class='bx bx-export'></i> Export Data</button>
+        </div>
       </div>
       
       <div class="stats-grid">
@@ -261,7 +263,15 @@
           <div class="table-scroll border-top pt-3">
             <table class="data-table">
               <thead>
-                <tr><th style="width: 30%;">មុខទំនិញ</th><th style="width: 12%; text-align: center;">ចំនួន</th><th style="width: 25%; text-align: right;">តម្លៃ (៛)</th><th style="width: 14%; text-align: right;">បញ្ចុះតម្លៃ (៛)</th><th style="width: 14%; text-align: right;">សរុប (៛)</th><th style="width: 5%; text-align: center;" class="no-print">លុប</th></tr>
+                <tr>
+                <th style="width: 25%;">មុខទំនិញ</th>
+                <th style="width: 15%;">ខ្នាត/ប្រភេទ</th>
+                <th style="width: 10%; text-align: center;">ចំនួន</th>
+                <th style="width: 20%; text-align: right;">តម្លៃ (៛)</th>
+                <th style="width: 13%; text-align: right;">បញ្ចុះតម្លៃ (៛)</th>
+                <th style="width: 13%; text-align: right;">សរុប (៛)</th>
+                <th style="width: 4%; text-align: center;" class="no-print">លុប</th>
+                </tr>
               </thead>
               <tbody id="itemTable"></tbody>
             </table>
@@ -288,8 +298,9 @@
                 
                 <!-- ប៊ូតុងដែលបានប្តូរទីតាំងមកខាងក្រោម (តម្រឹមស្តាំ) -->
                 <div class="no-print" style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px;">
-                    <button class="btn secondary" onclick="window.print()"><i class='bx bx-printer'></i> បោះពុម្ព</button>
-                    <button class="btn primary" id="btnSave" onclick="saveData()"><i class='bx bx-save'></i> រក្សាទុកការលក់</button>
+                  <button class="btn" style="background: #2AABEE; color: white;" onclick="copyInvoiceToTelegram()"><i class='bx bxl-telegram'></i> Copy</button>
+                  <button class="btn secondary" onclick="window.print()"><i class='bx bx-printer'></i> បោះពុម្ព</button>
+                  <button class="btn primary" id="btnSave" onclick="saveData()"><i class='bx bx-save'></i> រក្សាទុកការលក់</button>
                 </div>
             </div>
           </div>
@@ -313,7 +324,10 @@
       </div>
       <div class="panel">
         <div class="panel-head flex-between border-bottom pb-3 mb-3 flex-mobile-col align-start">
-            <div class="tabs-inline mb-mobile"><span class="active">វិក្កយបត្រទាំងអស់</span></div>
+          <div class="tabs-inline mb-mobile">
+            <span class="active" id="tabAllHistory" onclick="setHistoryFilter('all')">ទាំងអស់</span>
+            <span id="tabUnpaidHistory" onclick="setHistoryFilter('unpaid')" style="margin-left: 15px; color: var(--danger);">ជំពាក់ (Unpaid)</span>
+          </div>
             <div class="filter-actions flex-wrap">
                 <div class="search-box"><i class='bx bx-search'></i><input type="text" id="searchKeyword" placeholder="ស្វែងរកតាមឈ្មោះ..."></div>
                 <input type="date" id="searchStartDate" class="form-input" style="width: auto;">
