@@ -225,3 +225,22 @@ button { cursor: pointer; border: none; background: transparent; color: inherit;
     grid-template-columns: 73% 27%;
   }
 }
+@media print {
+  /* ធ្វើឲ្យប្រអប់បញ្ចូលអក្សរ ក្លាយជាអក្សរធម្មតា */
+  .form-input { 
+      border: none !important; 
+      background: transparent !important; 
+      padding: 0 !important; 
+      color: #000 !important; 
+      font-weight: bold;
+      appearance: none !important; /* លាក់សញ្ញាព្រួញ Dropdown */
+      -webkit-appearance: none !important;
+  }
+  select.form-input { pointer-events: none; }
+  
+  /* លាក់ Placeholder ពេល Print */
+  ::-webkit-input-placeholder { color: transparent; }
+  :-moz-placeholder { color: transparent; }
+  
+  .print-footer { display: block !important; text-align: center; }
+}
