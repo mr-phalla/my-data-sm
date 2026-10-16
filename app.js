@@ -583,10 +583,15 @@ window.toggleDueDate = function() {
 };
 
 function resetFormRows() {
-  document.getElementById('itemTable').innerHTML = ''; 
+  let tbody = document.getElementById('itemTable');
+  if(tbody) tbody.innerHTML = ''; 
   for(let i = 0; i < 3; i++) addItemRow();
-  document.getElementById('cashReceived').value = ''; 
-  document.getElementById('cashChange').value = '0 ៛';
+  
+  let receivedEl = document.getElementById('cashReceived');
+  if(receivedEl) receivedEl.value = ''; 
+  
+  let changeEl = document.getElementById('cashChange');
+  if(changeEl) changeEl.value = '0 ៛';
   
   let box = document.getElementById('smartAssistantBox');
   if(box) box.style.display = 'none';
@@ -596,24 +601,35 @@ function resetFormRows() {
 
 async function saveData() {
   let items = [];
-  let dateVal = document.getElementById('date').value; 
-  let cashierVal = document.getElementById('cashier').value;
-  let customerVal = document.getElementById('customerInput').value.trim(); 
-  let phoneVal = document.getElementById('phone').value; 
-  let addressVal = document.getElementById('address').value;
+  let dateEl = document.getElementById('date');
+  let dateVal = dateEl ? dateEl.value : new Date().toISOString().slice(0,10); 
+  
+  if (!dateVal) { 
+      showToast("សូមជ្រើសរើសកាលបរិច្ឆេទលក់!", "error"); 
+      return; 
+  }
+
+  let cashierVal = document.getElementById('cashier') ? document.getElementById('cashier').value : 'Admin';
+  let customerVal = document.getElementById('customerInput') ? document.getElementById('customerInput').value.trim() : ''; 
+  let phoneVal = document.getElementById('phone') ? document.getElementById('phone').value : ''; 
+  let addressVal = document.getElementById('address') ? document.getElementById('address').value : '';
   let statusVal = document.getElementById('paymentStatus') ? document.getElementById('paymentStatus').value : 'Paid';
 
-  let totalCashReceived = parseFloat(document.getElementById('cashReceived').value) || 0;
+  let cashReceivedEl = document.getElementById('cashReceived');
+  let totalCashReceived = cashReceivedEl ? (parseFloat(cashReceivedEl.value) || 0) : 0;
   let remainingCashToApply = totalCashReceived;
 
-  // 🌟 ស្វែងរកលេខ ID ធំបំផុតនៅក្នុង Database បច្ចុប្បន្ន រួចបូក ១ (ដើម្បីការពារលោតចេញ INV-00000) 🌟
+  // 🌟 បង្កើតប្រព័ន្ធរាប់លេខ ID វិក្កយបត្រដោយខ្លួនឯងឡើងវិញ 🌟
   let maxId = 0;
   if (salesData && salesData.length > 0) {
       maxId = salesData.reduce((max, p) => (p.id && p.id > max ? p.id : max), 0);
   }
 
   document.querySelectorAll('#itemTable tr').forEach(row => {
-    let prodName = row.querySelector('.item-input').value.trim();
+    let inputEl = row.querySelector('.item-input');
+    if (!inputEl) return;
+    
+    let prodName = inputEl.value.trim();
     if (prodName !== "") { 
         let qty = parseFloat(row.querySelector('.item-qty').value) || 0; 
         let price = parseFloat(row.querySelector('.item-price').value) || 0; 
@@ -634,38 +650,48 @@ async function saveData() {
             }
         }
         
-        let dueDateVal = statusVal === 'Unpaid' ? document.getElementById('dueDate').value : null;
+        let dueDateEl = document.getElementById('dueDate');
+        let dueDateVal = (statusVal === 'Unpaid' && dueDateEl && dueDateEl.value) ? dueDateEl.value : null;
 
-        maxId++; // បង្កើនលេខរៀង Invoice ID ម្តងមួយៗ
+        let prodObj = productsData.find(p => p.name === prodName);
+        let currentBasePrice = prodObj && prodObj.base_price > 0 ? prodObj.base_price : price;
+
+        maxId++; // 👈 បូកលេខវិក្កយបត្របន្តបន្ទាប់
 
         items.push({ 
-            id: maxId, // 🌟 ផ្តល់លេខ ID ថ្មីដោយផ្ទាល់ 🌟
+            id: maxId, // 👈 បញ្ជូនលេខ ID ចូលទៅកាន់ Supabase វិញ
             date: dateVal, cashier: cashierVal, customer_name: customerVal, phone: phoneVal, address: addressVal, 
-            item: prodName, unit: row.querySelector('.item-unit') ? row.querySelector('.item-unit').value.trim() : '', 
+            item: prodName, 
+            unit: row.querySelector('.item-unit') ? row.querySelector('.item-unit').value.trim() : '', 
             package_type: row.querySelector('.item-pkg') ? row.querySelector('.item-pkg').value.trim() : '', 
             unit_value: row.querySelector('.item-uv') ? parseFloat(row.querySelector('.item-uv').value) || 0 : 0, 
             unit_measure: row.querySelector('.item-um') ? row.querySelector('.item-um').value.trim() : '', 
             standard_unit_value: row.querySelector('.item-suv') ? parseFloat(row.querySelector('.item-suv').value) || 0 : 0, 
             standard_unit_measure: row.querySelector('.item-sum') ? row.querySelector('.item-sum').value.trim() : '', 
             qty: qty, price: price, discount: discount, total: finalAmount, paid_amount: rowPaid, status: statusVal,
-            due_date: dueDateVal
+            due_date: dueDateVal,
+            base_price: currentBasePrice
         });
     }
   });
 
   if (items.length === 0) { showToast("សូមបញ្ចូលមុខទំនិញយ៉ាងហោចណាស់ 1!", "error"); return; }
-  let btnSave = document.getElementById('btnSave'); btnSave.innerHTML = "Saving..."; btnSave.disabled = true;
+  let btnSave = document.getElementById('btnSave'); 
+  if(btnSave) { btnSave.innerHTML = "Saving..."; btnSave.disabled = true; }
 
   const { error } = await db.from(TABLE_SALES).insert(items);
   if (error) { 
-      showToast("រក្សាទុកបរាជ័យ សូមពិនិត្យមើល Column ក្នុង Supabase!", "error"); console.error(error); 
+      showToast("រក្សាទុកបរាជ័យ! សូមពិនិត្យ Database", "error"); 
+      console.error(error); 
   } else {
     showToast("រក្សាទុកជោគជ័យ!", "success");
-    document.getElementById('customerInput').value = ''; document.getElementById('phone').value = ''; document.getElementById('address').value = '';
+    if(document.getElementById('customerInput')) document.getElementById('customerInput').value = ''; 
+    if(document.getElementById('phone')) document.getElementById('phone').value = ''; 
+    if(document.getElementById('address')) document.getElementById('address').value = '';
     resetFormRows(); 
     await refreshAllData(); 
   }
-  btnSave.innerHTML = "<i class='bx bx-save'></i> រក្សាទុកការលក់"; btnSave.disabled = false;
+  if(btnSave) { btnSave.innerHTML = "<i class='bx bx-save'></i> រក្សាទុកការលក់"; btnSave.disabled = false; }
 }
 
 function loadDashboard() {
@@ -709,10 +735,9 @@ function loadDashboard() {
           if(d.getFullYear() === currentYear) {
               currentYearSalesTotal += rowTotal;
               
-              // គណនាចំណេញ និង Bonus
-              let prodObj = productsData.find(p => p.name === row.item);
-              let basePrice = prodObj && prodObj.base_price > 0 ? prodObj.base_price : (parseFloat(row.price) || 0);
-              let rowCost = basePrice * rowQty;
+              // ទាញតម្លៃដើមដែលបានថតចម្លងទុកពេលលក់ (កុំអានពី productsData ទៀត)
+              let historicalBasePrice = parseFloat(row.base_price) > 0 ? parseFloat(row.base_price) : (parseFloat(row.price) || 0);
+              let rowCost = historicalBasePrice * rowQty;
               let rowProfit = rowTotal - rowCost;
               let rowBonus = rowProfit > 0 ? rowProfit * 0.40 : 0;
               
@@ -861,10 +886,11 @@ function loadDashboard() {
       overdueContainer.innerHTML = htmlOverdue || '<tr><td colspan="4" class="text-center muted pt-4 pb-4"><i class="bx bx-check-circle" style="font-size:30px; color:var(--success); display:block; margin-bottom:10px;"></i>មិនមានអតិថិជនដល់ថ្ងៃកំណត់សងទេ</td></tr>';
   }
 
-  if(!document.getElementById('chartStartDate').value) setChartFilter('thisMonth'); else updateChart();
+  if(!document.getElementById('chartStartDate').value) window.applyGlobalFilter('thisMonth'); else updateChart();
 }
+// 🌟 3. មុខងារ UpdateChart បូកបញ្ចូលខ្សែកោង Bonus ៤០%
 let salesChartInstance = null;
-function updateChart() {
+window.updateChart = function() {
   const startDate = document.getElementById('chartStartDate').value; const endDate = document.getElementById('chartEndDate').value;
   let filteredData = salesData;
   let dateLabel = "ទិន្នន័យទាំងអស់";
@@ -876,40 +902,44 @@ function updateChart() {
     if(startDate && endDate) dateLabel = `${startDate} ដល់ ${endDate}`; else if(startDate) dateLabel = `ចាប់ពី ${startDate}`; else if(endDate) dateLabel = `រហូតដល់ ${endDate}`;
   }
 
-  let totalSales = 0; let unpaidCount = 0;
-  let catRev = {}; 
-  let prodCount = {}; let cusCount = {}; 
-  let catStats = {}; 
+  let totalSales = 0; let unpaidCount = 0; let catRev = {}; let prodCount = {}; let cusCount = {}; let catStats = {}; 
+  
+  // សម្រាប់គូរក្រាហ្វិក ២ ខ្សែ
+  let groupedByDate = {};
+  let bonusByDate = {}; 
 
   filteredData.forEach(item => { 
+      const dateStr = item.date || 'មិនស្គាល់'; 
       let rev = parseFloat(item.total || item.Total || 0);
       let rowQty = parseFloat(item.qty || item.Qty || 1);
       let cusName = item.customer_name || item['customer-name'] || 'Walk-in';
       let categoryName = item.agro_chemicals || 'ផ្សេងៗ'; 
-      
       let stdValue = parseFloat(item.standard_unit_value || 0);
       let stdMeasure = (item.standard_unit_measure || '').trim();
       
       totalSales += rev; 
-      
       let cleanStat = cleanStatus(item.status);
       if(cleanStat === 'Unpaid') unpaidCount++; 
+      
+      // គណនា Bonus សម្រាប់ក្រាហ្វិក
+      let historicalBasePrice = parseFloat(item.base_price) > 0 ? parseFloat(item.base_price) : (parseFloat(item.price) || 0);
+      let rowCost = historicalBasePrice * rowQty;
+      let rowProfit = rev - rowCost;
+      let rowBonus = rowProfit > 0 ? rowProfit * 0.40 : 0;
+
+      groupedByDate[dateStr] = (groupedByDate[dateStr] || 0) + rev; 
+      bonusByDate[dateStr] = (bonusByDate[dateStr] || 0) + rowBonus; 
       
       catRev[categoryName] = (catRev[categoryName] || 0) + rev;
       if(item.item) prodCount[item.item] = (prodCount[item.item] || 0) + rowQty;
       if(cusName !== 'Walk-in') cusCount[cusName] = (cusCount[cusName] || 0) + rev;
       
-      if(!catStats[categoryName]) {
-          catStats[categoryName] = { sortQty: 0, measures: {} };
-      }
+      if(!catStats[categoryName]) { catStats[categoryName] = { sortQty: 0, measures: {} }; }
       catStats[categoryName].sortQty += rowQty; 
-      
       if(stdValue > 0 && stdMeasure !== '') {
           let totalStdForRow = rowQty * stdValue;
           catStats[categoryName].measures[stdMeasure] = (catStats[categoryName].measures[stdMeasure] || 0) + totalStdForRow;
-      } else {
-          catStats[categoryName].measures['ឯកតា'] = (catStats[categoryName].measures['ឯកតា'] || 0) + rowQty;
-      }
+      } else { catStats[categoryName].measures['ឯកតា'] = (catStats[categoryName].measures['ឯកតា'] || 0) + rowQty; }
   });
   
   let uniqueOrders = new Set(filteredData.map(d => `${d.date}_${d.customer_name || d['customer-name']}`)).size;
@@ -920,6 +950,7 @@ function updateChart() {
   if(document.getElementById('dateRangeLabelSales')) document.getElementById('dateRangeLabelSales').innerHTML = `<i class='bx bx-calendar'></i> ${dateLabel}`;
   if(document.getElementById('dateRangeLabelOrders')) document.getElementById('dateRangeLabelOrders').innerHTML = `<i class='bx bx-calendar'></i> ${dateLabel}`;
 
+  // ... (កូដគូរតារាង Top Customers, Top Products, Top Categories រក្សាដូចដើម) ...
   let sortedCus = Object.keys(cusCount).map(k => ({ name: k, spent: cusCount[k] })).sort((a,b) => b.spent - a.spent).slice(0, 5);
   let cContainer = document.getElementById('topCustomersContainer');
   if(cContainer) {
@@ -970,13 +1001,10 @@ function updateChart() {
       catContainer.innerHTML = htmlCat || '<tr><td colspan="3" class="text-center muted pt-4">គ្មានទិន្នន័យ</td></tr>';
   }
 
-  const groupedByDate = {};
-  filteredData.forEach(item => { 
-      const dateStr = item.date || 'មិនស្គាល់'; 
-      groupedByDate[dateStr] = (groupedByDate[dateStr] || 0) + parseFloat(item.total || item.Total || 0); 
-  });
+  // គូរក្រាហ្វិកទី១ (Line Chart) ជាមួយបន្ទាត់ Bonus បន្ថែម
   const sortedDates = Object.keys(groupedByDate).sort((a,b) => new Date(a) - new Date(b));
   const chartValues = sortedDates.map(date => groupedByDate[date]);
+  const bonusValues = sortedDates.map(date => bonusByDate[date]);
 
   const ctx = document.getElementById('salesChart'); 
   if(ctx) {
@@ -986,11 +1014,30 @@ function updateChart() {
     
       salesChartInstance = new Chart(ctx, {
         type: 'line',
-        data: { labels: sortedDates.length > 0 ? sortedDates : ['គ្មានទិន្នន័យ'], datasets: [{ label: 'ចំណូលសរុប (៛)', data: chartValues.length > 0 ? chartValues : [0], borderColor: '#4f46e5', backgroundColor: 'rgba(79, 70, 229, 0.1)', borderWidth: 2, fill: true, tension: 0.3, pointBackgroundColor: '#4f46e5' }] },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: gridColor }, ticks: { color: textColor, callback: value => Number(value).toLocaleString() + ' ៛' } }, x: { grid: { display: false }, ticks: { color: textColor } } } }
+        data: { 
+            labels: sortedDates.length > 0 ? sortedDates : ['គ្មានទិន្នន័យ'], 
+            datasets: [
+                { 
+                    label: 'ចំណូលសរុប (៛)', 
+                    data: chartValues.length > 0 ? chartValues : [0], 
+                    borderColor: '#4f46e5', backgroundColor: 'rgba(79, 70, 229, 0.1)', borderWidth: 2, fill: true, tension: 0.3, pointBackgroundColor: '#4f46e5' 
+                },
+                { 
+                    label: 'Bonus សាខា (៛)', 
+                    data: bonusValues.length > 0 ? bonusValues : [0], 
+                    borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.1)', borderWidth: 2, fill: true, tension: 0.3, pointBackgroundColor: '#10b981' 
+                }
+            ] 
+        },
+        options: { 
+            responsive: true, maintainAspectRatio: false, 
+            plugins: { legend: { display: true, position: 'top', labels: { usePointStyle: true, boxWidth: 8 } } }, 
+            scales: { y: { beginAtZero: true, grid: { color: gridColor }, ticks: { color: textColor, callback: value => Number(value).toLocaleString() + ' ៛' } }, x: { grid: { display: false }, ticks: { color: textColor } } } 
+        }
       });
   }
   
+  // គូរក្រាហ្វិកទី២ (Pie Chart)
   const ctxPie = document.getElementById('categoryRevChart');
   if(ctxPie) {
       if(window.categoryRevChartInstance) window.categoryRevChartInstance.destroy();
@@ -1006,7 +1053,7 @@ function updateChart() {
           options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { boxWidth: 12 } } }, cutout: '60%' }
       });
   }
-}
+};
 
 function setChartFilter(type) {
     let startInput = document.getElementById('chartStartDate'); let endInput = document.getElementById('chartEndDate');
@@ -1334,42 +1381,48 @@ function renderCustomers() {
     tbody.innerHTML = html || '<tr><td colspan="6" class="text-center muted pt-4 pb-4">គ្មានទិន្នន័យអតិថិជនទេ</td></tr>';
 }
 
+// 🌟 1. មុខងារទាញប្រវត្តិទិញដាក់ចូលក្នុង Modal របស់ Customer
 window.viewCustomerDetail = function(name, orders, spent, lastDate) {
     document.getElementById('modalCusName').innerText = name;
     document.getElementById('modalCusOrders').innerText = orders;
     document.getElementById('modalCusSpent').innerText = money(spent);
     document.getElementById('modalCusLastDate').innerText = lastDate || '-';
     
-    let modalCard = document.querySelector('#customerDetailModal .modal-card');
-    let existingBtnArea = document.getElementById('modalDebtActionArea');
-    if (existingBtnArea) existingBtnArea.remove();
+    let btnArea = document.getElementById('modalDebtActionArea');
+    btnArea.innerHTML = '';
 
-    let customerUnpaidItems = salesData.filter(row => {
+    let customerSales = salesData.filter(row => {
         let cName = (row.customer_name || row['customer-name'] || '').trim();
-        return cName.toLowerCase() === name.trim().toLowerCase() && cleanStatus(row.status).toLowerCase() === 'unpaid';
+        return cName.toLowerCase() === name.trim().toLowerCase();
     });
 
-    let btnArea = document.createElement('div');
-    btnArea.id = 'modalDebtActionArea';
-    btnArea.style.marginTop = '20px';
-    btnArea.style.textAlign = 'center';
-
-    if (customerUnpaidItems.length > 0) {
-        let totalDebt = customerUnpaidItems.reduce((sum, item) => {
-            let rev = parseFloat(item.total || item.Total || 0);
-            let paid = parseFloat(item.paid_amount || 0);
-            return sum + (rev - paid);
-        }, 0);
-
-        btnArea.innerHTML = `<p style="color:var(--danger); font-weight:600; margin-bottom:10px;">កំពុងជំពាក់ប្រាក់សរុប: ${money(totalDebt)}</p><button class="btn primary" style="background:#2AABEE; color:white; width:100%; justify-content:center;" onclick="copyCustomerDebtStatement('${esc(name)}')"><i class='bx bxl-telegram'></i> ចម្លងសារទារបំណុលម៉ូយនេះ</button>`;
+    let unpaidItems = customerSales.filter(row => cleanStatus(row.status).toLowerCase() === 'unpaid');
+    if (unpaidItems.length > 0) {
+        let totalDebt = unpaidItems.reduce((sum, item) => sum + (parseFloat(item.total || 0) - parseFloat(item.paid_amount || 0)), 0);
+        btnArea.innerHTML = `<div style="text-align:center; margin-bottom:15px;"><p style="color:var(--danger); font-weight:600; margin-bottom:10px;">កំពុងជំពាក់ប្រាក់សរុប: ${money(totalDebt)}</p><button class="btn primary" style="background:#2AABEE; color:white; width:100%; justify-content:center;" onclick="copyCustomerDebtStatement('${esc(name)}')"><i class='bx bxl-telegram'></i> ចម្លងសារទារបំណុលម៉ូយនេះ</button></div>`;
     } else {
-        btnArea.innerHTML = `<p style="color:var(--success); font-weight:600; margin-top:10px;">✅ អតិថិជននេះគ្មានបំណុលជំពាក់ទេ</p>`;
+        btnArea.innerHTML = `<div style="text-align:center; margin-bottom:15px;"><p style="color:var(--success); font-weight:600; margin-top:10px;">✅ អតិថិជននេះគ្មានបំណុលជំពាក់ទេ</p></div>`;
     }
 
-    modalCard.appendChild(btnArea);
+    // ទាញប្រវត្តិទិញមកគូរជាតារាង
+    let historyHtml = '';
+    customerSales.sort((a,b) => new Date(b.date) - new Date(a.date)).forEach(item => {
+        let validId = item.id ? String(item.id) : "0";
+        let invNo = item.id ? `INV-${validId.padStart(5, '0')}` : `INV-00000`;
+        let badge = cleanStatus(item.status).toLowerCase() === 'unpaid' ? `<span class="status-badge" style="background:rgba(239,68,68,0.1); color:#ef4444;">ជំពាក់</span>` : `<span class="status-badge success">ទូទាត់រួច</span>`;
+        
+        historyHtml += `<tr>
+            <td><small class="muted block">${item.date || '-'}</small><b>${invNo}</b></td>
+            <td>${esc(item.item)}</td>
+            <td class="text-center">${item.qty}</td>
+            <td class="text-right"><b>${money(item.total)}</b></td>
+            <td class="text-center">${badge}</td>
+        </tr>`;
+    });
+    document.getElementById('modalCusHistoryTable').innerHTML = historyHtml || '<tr><td colspan="5" class="text-center muted pt-4">មិនទាន់មានប្រវត្តិទិញទេ</td></tr>';
+
     openModal('customerDetailModal');
 };
-
 window.copyInvoiceToTelegram = function() {
     let dateVal = document.getElementById('date').value;
     let cName = document.getElementById('customerInput').value || 'Walk-in';
@@ -2166,4 +2219,104 @@ window.viewProductDetail = function(productName) {
 
     tbody.innerHTML = html || '<tr><td colspan="3" class="text-center muted pt-4">គ្មានទិន្នន័យខ្នាត</td></tr>';
     openModal('productDetailModal');
+};
+// ==========================================
+// 🌟 មុខងារថ្មី៖ ប្រតិបត្តិការសាខា (Branch Ops) 🌟
+// ==========================================
+
+// កែប្រែមុខងារ openTab បន្តិច ដើម្បីឱ្យវា Load ទិន្នន័យពេលចូលផ្ទាំង Branch Ops
+const originalOpenTab = openTab;
+openTab = function(tabId) {
+    originalOpenTab(tabId);
+    if(tabId === 'branchTab') renderBranchOps();
+};
+
+function renderBranchOps() {
+    if(!salesData || !productsData) return;
+    
+    let todayStr = new Date().toISOString().slice(0, 10);
+    let todaySales = salesData.filter(s => s.date === todayStr);
+    
+    // ១. គណនា ផ្ទៀងផ្ទាត់បញ្ជី (Daily Recon)
+    let reconRev = 0; let reconPaid = 0; let reconCount = 0;
+    todaySales.forEach(s => {
+        let rev = parseFloat(s.total || 0);
+        let paid = cleanStatus(s.status) === 'Paid' ? rev : parseFloat(s.paid_amount || 0);
+        reconRev += rev; reconPaid += paid; reconCount++;
+    });
+    let reconUnpaid = reconRev - reconPaid;
+    
+    document.getElementById('dailyReconContainer').innerHTML = `
+        <div style="display:flex; justify-content:space-between; margin-bottom:10px;"><span>វិក្កយបត្រថ្ងៃនេះ:</span> <b>${reconCount} វិក្កយបត្រ</b></div>
+        <div style="display:flex; justify-content:space-between; margin-bottom:10px;"><span>សរុបការលក់:</span> <b style="color:var(--text);">${money(reconRev)}</b></div>
+        <div style="display:flex; justify-content:space-between; margin-bottom:10px;"><span>ប្រាក់ប្រមូលបាន (សាច់ប្រាក់):</span> <b style="color:var(--success); font-size:16px;">${money(reconPaid)}</b></div>
+        <div style="display:flex; justify-content:space-between; margin-bottom:10px; border-top: 1px solid var(--line); padding-top: 10px;"><span>ជំពាក់ (មិនទាន់ទូទាត់):</span> <b style="color:var(--danger);">${money(reconUnpaid)}</b></div>
+    `;
+
+    // ២. គណនា ប្រាក់រង្វាន់បន្ថែម (Tiered Bonus)
+    let currentYear = new Date().getFullYear();
+    let currentYearSalesTotal = salesData.reduce((sum, s) => {
+        if(s.date && new Date(s.date).getFullYear() === currentYear) return sum + parseFloat(s.total || 0);
+        return sum;
+    }, 0);
+
+    const tiers = [
+        { name: 'កម្រិតទី១ (50M ៛)', target: 50000000, reward: 'ប្រាក់រង្វាន់ 500,000 ៛' },
+        { name: 'កម្រិតទី២ (100M ៛)', target: 100000000, reward: 'ប្រាក់រង្វាន់ 1,200,000 ៛' },
+        { name: 'កម្រិតទី៣ (200M ៛)', target: 200000000, reward: 'មាស ១ ជី + កញ្ចប់ដំណើរកម្សាន្ត' }
+    ];
+
+    let htmlTiers = '';
+    tiers.forEach(t => {
+        let percent = (currentYearSalesTotal / t.target) * 100;
+        let isAchieved = percent >= 100;
+        let barColor = isAchieved ? 'var(--success)' : 'var(--primary)';
+        
+        htmlTiers += `
+        <div style="margin-bottom: 15px;">
+            <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 5px;">
+                <b>${t.name} <span style="color:var(--muted); font-weight:normal;">- ${t.reward}</span></b>
+                <span>${Math.min(percent, 100).toFixed(1)}%</span>
+            </div>
+            <div style="width: 100%; background: var(--line); height: 8px; border-radius: 4px; overflow: hidden;">
+                <div style="width: ${Math.min(percent, 100)}%; background: ${barColor}; height: 100%;"></div>
+            </div>
+        </div>`;
+    });
+    document.getElementById('tierBonusContainer').innerHTML = htmlTiers;
+}
+
+window.copyReconReport = function() {
+    let text = `📊 សេចក្តីរាយការណ៍បិទបញ្ជីលក់ប្រចាំថ្ងៃ\n📅 ថ្ងៃទី: ${new Date().toISOString().slice(0, 10)}\n--------------------------------\n`;
+    let reconContainer = document.getElementById('dailyReconContainer').innerText;
+    text += reconContainer + `\n--------------------------------\n🙏 សូមថៅកែជួយពិនិត្យ និងផ្ទៀងផ្ទាត់សាច់ប្រាក់!`;
+    
+    if (navigator.clipboard && window.isSecureContext) { 
+        navigator.clipboard.writeText(text).then(() => showToast("បានចម្លងរបាយការណ៍បិទបញ្ជី!", "success")); 
+    } else { prompt("Copy Text:", text); }
+};
+window.applyGlobalFilter = function(type) {
+    let startInput = document.getElementById('chartStartDate'); 
+    let endInput = document.getElementById('chartEndDate');
+    if(!startInput || !endInput) return;
+    
+    if(type === 'custom') return; // បើ User រើសថ្ងៃខ្លួនឯង មិនបាច់ Auto Set ទេ
+    
+    let today = new Date(); let start = new Date(); let end = new Date();
+    
+    if(type === 'thisMonth') { start = new Date(today.getFullYear(), today.getMonth(), 1); }
+    else if(type === 'lastMonth') { start = new Date(today.getFullYear(), today.getMonth() - 1, 1); end = new Date(today.getFullYear(), today.getMonth(), 0); }
+    else if(type === 'last3Months') { start = new Date(today.getFullYear(), today.getMonth() - 2, 1); }
+    else if(type === 'thisYear') { start = new Date(today.getFullYear(), 0, 1); }
+    else if(type === 'all') { startInput.value = ''; endInput.value = ''; updateChart(); return; }
+    
+    startInput.value = formatDateForInput(start); 
+    endInput.value = formatDateForInput(end);
+    updateChart();
+};
+
+window.handleCustomDate = function() {
+    let quickFilter = document.getElementById('quickDateFilter');
+    if(quickFilter) quickFilter.value = 'custom';
+    updateChart();
 };
