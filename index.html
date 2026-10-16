@@ -8,11 +8,13 @@
   <link rel="stylesheet" href="styles.css">
   <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Kantumruy+Pro:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <!-- Library សម្រាប់ Capture វិក្កយបត្រជារូបភាព -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   
   <style>
-    /* CSS ចាស់ដដែល */
     #customLoginModal { position: fixed; inset: 0; background: #eef2f6; z-index: 9999; display: flex; align-items: center; justify-content: center; font-family: 'Inter', sans-serif; }
     .login-container { background: #fff; width: 900px; max-width: 95%; height: 600px; max-height: 95vh; border-radius: 20px; display: flex; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.1); }
     .login-left { flex: 1.1; background: linear-gradient(135deg, #11347a 0%, #1e52a8 100%); color: white; padding: 40px; display: flex; flex-direction: column; justify-content: space-between; position: relative; overflow: hidden; }
@@ -46,8 +48,8 @@
       .login-container { width: 100%; height: 100vh; max-height: 100vh; border-radius: 0; box-shadow: none; display: flex; align-items: center; justify-content: center; }
       .login-right { flex: 1; padding: 40px 24px; max-width: 480px; width: 100%; }
     }
-
-    /* CSS ថ្មីសម្រាប់តែពេល Print (វិក្កយបត្រ) */
+    @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
+    /* CSS សម្រាប់ Print */
     @media print {
       body { background: white !important; font-family: 'Kantumruy Pro', sans-serif; }
       .sidebar, .topbar, .no-print, .heading-actions, .page-heading { display: none !important; }
@@ -56,21 +58,35 @@
       .tab-content.print-section { display: block !important; }
       .panel { border: none !important; box-shadow: none !important; padding: 0 !important; margin: 0 !important; }
       .print-only { display: block !important; }
-      
-      /* កែតម្រូវតារាងពេល Print */
       .data-table th { background-color: #f1f5f9 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; color: #0f172a !important; border-bottom: 2px solid #cbd5e1 !important; }
       .data-table td { border-bottom: 1px solid #e2e8f0 !important; color: #000 !important; }
-      /* លាក់ជួរ "លុប" */
       .data-table th:last-child, .data-table td:last-child { display: none !important; }
-      
-      /* បង្ហាញកន្លែងស៊ីញ៉េ */
       .print-footer { display: flex !important; justify-content: space-between; margin-top: 40px; text-align: center; }
-      
-      /* លាក់ Input Border */
       .form-input { border: none !important; background: transparent !important; padding: 0 !important; color: #000 !important; font-weight: bold; -webkit-appearance: none !important; }
       ::-webkit-input-placeholder { color: transparent; }
     }
     .print-footer { display: none; }
+
+    /* CSS សម្រាប់ Capture រូបភាពវិក្កយបត្រ */
+    body.capture-mode .sidebar, 
+    body.capture-mode .topbar, 
+    body.capture-mode .no-print, 
+    body.capture-mode .heading-actions, 
+    body.capture-mode .page-heading { display: none !important; }
+    body.capture-mode .main { margin: 0 !important; padding: 0 !important; width: 100% !important; background: white !important; }
+    body.capture-mode .tab-content { padding: 0 !important; display: none; }
+    body.capture-mode .tab-content.print-section { display: block !important; }
+    body.capture-mode .panel { border: none !important; box-shadow: none !important; padding: 0 !important; margin: 0 !important; background: transparent !important; }
+    body.capture-mode .print-only { display: block !important; }
+    body.capture-mode .data-table th { background-color: #f1f5f9 !important; color: #0f172a !important; border-bottom: 2px solid #cbd5e1 !important; }
+    body.capture-mode .data-table td { border-bottom: 1px solid #e2e8f0 !important; color: #000 !important; }
+    body.capture-mode .data-table th:last-child, 
+    body.capture-mode .data-table td:last-child { display: none !important; }
+    body.capture-mode .print-footer { display: flex !important; justify-content: space-between; margin-top: 40px; text-align: center; color: black !important; }
+    body.capture-mode .form-input { border: none !important; background: transparent !important; padding: 0 !important; color: #000 !important; font-weight: bold; appearance: none !important; -webkit-appearance: none !important; }
+    body.capture-mode select.form-input { pointer-events: none; }
+    body.capture-mode ::-webkit-input-placeholder { color: transparent; }
+    body.capture-mode #invoiceCaptureWrapper { padding: 40px; background: white; color: black !important; border-radius: 0; }
   </style>
 </head>
 <body>
@@ -139,8 +155,21 @@
             <input type="text" id="globalSearchInput" placeholder="ស្វែងរកទូទៅ (ចុច Enter)..." onkeypress="handleGlobalSearch(event)">
         </div>
       </div>
-      <div class="topbar-actions"><button class="icon-btn-round" onclick="toggleDarkMode()"><i class='bx bx-moon' id="darkModeIcon"></i></button><div class="user-profile" onclick="handleLogout()" title="ចុចដើម្បីចាកចេញ"><div class="avatar">AD</div><div class="user-info"><b>Admin</b><small>Active</small></div><i class='bx bx-log-out muted' style="margin-left: 8px;"></i></div></div>
-    </header>
+      <div class="topbar-actions">
+          <!-- 🌟 ប៊ូតុងកណ្តឹង (Notification Bell) 🌟 -->
+          <button class="icon-btn-round" style="position: relative;" onclick="openModal('overdueModal')">
+              <i class='bx bx-bell'></i>
+              <span id="notificationBadge" class="badge" style="display: none; animation: pulse 2s infinite;">0</span>
+          </button>
+          
+          <button class="icon-btn-round" onclick="toggleDarkMode()"><i class='bx bx-moon' id="darkModeIcon"></i></button>
+          <div class="user-profile" onclick="handleLogout()" title="ចុចដើម្បីចាកចេញ">
+              <div class="avatar">AD</div>
+              <div class="user-info"><b>Admin</b><small>Active</small></div>
+              <i class='bx bx-log-out muted' style="margin-left: 8px;"></i>
+          </div>
+      </div>
+        </header>
 
     <datalist id="customerListOptions"></datalist>
     <datalist id="productListOptions"></datalist>
@@ -148,7 +177,11 @@
     <!-- ================= Dashboard Tab ================= -->
     <section id="dashboardTab" class="tab-content active">
       <div class="page-heading">
-        <div><h1>Sales Analytics</h1><p class="muted">ទិន្នន័យលក់ និងការវិភាគអតិថិជន។</p></div>
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <div><h1>Sales Analytics</h1><p class="muted">ទិន្នន័យលក់ និងការវិភាគអតិថិជន។</p></div>
+            <!-- 🌟 ប៊ូតុងរំលឹកបំណុល (លោតក្រហមពេលមានអ្នកដល់ថ្ងៃសង) 🌟 -->
+            
+        </div>
         <div class="heading-actions">
             <button class="btn primary" onclick="generateDailyReport()" style="background: #2AABEE; color: white;"><i class='bx bxl-telegram'></i> ចម្លងរបាយការណ៍ថ្ងៃនេះ</button>
             <button class="btn secondary" onclick="exportToCSV()"><i class='bx bx-export'></i> Export Data</button>
@@ -162,12 +195,12 @@
         <div class="stat-card"><div><span>វិក្កយបត្រជំពាក់</span><strong id="unpaidCountLabel">0</strong><small class="trend warning"><i class='bx bx-time'></i> មិនទាន់ទូទាត់</small></div><div class="stat-icon-light" style="color:#ef4444; background:rgba(239,68,68,0.1);"><i class='bx bx-credit-card'></i></div></div>
       </div>
 
-      <!-- Yearly Target -->
+      <!-- Yearly Target & Gamification (Bonus System) -->
       <div class="panel mt-4" style="background: linear-gradient(135deg, #1e3a8a, #3b82f6); color: white;">
           <div class="flex-between align-start mb-3">
               <div>
                   <h3 style="margin:0; color:white;">គោលដៅលក់ប្រចាំឆ្នាំ <span id="targetYearLabel"></span></h3>
-                  <p style="margin:5px 0 0 0; font-size:13px; opacity:0.8;">កម្រៃជើងសារ (Commission): 3%</p>
+                  <p style="margin:5px 0 0 0; font-size:13px; opacity:0.8;">អត្រាប្រាក់ចំណេញ (Bonus សាខា): 40%</p>
               </div>
               <div style="text-align: right;">
                   <button class="btn outline small" style="color: white; border-color: rgba(255,255,255,0.4); margin-bottom: 5px;" onclick="openTargetModal()">
@@ -188,16 +221,29 @@
           </div>
           
           <div style="display: flex; justify-content: space-between; align-items: center; font-size: 14px; flex-wrap: wrap; gap: 10px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 12px;">
-              <span><i class='bx bx-coin-stack'></i> Commission ឆ្នាំនេះ: <b id="myCommission" style="color:#fcd34d;">0 ៛</b></span>
-              <span><i class='bx bx-money-withdraw'></i> ចំណាយឆ្នាំនេះ: <b id="dashboardExpenses" style="color:#fca5a5;">0 ៛</b></span>
+              <span style="min-width: 160px;"><i class='bx bx-coin-stack'></i> លុយ Bonus សាខា: <br><b id="myCommission" style="color:#fcd34d; font-size: 16px;">0 ៛</b></span>
+              <span><i class='bx bx-money-withdraw'></i> ចំណាយសាខា: <br><b id="dashboardExpenses" style="color:#fca5a5; font-size: 16px;">0 ៛</b></span>
               <span style="background: rgba(255,255,255,0.2); padding: 6px 14px; border-radius: 8px; font-weight: bold; font-size: 15px;">
-                  <i class='bx bx-wallet'></i> ចំណេញសុទ្ធ (Net): <b id="netEarnings" style="color:#6ee7b7;">0 ៛</b>
+                  <i class='bx bx-wallet'></i> ចំណេញសុទ្ធ (Net): <br><b id="netEarnings" style="color:#6ee7b7; font-size: 16px;">0 ៛</b>
               </span>
+          </div>
+          
+          <!-- 🌟 មុខងារទី២: ការព្យាករណ៍ Bonus ចុងខែ (Forecast Gamification) 🌟 -->
+          <div style="background: rgba(0,0,0,0.15); padding: 12px 16px; border-radius: 8px; margin-top: 15px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+              <div>
+                  <span style="font-size: 12px; opacity: 0.8; display: block;">ការព្យាករណ៍ចំណូលលក់ចុងខែនេះ</span>
+                  <b id="forecastSales" style="color:#6ee7b7; font-size: 16px;"><i class='bx bx-line-chart'></i> 0 ៛</b>
+              </div>
+              <div style="text-align: right;">
+                  <span style="font-size: 12px; opacity: 0.8; display: block;">រំពឹងបាន Bonus ចុងខែនេះ</span>
+                  <b id="forecastCommission" style="color:#fcd34d; font-size: 18px;">0 ៛</b>
+              </div>
           </div>
       </div>
 
       <!-- ជួរទី១: ក្រាហ្វិកចំណូល និង Follow up -->
       <div class="dashboard-grid-main mt-4" style="grid-template-columns: 2fr 1fr;">
+        
         <div class="panel">
           <div class="panel-head border-bottom pb-3 mb-3 flex-wrap">
               <h3>📈 ក្រាហ្វិកចំណូលលក់</h3>
@@ -214,11 +260,11 @@
 
         <div class="panel">
             <div class="panel-head border-bottom pb-3 mb-3">
-                <h3 style="color: var(--warning); margin: 0; font-size: 16px;"><i class='bx bx-phone-call'></i> អតិថិជនត្រូវ Follow-Up (>30ថ្ងៃ)</h3>
+                <h3 style="color: var(--warning); margin: 0; font-size: 16px;"><i class='bx bx-phone-call'></i> អតិថិជនត្រូវ Follow-Up</h3>
             </div>
             <div class="table-scroll" style="max-height: 300px; overflow-y: auto;">
                 <table class="data-table">
-                    <thead><tr><th>អតិថិជន</th><th class="text-center">ទិញចុងក្រោយ</th><th class="text-right">សកម្មភាព</th></tr></thead>
+                    <thead><tr><th>អតិថិជន</th><th class="text-center">ដំណាក់កាលថែទាំ</th><th class="text-right">សកម្មភាព</th></tr></thead>
                     <tbody id="followUpContainer"></tbody>
                 </table>
             </div>
@@ -240,7 +286,7 @@
               <div class="panel-head border-bottom pb-3 mb-3"><h3>👑 អតិថិជន VIP កំពូល</h3></div>
               <div class="table-scroll">
                   <table class="data-table">
-                      <thead><tr><th>មុខទំនិញ</th><th class="text-right">តម្លៃលក់</th><th class="text-center">ស្ថានភាព</th><th class="text-center">ជម្រើស</th></tr></thead>
+                      <thead><tr><th>អតិថិជន</th><th class="text-right">ទឹកប្រាក់សរុប</th></tr></thead>
                       <tbody id="topCustomersContainer"></tbody>
                   </table>
               </div>
@@ -253,8 +299,7 @@
               <div class="panel-head border-bottom pb-3 mb-3"><h3>🔥 មុខទំនិញលក់ដាច់បំផុត</h3></div>
               <div class="table-scroll">
                   <table class="data-table">
-                      <!-- 🌟 កែប្រែជួរនេះ 🌟 -->
-                      <thead><tr><th>មុខទំនិញ</th><th class="text-center">ចំនួន (Qty)</th><th class="text-center">ជម្រើស</th></tr></thead>
+                      <thead><tr><th>មុខទំនិញ</th><th class="text-center">សរុប (Kg / L)</th><th class="text-center">ជម្រើស</th></tr></thead>
                       <tbody id="topProductsContainer"></tbody>
                   </table>
               </div>
@@ -264,9 +309,7 @@
               <div class="panel-head border-bottom pb-3 mb-3"><h3>🧪 ប្រភេទថ្នាំលក់ដាច់</h3></div>
               <div class="table-scroll">
                   <table class="data-table">
-                      <thead><tr><th>ប្រភេទថ្នាំ</th>
-                        <th class="text-center">ចំនួនលក់ចេញ</th>
-                        <th class="text-center">ជម្រើស</th></tr></thead>
+                      <thead><tr><th>ប្រភេទថ្នាំ</th><th class="text-center">សរុប (Kg / L)</th><th class="text-center">ជម្រើស</th></tr></thead>
                       <tbody id="topCategoriesContainer"></tbody>
                   </table>
               </div>
@@ -278,86 +321,113 @@
     <section id="invoiceTab" class="tab-content print-section">
       <div class="page-heading no-print"><div><h1>វិក្កយបត្រថ្មី (New Sale)</h1><p class="muted">បញ្ចូលការលក់ និងកំណត់ស្ថានភាពបង់ប្រាក់។</p></div></div>
       
-      <!-- ទម្រង់ថ្មីសម្រាប់តែពេល Print -->
-      <div class="print-only invoice-print-wrapper" style="margin-bottom: 20px;">
-          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #1e3a8a; padding-bottom: 10px; margin-bottom: 20px;">
-              <div style="text-align: left;">
-                  <h1 style="color: #1e3a8a; margin: 0; font-size: 28px; font-family: 'Kantumruy Pro', sans-serif;">ស្រែមាស ចំការលើ</h1>
-                  <p style="margin: 5px 0 0; font-size: 13px; color: #64748b;">អាសយដ្ឋាន: ចំការលើ, កំពង់ចាម<br>ទូរស័ព្ទ: 088 433 7888</p>
+      <!-- រុំកូដវិក្កយបត្រទាំងមូល ដើម្បីងាយស្រួល Capture -->
+      <div id="invoiceCaptureWrapper" style="border-radius: 12px;">
+          
+          <div class="print-only invoice-print-wrapper" style="margin-bottom: 20px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #1e3a8a; padding-bottom: 10px; margin-bottom: 20px;">
+                  <div style="text-align: left;">
+                      <h1 style="color: #1e3a8a; margin: 0; font-size: 28px; font-family: 'Kantumruy Pro', sans-serif;">ស្រែមាស ចំការលើ</h1>
+                      <p style="margin: 5px 0 0; font-size: 13px; color: #64748b;">អាសយដ្ឋាន: ចំការលើ, កំពង់ចាម<br>ទូរស័ព្ទ: 088 433 7888</p>
+                  </div>
+                  <div style="text-align: right;">
+                      <h2 id="printMainTitle" style="margin: 0; font-size: 26px; color: #0f172a;">វិក្កយបត្រ (INVOICE)</h2>
+                      <p style="margin: 5px 0 0; font-size: 14px;">កាលបរិច្ឆេទ: <span id="printDate"></span></p>
+                  </div>
               </div>
-              <div style="text-align: right;">
-                  <h2 id="printMainTitle" style="margin: 0; font-size: 26px; color: #0f172a;">វិក្កយបត្រ (INVOICE)</h2>
-                  <p style="margin: 5px 0 0; font-size: 14px;">កាលបរិច្ឆេទ: <span id="printDate"></span></p>
+              <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 20px;">
+                  <div>
+                      <strong style="color: #1e3a8a;">ចេញជូន (Bill To):</strong><br>
+                      អតិថិជន: <b id="printCusName"></b><br>
+                      ទូរស័ព្ទ: <span id="printCusPhone"></span><br>
+                      អាសយដ្ឋាន: <span id="printCusAddress"></span>
+                  </div>
+                  <div style="text-align: right;">
+                      <strong style="color: #1e3a8a;">ព័ត៌មានបន្ថែម:</strong><br>
+                      អ្នកលក់ (Cashier): <span id="printCashier"></span><br>
+                      ស្ថានភាព (Status): <b id="printStatus"></b>
+                  </div>
               </div>
           </div>
-          <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 20px;">
-              <div>
-                  <strong style="color: #1e3a8a;">ចេញជូន (Bill To):</strong><br>
-                  អតិថិជន: <b id="printCusName"></b><br>
-                  ទូរស័ព្ទ: <span id="printCusPhone"></span><br>
-                  អាសយដ្ឋាន: <span id="printCusAddress"></span>
-              </div>
-              <div style="text-align: right;">
-                  <strong style="color: #1e3a8a;">ព័ត៌មានបន្ថែម:</strong><br>
-                  អ្នកលក់ (Cashier): <span id="printCashier"></span><br>
-                  ស្ថានភាព (Status): <b id="printStatus"></b>
-              </div>
-          </div>
-      </div>
 
-      <div class="dashboard-grid-main invoice-layout">
-        <!-- Form បញ្ចូលទិន្នន័យ -->
-        <div class="panel print-full-width">
-          <div class="form-grid mb-4">
-            <label>កាលបរិច្ឆេទ<input type="date" id="date" class="form-input"></label>
-            <label>ស្ថានភាព<select id="paymentStatus" class="form-input"><option value="Paid">✅ ទូទាត់រួច (Paid)</option><option value="Unpaid">⏳ ជំពាក់ (Unpaid)</option></select></label>
-            <label>អ្នកគិតលុយ<input type="text" id="cashier" value="Admin" class="form-input"></label>
-            <label class="span-2">អតិថិជន<input type="text" id="customerInput" list="customerListOptions" placeholder="ស្វែងរកអតិថិជន..." oninput="onCustomerSelect()" class="form-input"></label>
-            <label>លេខទូរស័ព្ទ<input type="text" id="phone" class="form-input"></label>
-            <label class="span-3">អាសយដ្ឋាន<input type="text" id="address" class="form-input"></label>
-          </div>
-          <div class="table-scroll border-top pt-3">
-            <table class="data-table">
-              <thead><tr><th style="width: 25%;">មុខទំនិញ</th><th style="width: 15%;">ខ្នាត/ប្រភេទ</th><th style="width: 10%; text-align: center;">ចំនួន</th><th style="width: 20%; text-align: right;">តម្លៃ (៛)</th><th style="width: 13%; text-align: right;">បញ្ចុះតម្លៃ (៛)</th><th style="width: 13%; text-align: right;">សរុប (៛)</th><th style="width: 4%; text-align: center;" class="no-print">លុប</th></tr></thead>
-              <tbody id="itemTable"></tbody>
-            </table>
-          </div>
-          <div class="flex-between mt-4 border-top pt-4 align-start flex-mobile-col">
-            <button class="btn secondary no-print mb-mobile" onclick="addItemRow()"><i class='bx bx-plus'></i> បន្ថែមជួរថ្មី</button>
-            <div>
-                <div style="display: flex; gap: 20px; align-items: flex-end; flex-wrap: wrap; justify-content: flex-end;">
-                    <div style="text-align: right;" class="no-print"><label class="muted block mb-1">ប្រាក់ទទួល (៛)</label><input type="number" id="cashReceived" class="form-input" style="width: 140px; font-weight:bold; font-size: 16px;" placeholder="0" oninput="calculateChange()"></div>
-                    <div style="text-align: right;" class="no-print"><label class="muted block mb-1">ប្រាក់អាប់ (៛)</label><input type="text" id="cashChange" class="form-input" style="width: 140px; color: var(--danger); font-weight:bold; font-size: 16px;" readonly value="0 ៛"></div>
-                    <div style="text-align: right; min-width: 150px;"><span class="muted" style="font-size: 13px;">សរុបទឹកប្រាក់</span><strong id="grandTotal" style="display: block; font-size: 28px; color: var(--text); margin-top: 4px;">0 ៛</strong></div>
+          <div class="dashboard-grid-main invoice-layout">
+            <div class="panel print-full-width">
+              <div class="form-grid mb-4">
+                <label>កាលបរិច្ឆេទ<input type="date" id="date" class="form-input"></label>
+                <label>ស្ថានភាព និងសន្យាសង
+                <div style="display:flex; gap:5px;">
+                    <select id="paymentStatus" class="form-input" onchange="toggleDueDate()">
+                        <option value="Paid">✅ ទូទាត់រួច</option>
+                        <option value="Unpaid">⏳ ជំពាក់</option>
+                    </select>
+                    <input type="date" id="dueDate" class="form-input" style="display:none; border-color:var(--danger); color:var(--danger);">
                 </div>
-                <div class="no-print" style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px;">
-                  <button class="btn secondary" style="border-color: #f59e0b; color: #f59e0b;" onclick="prepareAndPrint(true)"><i class='bx bx-file'></i> បង្កើត Quotation</button>
-                  <button class="btn" style="background: #2AABEE; color: white;" onclick="copyInvoiceToTelegram()"><i class='bx bxl-telegram'></i> Copy</button>
-                  <button class="btn secondary" onclick="prepareAndPrint(false)"><i class='bx bx-printer'></i> បោះពុម្ព</button>
-                  <button class="btn primary" id="btnSave" onclick="saveData()"><i class='bx bx-save'></i> រក្សាទុកការលក់</button>
+            </label>
+                <label>អ្នកគិតលុយ<input type="text" id="cashier" value="Admin" class="form-input"></label>
+                <label class="span-2">អតិថិជន<input type="text" id="customerInput" list="customerListOptions" placeholder="ស្វែងរកអតិថិជន..." oninput="onCustomerSelect()" class="form-input"></label>
+                <label>លេខទូរស័ព្ទ<input type="text" id="phone" class="form-input"></label>
+                <label class="span-3">អាសយដ្ឋាន<input type="text" id="address" class="form-input"></label>
+              </div>
+              
+              <!-- 🌟 មុខងារថ្មីទី១៖ ជំនួយការលក់ឆ្លាតវៃ (Smart Assistant) 🌟 -->
+              <div id="smartAssistantBox" class="no-print" style="display: none; background: #eef2ff; border: 1px solid #c7d2fe; border-left: 4px solid #4f46e5; padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; font-size: 13px; color: #3730a3; align-items: flex-start; gap: 10px;">
+                  <i class='bx bx-bulb' style="font-size: 20px; color: #f59e0b;"></i>
+                  <div id="smartAssistantText">កំពុងវិភាគអតិថិជន...</div>
+              </div>
+              <!-- ប្រអប់បង្ហាញរបៀបប្រើប្រាស់ (Product Guide) -->
+              <div id="productGuideBox" class="no-print" style="display: none; background: #ecfdf5; border: 1px solid #a7f3d0; border-left: 4px solid #10b981; padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; font-size: 13px; color: #065f46; align-items: flex-start; gap: 10px;">
+                  <i class='bx bx-book-reader' style="font-size: 20px; color: #10b981;"></i>
+                  <div id="productGuideText">របៀបប្រើប្រាស់...</div>
+              </div>
+
+              <div class="table-scroll border-top pt-3">
+                <table class="data-table">
+                  <thead><tr><th style="width: 25%;">មុខទំនិញ</th><th style="width: 15%;">ខ្នាត/ប្រភេទ</th><th style="width: 10%; text-align: center;">ចំនួន</th><th style="width: 20%; text-align: right;">តម្លៃ (៛)</th><th style="width: 13%; text-align: right;">បញ្ចុះតម្លៃ (៛)</th><th style="width: 13%; text-align: right;">សរុប (៛)</th><th style="width: 4%; text-align: center;" class="no-print">លុប</th></tr></thead>
+                  <tbody id="itemTable"></tbody>
+                </table>
+              </div>
+              <div class="flex-between mt-4 border-top pt-4 align-start flex-mobile-col">
+                <button class="btn secondary no-print mb-mobile" onclick="addItemRow()"><i class='bx bx-plus'></i> បន្ថែមជួរថ្មី</button>
+                <div>
+                    <div style="text-align: right; min-width: 150px;">
+                            <span class="muted" style="font-size: 13px;">សរុបទឹកប្រាក់ភ្ញៀវ</span>
+                            <strong id="grandTotal" style="display: block; font-size: 28px; color: var(--text); margin-top: 4px;">0 ៛</strong>
+                            <!-- 🌟 ប្រអប់គណនាប្រាក់ចំណេញ និង Bonus ៤០% ប្រចាំវិក្កយបត្រ 🌟 -->
+                            <div class="no-print" style="margin-top: 8px; border-top: 1px dashed var(--line); padding-top: 8px; background: rgba(16,185,129,0.05); border-radius: 6px; padding: 8px; text-align: left;">
+                                <small class="muted block" style="margin-bottom: 4px;">+ ចំណេញសរុប: <b id="invoiceTotalProfit" style="color:var(--text);">0 ៛</b></small>
+                                <small class="muted block" style="font-size: 13px;">🔥 <b>Bonus សាខា (40%):</b> <b id="branchBonusTotal" style="color:var(--success);">0 ៛</b></small>
+                            </div>
+                        </div>
+                    
+                    <div class="no-print" style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px;">
+                      <button class="btn secondary" style="border-color: #8b5cf6; color: #8b5cf6;" onclick="downloadInvoiceImage()"><i class='bx bx-image-download'></i> ទាញជារូបភាព</button>
+                      <button class="btn secondary" style="border-color: #f59e0b; color: #f59e0b;" onclick="prepareAndPrint(true)"><i class='bx bx-file'></i> បង្កើត Quotation</button>
+                      <button class="btn" style="background: #2AABEE; color: white;" onclick="copyInvoiceToTelegram()"><i class='bx bxl-telegram'></i> Copy</button>
+                      <button class="btn secondary" onclick="prepareAndPrint(false)"><i class='bx bx-printer'></i> បោះពុម្ព</button>
+                      <button class="btn primary" id="btnSave" onclick="saveData()"><i class='bx bx-save'></i> រក្សាទុកការលក់</button>
+                    </div>
                 </div>
+              </div>
+            </div>
+
+            <!-- ប្រវត្តិបញ្ចូលថ្មីៗខាងស្តាំ -->
+            <div class="panel no-print">
+              <div class="panel-head border-bottom pb-3 mb-3"><h3>🕒 ប្រវត្តិបញ្ចូលថ្មីៗ</h3><button class="icon-btn-round" onclick="loadRecentHistory()"><i class='bx bx-refresh'></i></button></div>
+              <div id="recentHistoryContainer" class="activity-list"></div>
             </div>
           </div>
-        </div>
-
-        <!-- ប្រវត្តិបញ្ចូលថ្មីៗខាងស្តាំ -->
-        <div class="panel no-print">
-          <div class="panel-head border-bottom pb-3 mb-3"><h3>🕒 ប្រវត្តិបញ្ចូលថ្មីៗ</h3><button class="icon-btn-round" onclick="loadRecentHistory()"><i class='bx bx-refresh'></i></button></div>
-          <div id="recentHistoryContainer" class="activity-list"></div>
-        </div>
-      </div>
-      
-      <!-- កន្លែងហត្ថលេខាសម្រាប់ Print -->
-      <div class="print-footer mt-4">
-          <div style="width: 200px;">
-              <strong>ហត្ថលេខាអ្នកទិញ</strong>
-              <div style="border-bottom: 1px dashed #94a3b8; height: 80px; margin-top: 10px;"></div>
+          
+          <div class="print-footer mt-4">
+              <div style="width: 200px;">
+                  <strong>ហត្ថលេខាអ្នកទិញ</strong>
+                  <div style="border-bottom: 1px dashed #94a3b8; height: 80px; margin-top: 10px;"></div>
+              </div>
+              <div style="width: 200px;">
+                  <strong>ហត្ថលេខាអ្នកលក់</strong>
+                  <div style="border-bottom: 1px dashed #94a3b8; height: 80px; margin-top: 10px;"></div>
+              </div>
           </div>
-          <div style="width: 200px;">
-              <strong>ហត្ថលេខាអ្នកលក់</strong>
-              <div style="border-bottom: 1px dashed #94a3b8; height: 80px; margin-top: 10px;"></div>
-          </div>
-      </div>
+      </div> <!-- បញ្ចប់ #invoiceCaptureWrapper -->
     </section>
 
     <!-- ================= History Tab ================= -->
@@ -386,7 +456,16 @@
               <div class="tabs-inline mb-mobile"><span class="active">ទំនិញទាំងអស់ <span class="count" id="productCountBadge">0</span></span></div>
               <div class="filter-actions flex-wrap"><select id="filterCategory" class="form-input" style="width: auto; padding: 9px; font-weight: 500;" onchange="renderProducts()"><option value="all">គ្រប់ប្រភេទទាំងអស់</option></select><div class="search-box"><i class='bx bx-search'></i><input type="text" id="searchProduct" placeholder="ស្វែងរកទំនិញ..." oninput="renderProducts()"></div></div>
           </div>
-          <div class="table-scroll"><table class="data-table"><thead><tr><th>មុខទំនិញ</th><th class="text-right">តម្លៃលក់</th><th>ស្ថានភាព</th></tr></thead><tbody id="productsTableBody"></tbody></table></div>
+          <div class="table-scroll"><table class="data-table">
+              <thead><tr>
+                  <th>មុខទំនិញ</th>
+                  <th class="text-right">តម្លៃក្រុមហ៊ុន</th>
+                  <th class="text-right">តម្លៃលក់</th>
+                  <th class="text-right">Bonus សាខា</th>
+                  <th class="text-center">ជម្រើស</th>
+              </tr></thead>
+              <tbody id="productsTableBody"></tbody>
+          </table></div>
       </div>
     </section>
     
@@ -423,7 +502,7 @@
     <!-- ================= Expenses Tab ================= -->
     <section id="expenseTab" class="tab-content">
       <div class="page-heading">
-        <div><h1>ការកត់ត្រាចំណាយ</h1><p class="muted">គ្រប់គ្រងចំណាយប្រចាំថ្ងៃលើការលក់ (សាំង, កាហ្វេ...)</p></div>
+        <div><h1>ការកត់ត្រាចំណាយ</h1><p class="muted">វិភាគរាល់ចំណាយ និងទំហំថវិកាធៀបនឹងចំណូល (Budget vs. Actual) ក្នុងខែនេះ។</p></div>
         <div class="heading-actions">
             <button class="btn" style="background: #2AABEE; color: white;" onclick="copyExpenseReport()"><i class='bx bxl-telegram'></i> Copy របាយការណ៍លុយ Clear</button>
             <button class="btn secondary" onclick="exportExpensesCSV()"><i class='bx bx-export'></i> Export CSV</button>
@@ -431,6 +510,33 @@
         </div>
       </div>
       
+      <!-- 🌟 មុខងារថ្មី៖ របារភាគរយចំណាយ និងក្រាហ្វិករង្វង់ (Budget & Pie Chart) 🌟 -->
+      <div class="mt-4" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px;">
+          <!-- របារតាមដានថវិកា (Budget vs Actual) -->
+          <div class="panel" style="display: flex; flex-direction: column; justify-content: center;">
+              <h3 style="margin: 0 0 15px; font-size: 16px; color: var(--text);"><i class='bx bx-target-lock' style="color:var(--primary);"></i> ភាគរយចំណាយ ធៀបនឹង ចំណូលខែនេះ</h3>
+              <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px;">
+                  <span class="muted">ចំណូលសរុប: <b id="expDashRevenue" style="color:var(--success);">0 ៛</b></span>
+                  <span class="muted">ចំណាយអស់: <b id="expDashExpense" style="color:var(--danger);">0 ៛</b></span>
+              </div>
+              <div style="width: 100%; background: var(--line); height: 12px; border-radius: 6px; overflow: hidden; margin-bottom: 10px;">
+                  <div id="expenseProgressBar" style="width: 0%; background: var(--danger); height: 100%; transition: width 0.5s;"></div>
+              </div>
+              <div style="text-align: right; font-size: 14px; font-weight: 600;" id="expenseRatioText">
+                  ចាយអស់ 0% នៃចំណូល
+              </div>
+          </div>
+          
+          <!-- ក្រាហ្វិករង្វង់ចំណាយ (Expense Breakdown Pie Chart) -->
+          <div class="panel">
+              <h3 style="margin: 0 0 15px; font-size: 16px; color: var(--text);"><i class='bx bx-pie-chart-alt-2' style="color:var(--warning);"></i> ភាគរយចំណាយតាមប្រភេទ</h3>
+              <div style="height: 180px; width: 100%; position: relative;">
+                  <canvas id="expensePieChart"></canvas>
+              </div>
+          </div>
+      </div>
+      
+      <!-- តារាងប្រវត្តិចំណាយ -->
       <div class="panel">
           <div class="panel-head flex-between border-bottom pb-3 mb-3">
               <h3>ប្រវត្តិចំណាយខែនេះ</h3>
@@ -438,9 +544,9 @@
                   <span class="muted">សរុបចំណាយ: </span><strong id="totalExpenseAmount" style="color: var(--danger); font-size: 20px;">0 ៛</strong>
               </div>
           </div>
-          <div class="table-scroll">
+          <div class="table-scroll" style="max-height: 400px; overflow-y: auto;">
               <table class="data-table">
-                  <thead><tr><th>កាលបរិច្ឆេទ</th><th>ប្រភេទចំណាយ</th><th>កំណត់សម្គាល់</th><th class="text-right">ទឹកប្រាក់ (៛)</th><th class="text-center">ជម្រើស</th></tr></thead>
+                  <thead><tr><th>កាលបរិច្ឆេទ</th><th>ប្រភេទចំណាយ</th><th>លេខវិក្កយបត្រ / សម្គាល់</th><th class="text-right">ទឹកប្រាក់ (៛)</th><th class="text-center">ជម្រើស</th></tr></thead>
                   <tbody id="expenseTableBody"></tbody>
               </table>
           </div>
@@ -487,7 +593,7 @@
       </div>
     </section>
   </main>
-</div> <!-- 💥 នេះជាទីតាំងដែលវាធ្លាប់បាត់ /div ធ្វើឱ្យខូចទ្រង់ទ្រាយ 💥 -->
+</div> 
 
 <!-- ================= Modals (លោតពីលើ) ================= -->
 <div id="customerDetailModal" class="modal"><div class="modal-card" style="width: 500px;"><div class="modal-head"><h3><i class='bx bx-user-circle' style="color:var(--primary); margin-right:5px;"></i> ប្រវត្តិអតិថិជន (CLV)</h3><button class="icon-btn-round" onclick="closeModal('customerDetailModal')"><i class='bx bx-x'></i></button></div><div style="text-align:center; padding: 20px; background:var(--sidebar-hover); border-radius:12px; margin-bottom:20px;"><h2 id="modalCusName" style="margin:0 0 10px; color:var(--text);">ឈ្មោះអតិថិជន</h2><div style="display:flex; justify-content:space-around;"><div><small class="muted block">ទិញសរុប (ដង)</small><b id="modalCusOrders" style="font-size:18px;">0</b></div><div><small class="muted block">ចំណាយសរុប (៛)</small><b id="modalCusSpent" style="font-size:18px; color:var(--success);">0 ៛</b></div><div><small class="muted block">ទិញចុងក្រោយ</small><b id="modalCusLastDate" style="font-size:14px;">-</b></div></div></div></div></div>
@@ -496,35 +602,44 @@
         <div class="modal-head"><h3><i class='bx bx-cube-alt' style="color:var(--primary); margin-right:5px;"></i> បន្ថែមមុខទំនិញថ្មី</h3><button class="icon-btn-round" onclick="closeModal('productModal')"><i class='bx bx-x'></i></button></div>
         <div class="form-grid mb-4">
             <label class="span-2">ឈ្មោះទំនិញ (Product Name)<input type="text" id="newProdName" class="form-input" placeholder="ឧ. ABA 5WG-អាបា"></label>
-            <label>តម្លៃ (Price ៛)<input type="number" id="newProdPrice" class="form-input" placeholder="0"></label>
+            <label>តម្លៃក្រុមហ៊ុន (Base Price ៛)<input type="number" id="newProdBasePrice" class="form-input" placeholder="ឧ. 24000"></label>
+            <label>តម្លៃលក់ចេញ (Sale Price ៛)<input type="number" id="newProdPrice" class="form-input" placeholder="ឧ. 26000"></label>
+            
             <label>ប្រភេទថ្នាំ (Category)<select id="newProdCategory" class="form-input"><option value="insecticide">ថ្នាំសម្លាប់សត្វល្អិត (insecticide)</option><option value="fungicide">ថ្នាំផ្សិត (fungicide)</option><option value="liquid fertilizer">ជីទឹក (liquid fertilizer)</option><option value="herbicide">ថ្នាំស្មៅ (herbicide)</option><option value="powder fertilizer">ជីម្សៅ (powder fertilizer)</option><option value="fertilizer">ជីគ្រាប់ (fertilizer)</option><option value="other">ផ្សេងៗ (Other)</option></select></label>
             <label>ចំណុះ (Unit Value)<input type="number" id="newProdUnitValue" class="form-input" placeholder="ឧ. 60"></label>
             <label>រង្វាស់ (Unit Measure)<select id="newProdUnitMeasure" class="form-input"><option value="g">ក្រាម (g)</option><option value="ml">មីលីលីត្រ (ml)</option><option value="kg">គីឡូក្រាម (kg)</option><option value="L">លីត្រ (L)</option><option value="pc">កញ្ចប់/គ្រាប់(pack)</option></select></label>
             <label>ការវេចខ្ចប់ (Package Type)<select id="newProdPackage" class="form-input"><option value="Pack">កញ្ចប់ (Pack)</option><option value="Bottle">ដប (Bottle)</option><option value="Can">កំប៉ុង (Can)</option><option value="Bag">បាវ/ថង់ (Bag)</option></select></label>
             <label>ចំណុះស្តង់ដារ (Std Value)<input type="number" id="newProdStdValue" class="form-input" placeholder="ឧ. 0.06" step="0.001"></label>
             <label>រង្វាស់ស្តង់ដារ (Std Measure)<select id="newProdStdMeasure" class="form-input"><option value="Kg">គីឡូក្រាម (Kg)</option><option value="L">លីត្រ (L)</option><option value="Pc">កញ្ចប់/គ្រាប់(pack)</option></select></label>
+            <label class="span-3">របៀបប្រើប្រាស់/អត្រាលាយ (Usage Guide)<input type="text" id="newProdUsage" class="form-input" placeholder="ឧ. លាយ ២០មីលីលីត្រ ក្នុងទឹក ២៥លីត្រ"></label>
         </div>
         <div class="modal-actions border-top pt-3"><button class="btn secondary" onclick="closeModal('productModal')">បោះបង់</button><button class="btn primary" onclick="saveNewProduct()"><i class='bx bx-save'></i> រក្សាទុក</button></div>
     </div>
 </div>
 <div id="customerModal" class="modal"><div class="modal-card"><div class="modal-head"><h3>បន្ថែមអតិថិជនថ្មី</h3><button class="icon-btn-round" onclick="closeModal('customerModal')"><i class='bx bx-x'></i></button></div><div class="form-grid mb-4"><label class="span-3">ឈ្មោះ<input type="text" id="newCustName" class="form-input"></label><label class="span-3">លេខទូរស័ព្ទ<input type="text" id="newCustPhone" class="form-input"></label><label class="span-3">អាសយដ្ឋាន<input type="text" id="newCustAddress" class="form-input"></label></div><div class="modal-actions border-top pt-3"><button class="btn secondary" onclick="closeModal('customerModal')">បោះបង់</button><button class="btn primary" onclick="saveNewCustomer()">រក្សាទុក</button></div></div></div>
 <div id="editSaleModal" class="modal"><div class="modal-card" style="width: 600px;"><div class="modal-head"><h3>កែប្រែទិន្នន័យ</h3><button class="icon-btn-round" onclick="closeModal('editSaleModal')"><i class='bx bx-x'></i></button></div><input type="hidden" id="editSaleId"><div class="form-grid two mb-4"><label class="span-2">មុខទំនិញ<input type="text" id="editSaleItem" class="form-input" readonly style="background: rgba(0,0,0,0.05); color: var(--muted);"></label><label>ស្ថានភាព<select id="editPaymentStatus" class="form-input"><option value="Paid">ទូទាត់រួច</option><option value="Unpaid">ជំពាក់</option></select></label><label>ចំនួន<input type="number" id="editSaleQty" class="form-input" oninput="calculateEditTotal()"></label><label>តម្លៃ (៛)<input type="number" id="editSalePrice" class="form-input" oninput="calculateEditTotal()"></label><label>បញ្ចុះតម្លៃ (៛)<input type="number" id="editSaleDiscount" class="form-input" oninput="calculateEditTotal()"></label><label class="span-2">សរុប (៛)<input type="text" id="editSaleTotal" class="form-input" readonly style="color:var(--success); font-weight:bold; font-size: 16px;"></label></div><div class="modal-actions border-top pt-3"><button class="btn secondary" onclick="closeModal('editSaleModal')">បោះបង់</button><button class="btn primary" onclick="saveEditedSale()">កែប្រែ</button></div></div></div>
-
 <div id="expenseModal" class="modal">
-    <div class="modal-card">
-        <div class="modal-head"><h3><i class='bx bx-money-withdraw' style="color:var(--danger); margin-right:5px;"></i> បន្ថែមចំណាយថ្មី</h3><button class="icon-btn-round" onclick="closeModal('expenseModal')"><i class='bx bx-x'></i></button></div>
-        <div class="form-grid mb-4">
-            <label class="span-3">កាលបរិច្ឆេទ<input type="date" id="expDate" class="form-input"></label>
-            <label class="span-3">ប្រភេទចំណាយ
-                <select id="expCategory" class="form-input">
-                    <option value="សាំង/ធ្វើដំណើរ">សាំង / ធ្វើដំណើរ</option>
-                    <option value="កាហ្វេ/អាហារ">កាហ្វេ / អាហារជួបភ្ញៀវ</option>
-                    <option value="កាតទូរស័ព្ទ">កាតទូរស័ព្ទ / អ៊ីនធឺណិត</option>
-                    <option value="ផ្សេងៗ">ផ្សេងៗ</option>
+    <div class="modal-card" style="width: 600px;">
+        <div class="modal-head">
+            <h3><i class='bx bx-money-withdraw' style="color:var(--danger); margin-right:5px;"></i> បន្ថែមចំណាយថ្មី (Expenses)</h3>
+            <button class="icon-btn-round" onclick="closeModal('expenseModal')"><i class='bx bx-x'></i></button>
+        </div>
+        <div class="form-grid two mb-4">
+            <label class="span-2">កាលបរិច្ឆេទ<input type="date" id="expDate" class="form-input"></label>
+            <label class="span-2">ប្រភេទចំណាយ (Category)
+                <select id="expCategory" class="form-input" style="font-weight: 500;">
+                    <option value="សាំង/ធ្វើដំណើរ">⛽ សាំង / ធ្វើដំណើរ</option>
+                    <option value="ថ្លៃឈ្នួលដឹកជញ្ជូន">🚚 ថ្លៃឈ្នួលដឹកជញ្ជូន (Delivery)</option>
+                    <option value="កាហ្វេ/អាហារភ្ញៀវ">☕ កាហ្វេ / អាហារជួបភ្ញៀវ</option>
+                    <option value="ចុះទីផ្សារ/ប្រូម៉ូសិន">🎯 ចុះទីផ្សារ / ប្រូម៉ូសិន</option>
+                    <option value="បញ្ចុះតម្លៃពិសេសម៉ូយ">🎁 បញ្ចុះតម្លៃពិសេសឱ្យម៉ូយ</option>
+                    <option value="កាតទូរស័ព្ទ/អ៊ីនធឺណិត">📱 កាតទូរស័ព្ទ / អ៊ីនធឺណិត</option>
+                    <option value="ផ្សេងៗ">📦 ផ្សេងៗ</option>
                 </select>
             </label>
-            <label class="span-3">ចំនួនទឹកប្រាក់ (៛)<input type="number" id="expAmount" class="form-input" placeholder="0"></label>
-            <label class="span-3">កំណត់សម្គាល់<input type="text" id="expNote" class="form-input" placeholder="ឧ. ចាក់សាំងម៉ូតូ..."></label>
+            <label>ចំនួនទឹកប្រាក់ (៛)<input type="number" id="expAmount" class="form-input" placeholder="0" style="font-size: 16px; font-weight: bold; color: var(--danger);"></label>
+            <label>វិក្កយបត្រយោង (Ref #)<input type="text" id="expRef" class="form-input" placeholder="ឧ. #10293 ទុកសម្រាប់ Audit"></label>
+            <label class="span-2">កំណត់សម្គាល់បន្ថែម<input type="text" id="expNote" class="form-input" placeholder="ឧ. ថ្លៃផ្ញើឡានតាក់ស៊ីទៅខេត្ត..."></label>
         </div>
         <div class="modal-actions border-top pt-3">
             <button class="btn secondary" onclick="closeModal('expenseModal')">បោះបង់</button>
@@ -532,7 +647,6 @@
         </div>
     </div>
 </div>
-
 <!-- Modal សម្រាប់កំណត់ Target ប្រចាំឆ្នាំ -->
 <div id="targetModal" class="modal">
     <div class="modal-card" style="width: 400px;">
@@ -558,27 +672,55 @@
         </div>
     </div>
 </div>
-
 <!-- Modal សម្រាប់បង្ហាញមុខទំនិញលម្អិតតាមប្រភេទ -->
 <div id="categoryDetailModal" class="modal">
-    <div class="modal-card" style="width: 550px;">
+    <div class="modal-card" style="width: 700px; max-width: 95%;">
         <div class="modal-head" style="display: flex; align-items: center;">
             <h3 style="margin: 0; flex: 1;"><i class='bx bx-list-ul' style="color:var(--primary); margin-right:5px;"></i> លម្អិត: <span id="modalCatName" style="color: var(--primary);"></span></h3>
-            <!-- 🌟 កន្លែងបង្ហាញសរុបរួម (Kg/L) នៅជ្រុងខាងស្តាំ 🌟 -->
             <div id="modalCatTotalStd" style="margin-right: 15px; display: flex; align-items: center;"></div>
             <button class="icon-btn-round" onclick="closeModal('categoryDetailModal')"><i class='bx bx-x'></i></button>
         </div>
         <div class="table-scroll" style="max-height: 400px; overflow-y: auto;">
             <table class="data-table">
-                <thead><tr><th>មុខទំនិញ</th><th class="text-right">ចំនួនលក់ចេញ និងចំណុះស្តង់ដារ</th></tr></thead>
+                <thead>
+                    <tr>
+                        <th>មុខទំនិញ & ថ្ងៃលក់ចុងក្រោយ</th>
+                        <th class="text-right">ចំនួនលក់ & របារប្រៀបធៀប</th>
+                        <th class="text-right">ចំណូលសរុប (៛)</th>
+                    </tr>
+                </thead>
                 <tbody id="categoryDetailTableBody"></tbody>
             </table>
         </div>
     </div>
 </div>
+
+<!-- Modal សម្រាប់បង្ហាញមុខទំនិញលម្អិតតាមប្រភេទ -->
+<div id="categoryDetailModal" class="modal">
+    <div class="modal-card" style="width: 700px; max-width: 95%;">
+        <div class="modal-head" style="display: flex; align-items: center;">
+            <h3 style="margin: 0; flex: 1;"><i class='bx bx-list-ul' style="color:var(--primary); margin-right:5px;"></i> លម្អិត: <span id="modalCatName" style="color: var(--primary);"></span></h3>
+            <div id="modalCatTotalStd" style="margin-right: 15px; display: flex; align-items: center;"></div>
+            <button class="icon-btn-round" onclick="closeModal('categoryDetailModal')"><i class='bx bx-x'></i></button>
+        </div>
+        <div class="table-scroll" style="max-height: 400px; overflow-y: auto;">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>មុខទំនិញ & ថ្ងៃលក់ចុងក្រោយ</th>
+                        <th class="text-right">ចំនួនលក់ & របារប្រៀបធៀប</th>
+                        <th class="text-right">ចំណូលសរុប (៛)</th>
+                    </tr>
+                </thead>
+                <tbody id="categoryDetailTableBody"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
 <!-- Modal សម្រាប់បង្ហាញមុខទំនិញលម្អិតតាមផលិតផល (Product Detail) -->
 <div id="productDetailModal" class="modal">
-    <div class="modal-card" style="width: 550px;">
+    <div class="modal-card" style="width: 700px; max-width: 95%;">
         <div class="modal-head" style="display: flex; align-items: center;">
             <h3 style="margin: 0; flex: 1;"><i class='bx bx-box' style="color:var(--primary); margin-right:5px;"></i> ទំនិញ: <span id="modalProdName" style="color: var(--primary);"></span></h3>
             <div id="modalProdTotalStd" style="margin-right: 15px; display: flex; align-items: center;"></div>
@@ -586,9 +728,99 @@
         </div>
         <div class="table-scroll" style="max-height: 400px; overflow-y: auto;">
             <table class="data-table">
-                <thead><tr><th>ខ្នាតទំនិញ (Unit)</th><th class="text-right">ចំនួនលក់ចេញ និងចំណុះស្តង់ដារ</th></tr></thead>
+                <thead>
+                    <tr>
+                        <th>ខ្នាតទំនិញ & ថ្ងៃលក់ចុងក្រោយ</th>
+                        <th class="text-right">ចំនួនលក់ & របារប្រៀបធៀប</th>
+                        <th class="text-right">ចំណូលសរុប (៛)</th>
+                    </tr>
+                </thead>
                 <tbody id="productDetailTableBody"></tbody>
             </table>
+        </div>
+    </div>
+</div>
+<!-- 🌟 Modal សម្រាប់បង្ហាញបំណុលដល់ថ្ងៃកំណត់ (Promise-to-Pay) 🌟 -->
+<div id="overdueModal" class="modal">
+    <div class="modal-card" style="width: 600px; max-width: 95%;">
+        <div class="modal-head" style="display: flex; align-items: center; border-bottom: 1px solid var(--line); padding-bottom: 15px;">
+            <h3 style="margin: 0; flex: 1; color: var(--danger);"><i class='bx bx-alarm-exclamation'></i> អតិថិជនដល់ថ្ងៃសន្យាសងប្រាក់</h3>
+            <button class="icon-btn-round" onclick="closeModal('overdueModal')"><i class='bx bx-x'></i></button>
+        </div>
+        <div class="table-scroll" style="max-height: 400px; overflow-y: auto;">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>អតិថិជន</th>
+                        <th class="text-center">ថ្ងៃសន្យា</th>
+                        <th class="text-right">ទឹកប្រាក់ជំពាក់ (៛)</th>
+                        <th class="text-center">ជម្រើស</th>
+                    </tr>
+                </thead>
+                <tbody id="overdueContainer"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+<!-- 🌟 Modal សម្រាប់កែប្រែ និងលុបទំនិញ (Edit & Delete Product) 🌟 -->
+<div id="editProductModal" class="modal">
+    <div class="modal-card" style="width: 700px; max-width: 95%;">
+        <div class="modal-head" style="border-bottom: 1px solid var(--line); padding-bottom: 15px; margin-bottom: 20px;">
+            <h3 style="margin: 0; color: #f59e0b;"><i class='bx bx-edit'></i> កែប្រែមុខទំនិញ</h3>
+            <button class="icon-btn-round" onclick="closeModal('editProductModal')"><i class='bx bx-x'></i></button>
+        </div>
+        <input type="hidden" id="editProdId">
+        <div class="form-grid mb-4">
+            <label class="span-2">ឈ្មោះទំនិញ (Product Name)<input type="text" id="editProdName" class="form-input"></label>
+            <label>តម្លៃក្រុមហ៊ុន (Base Price ៛)<input type="number" id="editProdBasePrice" class="form-input"></label>
+            <label>តម្លៃលក់ចេញ (Sale Price ៛)<input type="number" id="editProdPrice" class="form-input"></label>
+            
+            <label>ប្រភេទថ្នាំ (Category)
+                <select id="editProdCategory" class="form-input">
+                    <option value="insecticide">ថ្នាំសម្លាប់សត្វល្អិត (insecticide)</option>
+                    <option value="fungicide">ថ្នាំផ្សិត (fungicide)</option>
+                    <option value="liquid fertilizer">ជីទឹក (liquid fertilizer)</option>
+                    <option value="herbicide">ថ្នាំស្មៅ (herbicide)</option>
+                    <option value="powder fertilizer">ជីម្សៅ (powder fertilizer)</option>
+                    <option value="fertilizer">ជីគ្រាប់ (fertilizer)</option>
+                    <option value="other">ផ្សេងៗ (Other)</option>
+                </select>
+            </label>
+            <label>ចំណុះ (Unit Value)<input type="number" id="editProdUnitValue" class="form-input"></label>
+            <label>រង្វាស់ (Unit Measure)
+                <select id="editProdUnitMeasure" class="form-input">
+                    <option value="g">ក្រាម (g)</option>
+                    <option value="ml">មីលីលីត្រ (ml)</option>
+                    <option value="kg">គីឡូក្រាម (kg)</option>
+                    <option value="L">លីត្រ (L)</option>
+                    <option value="pc">កញ្ចប់/គ្រាប់(pack)</option>
+                </select>
+            </label>
+            <label>ការវេចខ្ចប់ (Package Type)
+                <select id="editProdPackage" class="form-input">
+                    <option value="Pack">កញ្ចប់ (Pack)</option>
+                    <option value="Bottle">ដប (Bottle)</option>
+                    <option value="Can">កំប៉ុង (Can)</option>
+                    <option value="Bag">បាវ/ថង់ (Bag)</option>
+                </select>
+            </label>
+            <label>ចំណុះស្តង់ដារ (Std Value)<input type="number" id="editProdStdValue" class="form-input" step="0.001"></label>
+            <label>រង្វាស់ស្តង់ដារ (Std Measure)
+                <select id="editProdStdMeasure" class="form-input">
+                    <option value="Kg">គីឡូក្រាម (Kg)</option>
+                    <option value="L">លីត្រ (L)</option>
+                    <option value="Pc">កញ្ចប់/គ្រាប់(pack)</option>
+                </select>
+            </label>
+            <label class="span-3">របៀបប្រើប្រាស់/អត្រាលាយ (Usage Guide)<input type="text" id="editProdUsage" class="form-input"></label>
+        </div>
+        <div class="modal-actions border-top pt-3" style="display: flex; justify-content: space-between;">
+            <!-- 🌟 ប៊ូតុងលុប (Delete) 🌟 -->
+            <button class="btn outline" style="color: var(--danger); border-color: var(--danger);" onclick="deleteProduct()"><i class='bx bx-trash'></i> លុបទំនិញ</button>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn secondary" onclick="closeModal('editProductModal')">បោះបង់</button>
+                <button class="btn primary" onclick="saveEditedProduct()"><i class='bx bx-save'></i> រក្សាទុកកែប្រែ</button>
+            </div>
         </div>
     </div>
 </div>
