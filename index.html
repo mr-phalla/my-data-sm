@@ -11,7 +11,6 @@
   
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
-  <!-- Library សម្រាប់ Capture វិក្កយបត្រជារូបភាព -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   
   <style>
@@ -140,6 +139,7 @@
     <button class="nav-item" data-tab="invoiceTab" onclick="openTab('invoiceTab')"><i class='bx bx-cart-add'></i> New Sale</button>
     <button class="nav-item" data-tab="historyTab" onclick="openTab('historyTab')"><i class='bx bx-line-chart'></i> Sales History</button>
     <button class="nav-item" data-tab="expenseTab" onclick="openTab('expenseTab')"><i class='bx bx-money-withdraw'></i> Expenses</button>
+    <button class="nav-item" data-tab="branchTab" onclick="openTab('branchTab')"><i class='bx bx-store-alt'></i> Branch Ops</button>
     <div class="sidebar-section mt-4">PEOPLE</div>
     <button class="nav-item" data-tab="customerTab" onclick="openTab('customerTab')"><i class='bx bx-user'></i> Customers</button>
     <div class="sidebar-section mt-4">SYSTEM</div>
@@ -156,7 +156,6 @@
         </div>
       </div>
       <div class="topbar-actions">
-          <!-- 🌟 ប៊ូតុងកណ្តឹង (Notification Bell) 🌟 -->
           <button class="icon-btn-round" style="position: relative;" onclick="openModal('overdueModal')">
               <i class='bx bx-bell'></i>
               <span id="notificationBadge" class="badge" style="display: none; animation: pulse 2s infinite;">0</span>
@@ -169,20 +168,37 @@
               <i class='bx bx-log-out muted' style="margin-left: 8px;"></i>
           </div>
       </div>
-        </header>
+    </header>
 
     <datalist id="customerListOptions"></datalist>
     <datalist id="productListOptions"></datalist>
     
     <!-- ================= Dashboard Tab ================= -->
     <section id="dashboardTab" class="tab-content active">
-      <div class="page-heading">
+      <div class="page-heading flex-mobile-col align-start">
         <div style="display: flex; align-items: center; gap: 15px;">
             <div><h1>Sales Analytics</h1><p class="muted">ទិន្នន័យលក់ និងការវិភាគអតិថិជន។</p></div>
-            <!-- 🌟 ប៊ូតុងរំលឹកបំណុល (លោតក្រហមពេលមានអ្នកដល់ថ្ងៃសង) 🌟 -->
-            
         </div>
-        <div class="heading-actions">
+        <div class="heading-actions flex-wrap">
+            <!-- 🌟 តម្រងពេលវេលារហ័ស 🌟 -->
+             <!-- 🌟 តម្រងរើសថ្ងៃខែឆ្នាំដោយខ្លួនឯង 🌟 -->
+            <div style="display: flex; align-items: center; gap: 5px;">
+                <input type="date" id="chartStartDate" class="form-input" style="padding: 6px; width: auto; font-size: 12px;" onchange="handleCustomDate()">
+                <span class="muted">-</span>
+                <input type="date" id="chartEndDate" class="form-input" style="padding: 6px; width: auto; font-size: 12px;" onchange="handleCustomDate()">
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px; background: var(--sidebar-hover); padding: 5px 10px; border-radius: 8px; border: 1px solid var(--line);">
+                <i class='bx bx-filter-alt muted'></i>
+                <select id="quickDateFilter" class="form-input" style="border: none; background: transparent; padding: 5px; width: auto; font-weight: bold; color: var(--primary);" onchange="applyGlobalFilter(this.value)">
+                    <option value="thisMonth" selected>📅 ខែនេះ</option>
+                    <option value="lastMonth">📅 ខែមុន</option>
+                    <option value="last3Months">📅 ៣ខែចុងក្រោយ</option>
+                    <option value="thisYear">📅 ឆ្នាំនេះ</option>
+                    <option value="all">📅 របាយការណ៍ទាំងអស់</option>
+                    <option value="custom">📅 តាមកាលបរិច្ឆេទ</option>
+                </select>
+            </div>
+            
             <button class="btn primary" onclick="generateDailyReport()" style="background: #2AABEE; color: white;"><i class='bx bxl-telegram'></i> ចម្លងរបាយការណ៍ថ្ងៃនេះ</button>
             <button class="btn secondary" onclick="exportToCSV()"><i class='bx bx-export'></i> Export Data</button>
         </div>
@@ -228,7 +244,6 @@
               </span>
           </div>
           
-          <!-- 🌟 មុខងារទី២: ការព្យាករណ៍ Bonus ចុងខែ (Forecast Gamification) 🌟 -->
           <div style="background: rgba(0,0,0,0.15); padding: 12px 16px; border-radius: 8px; margin-top: 15px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
               <div>
                   <span style="font-size: 12px; opacity: 0.8; display: block;">ការព្យាករណ៍ចំណូលលក់ចុងខែនេះ</span>
@@ -246,14 +261,7 @@
         
         <div class="panel">
           <div class="panel-head border-bottom pb-3 mb-3 flex-wrap">
-              <h3>📈 ក្រាហ្វិកចំណូលលក់</h3>
-              <div class="filter-actions flex-wrap">
-                  <button class="btn outline small" onclick="setChartFilter('thisMonth')">ខែនេះ</button>
-                  <button class="btn outline small" onclick="setChartFilter('last3Months')">៣ខែចុងក្រោយ</button>
-                  <button class="btn outline small" onclick="setChartFilter('thisYear')">ឆ្នាំនេះ</button>
-                  <input type="date" id="chartStartDate" class="form-input" style="padding:4px; width:auto; font-size:11px;" onchange="updateChart()">
-                  <input type="date" id="chartEndDate" class="form-input" style="padding:4px; width:auto; font-size:11px;" onchange="updateChart()">
-              </div>
+              <h3>📈 ក្រាហ្វិកចំណូលលក់ និង Bonus</h3>
           </div>
           <div style="height: 300px; width: 100%; position: relative;"><canvas id="salesChart"></canvas></div>
         </div>
@@ -389,15 +397,27 @@
               <div class="flex-between mt-4 border-top pt-4 align-start flex-mobile-col">
                 <button class="btn secondary no-print mb-mobile" onclick="addItemRow()"><i class='bx bx-plus'></i> បន្ថែមជួរថ្មី</button>
                 <div>
-                    <div style="text-align: right; min-width: 150px;">
+                    <!-- 🌟 កូដដែលបាត់ប្រអប់បញ្ចូលប្រាក់ ត្រូវបានរៀបចំដាក់បញ្ចូលវិញ 🌟 -->
+                    <div style="display: flex; gap: 20px; align-items: flex-end; flex-wrap: wrap; justify-content: flex-end;">
+                        <div style="text-align: right;" class="no-print">
+                            <label class="muted block mb-1">ប្រាក់ទទួល (៛)</label>
+                            <input type="number" id="cashReceived" class="form-input" style="width: 140px; font-weight:bold; font-size: 16px;" placeholder="0" oninput="calculateChange()">
+                        </div>
+                        <div style="text-align: right;" class="no-print">
+                            <label class="muted block mb-1">ប្រាក់អាប់ (៛)</label>
+                            <input type="text" id="cashChange" class="form-input" style="width: 140px; color: var(--danger); font-weight:bold; font-size: 16px;" readonly value="0 ៛">
+                        </div>
+                        <div style="text-align: right; min-width: 150px;">
                             <span class="muted" style="font-size: 13px;">សរុបទឹកប្រាក់ភ្ញៀវ</span>
                             <strong id="grandTotal" style="display: block; font-size: 28px; color: var(--text); margin-top: 4px;">0 ៛</strong>
+                            
                             <!-- 🌟 ប្រអប់គណនាប្រាក់ចំណេញ និង Bonus ៤០% ប្រចាំវិក្កយបត្រ 🌟 -->
                             <div class="no-print" style="margin-top: 8px; border-top: 1px dashed var(--line); padding-top: 8px; background: rgba(16,185,129,0.05); border-radius: 6px; padding: 8px; text-align: left;">
                                 <small class="muted block" style="margin-bottom: 4px;">+ ចំណេញសរុប: <b id="invoiceTotalProfit" style="color:var(--text);">0 ៛</b></small>
                                 <small class="muted block" style="font-size: 13px;">🔥 <b>Bonus សាខា (40%):</b> <b id="branchBonusTotal" style="color:var(--success);">0 ៛</b></small>
                             </div>
                         </div>
+                    </div>
                     
                     <div class="no-print" style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px;">
                       <button class="btn secondary" style="border-color: #8b5cf6; color: #8b5cf6;" onclick="downloadInvoiceImage()"><i class='bx bx-image-download'></i> ទាញជារូបភាព</button>
@@ -552,6 +572,38 @@
           </div>
       </div>
     </section>
+    <!-- ================= Branch Ops Tab (ប្រតិបត្តិការសាខា) ================= -->
+    <section id="branchTab" class="tab-content">
+      <div class="page-heading">
+        <div><h1>ប្រតិបត្តិការសាខា</h1><p class="muted">ផ្ទៀងផ្ទាត់បញ្ជីបិទការលក់ និងតាមដានរង្វាន់លើកទឹកចិត្ត (Incentives) ប្រចាំឆ្នាំ។</p></div>
+      </div>
+      
+      <div class="dashboard-grid-main mt-4" style="grid-template-columns: 1fr 1fr; gap: 20px;">
+        <!-- ១. ផ្ទៀងផ្ទាត់បញ្ជីប្រចាំថ្ងៃ (Daily Reconciliation) -->
+        <div class="panel">
+            <div class="panel-head border-bottom pb-3 mb-3">
+                <h3><i class='bx bx-check-shield' style="color:var(--success);"></i> ផ្ទៀងផ្ទាត់បញ្ជី (បិទការលក់ថ្ងៃនេះ)</h3>
+            </div>
+            <div id="dailyReconContainer" style="font-size: 14px;">
+                <!-- ទិន្នន័យនឹងលោតនៅទីនេះ -->
+            </div>
+            <div class="border-top pt-3 mt-3 text-right">
+                <button class="btn primary" style="background: #2AABEE; width: 100%; justify-content: center;" onclick="copyReconReport()"><i class='bx bxl-telegram'></i> Copy របាយការណ៍បិទបញ្ជី</button>
+            </div>
+        </div>
+
+        <!-- ២. ប្រព័ន្ធប្រាក់រង្វាន់លើកទឹកចិត្ត (Tiered Bonus) -->
+        <div class="panel">
+            <div class="panel-head border-bottom pb-3 mb-3">
+                <h3><i class='bx bx-medal' style="color:var(--warning);"></i> គោលដៅប្រាក់រង្វាន់បន្ថែម (Incentives)</h3>
+            </div>
+            <div id="tierBonusContainer">
+                <!-- របារគោលដៅនឹងលោតនៅទីនេះ -->
+            </div>
+            <small class="muted" style="display: block; margin-top: 15px; font-size: 11px;">* ប្រាក់រង្វាន់នេះនឹងបើកជូននៅពេលបិទបញ្ជីបំណាច់ឆ្នាំ ដោយផ្អែកលើទំហំលក់សរុប។</small>
+        </div>
+      </div>
+    </section>
 
     <!-- ================= Settings Tab ================= -->
     <section id="settingsTab" class="tab-content">
@@ -596,7 +648,39 @@
 </div> 
 
 <!-- ================= Modals (លោតពីលើ) ================= -->
-<div id="customerDetailModal" class="modal"><div class="modal-card" style="width: 500px;"><div class="modal-head"><h3><i class='bx bx-user-circle' style="color:var(--primary); margin-right:5px;"></i> ប្រវត្តិអតិថិជន (CLV)</h3><button class="icon-btn-round" onclick="closeModal('customerDetailModal')"><i class='bx bx-x'></i></button></div><div style="text-align:center; padding: 20px; background:var(--sidebar-hover); border-radius:12px; margin-bottom:20px;"><h2 id="modalCusName" style="margin:0 0 10px; color:var(--text);">ឈ្មោះអតិថិជន</h2><div style="display:flex; justify-content:space-around;"><div><small class="muted block">ទិញសរុប (ដង)</small><b id="modalCusOrders" style="font-size:18px;">0</b></div><div><small class="muted block">ចំណាយសរុប (៛)</small><b id="modalCusSpent" style="font-size:18px; color:var(--success);">0 ៛</b></div><div><small class="muted block">ទិញចុងក្រោយ</small><b id="modalCusLastDate" style="font-size:14px;">-</b></div></div></div></div></div>
+<!-- Modal សម្រាប់បង្ហាញប្រវត្តិអតិថិជន និងតារាងទិញទំនិញ -->
+<div id="customerDetailModal" class="modal">
+    <div class="modal-card" style="width: 700px; max-width: 95%;">
+        <div class="modal-head">
+            <h3><i class='bx bx-user-circle' style="color:var(--primary); margin-right:5px;"></i> ប្រវត្តិអតិថិជនលម្អិត</h3>
+            <button class="icon-btn-round" onclick="closeModal('customerDetailModal')"><i class='bx bx-x'></i></button>
+        </div>
+        <div style="text-align:center; padding: 15px; background:var(--sidebar-hover); border-radius:12px; margin-bottom:20px;">
+            <h2 id="modalCusName" style="margin:0 0 10px; color:var(--text);">ឈ្មោះអតិថិជន</h2>
+            <div style="display:flex; justify-content:space-around;">
+                <div><small class="muted block">ទិញសរុប (ដង)</small><b id="modalCusOrders" style="font-size:18px;">0</b></div>
+                <div><small class="muted block">ចំណាយសរុប (៛)</small><b id="modalCusSpent" style="font-size:18px; color:var(--success);">0 ៛</b></div>
+                <div><small class="muted block">ទិញចុងក្រោយ</small><b id="modalCusLastDate" style="font-size:14px;">-</b></div>
+            </div>
+        </div>
+        <div id="modalDebtActionArea"></div>
+        <h4 style="margin-bottom: 10px; color: var(--text); border-bottom: 2px solid var(--line); padding-bottom: 8px;">ប្រវត្តិទិញទំនិញ (Purchase History)</h4>
+        <div class="table-scroll" style="max-height: 250px; overflow-y: auto;">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>ថ្ងៃទី / វិក្កយបត្រ</th>
+                        <th>មុខទំនិញ</th>
+                        <th class="text-center">ចំនួន</th>
+                        <th class="text-right">សរុប (៛)</th>
+                        <th class="text-center">ស្ថានភាព</th>
+                    </tr>
+                </thead>
+                <tbody id="modalCusHistoryTable"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
 <div id="productModal" class="modal">
     <div class="modal-card" style="width: 700px; max-width: 95%;">
         <div class="modal-head"><h3><i class='bx bx-cube-alt' style="color:var(--primary); margin-right:5px;"></i> បន្ថែមមុខទំនិញថ្មី</h3><button class="icon-btn-round" onclick="closeModal('productModal')"><i class='bx bx-x'></i></button></div>
@@ -695,29 +779,6 @@
     </div>
 </div>
 
-<!-- Modal សម្រាប់បង្ហាញមុខទំនិញលម្អិតតាមប្រភេទ -->
-<div id="categoryDetailModal" class="modal">
-    <div class="modal-card" style="width: 700px; max-width: 95%;">
-        <div class="modal-head" style="display: flex; align-items: center;">
-            <h3 style="margin: 0; flex: 1;"><i class='bx bx-list-ul' style="color:var(--primary); margin-right:5px;"></i> លម្អិត: <span id="modalCatName" style="color: var(--primary);"></span></h3>
-            <div id="modalCatTotalStd" style="margin-right: 15px; display: flex; align-items: center;"></div>
-            <button class="icon-btn-round" onclick="closeModal('categoryDetailModal')"><i class='bx bx-x'></i></button>
-        </div>
-        <div class="table-scroll" style="max-height: 400px; overflow-y: auto;">
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th>មុខទំនិញ & ថ្ងៃលក់ចុងក្រោយ</th>
-                        <th class="text-right">ចំនួនលក់ & របារប្រៀបធៀប</th>
-                        <th class="text-right">ចំណូលសរុប (៛)</th>
-                    </tr>
-                </thead>
-                <tbody id="categoryDetailTableBody"></tbody>
-            </table>
-        </div>
-    </div>
-</div>
-
 <!-- Modal សម្រាប់បង្ហាញមុខទំនិញលម្អិតតាមផលិតផល (Product Detail) -->
 <div id="productDetailModal" class="modal">
     <div class="modal-card" style="width: 700px; max-width: 95%;">
@@ -762,6 +823,7 @@
         </div>
     </div>
 </div>
+
 <!-- 🌟 Modal សម្រាប់កែប្រែ និងលុបទំនិញ (Edit & Delete Product) 🌟 -->
 <div id="editProductModal" class="modal">
     <div class="modal-card" style="width: 700px; max-width: 95%;">
@@ -815,7 +877,6 @@
             <label class="span-3">របៀបប្រើប្រាស់/អត្រាលាយ (Usage Guide)<input type="text" id="editProdUsage" class="form-input"></label>
         </div>
         <div class="modal-actions border-top pt-3" style="display: flex; justify-content: space-between;">
-            <!-- 🌟 ប៊ូតុងលុប (Delete) 🌟 -->
             <button class="btn outline" style="color: var(--danger); border-color: var(--danger);" onclick="deleteProduct()"><i class='bx bx-trash'></i> លុបទំនិញ</button>
             <div style="display: flex; gap: 10px;">
                 <button class="btn secondary" onclick="closeModal('editProductModal')">បោះបង់</button>
