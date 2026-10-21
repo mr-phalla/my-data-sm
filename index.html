@@ -241,7 +241,7 @@
       </div>
 
       <!-- Yearly Target & Gamification (Bonus System) -->
-      <div class="panel mt-4" style="background: linear-gradient(135deg, #1e3a8a, #3b82f6); color: white;">
+      <div class="panel mt-4" style="background: linear-gradient(135deg, #0284c7, #38bdf8); color: white;">
           <div class="flex-between align-start mb-3">
               <div>
                   <h3 style="margin:0; color:white;">គោលដៅលក់ប្រចាំឆ្នាំ <span id="targetYearLabel"></span></h3>
@@ -392,7 +392,19 @@
                 <label>អ្នកគិតលុយ<input type="text" id="cashier" value="Admin" class="form-input"></label>
                 <label class="span-2">អតិថិជន<input type="text" id="customerInput" list="customerListOptions" placeholder="ស្វែងរកអតិថិជន..." oninput="onCustomerSelect()" class="form-input"></label>
                 <label>លេខទូរស័ព្ទ<input type="text" id="phone" class="form-input"></label>
-                <label class="span-3">អាសយដ្ឋាន<input type="text" id="address" class="form-input"></label>
+                <label class="span-2">អាសយដ្ឋាន<input type="text" id="address" class="form-input"></label>
+                <label>ប្រភេទដំណាំ
+                    <select id="saleCropType" class="form-input">
+                        <option value="">មិនបញ្ជាក់</option>
+                        <option value="ស្វាយចន្ទី">ស្វាយចន្ទី</option>
+                        <option value="ទុរេន">ទុរេន</option>
+                        <option value="ស្រូវ">ស្រូវ</option>
+                        <option value="ពុទ្រា">ពុទ្រា</option>
+                        <option value="តាង៉ែន">តាង៉ែន</option>
+                        <option value="ស្វាយកែវរមៀត">ស្វាយកែវរមៀត</option>
+                        <option value="ផ្សេងៗ">ផ្សេងៗ</option>
+                    </select>
+                </label>
               </div>
               
               <!-- 🌟 មុខងារថ្មីទី១៖ ជំនួយការលក់ឆ្លាតវៃ (Smart Assistant) 🌟 -->
@@ -460,16 +472,7 @@
             </div>
           </div>
           
-          <div class="print-footer mt-4">
-              <div style="width: 200px;">
-                  <strong>ហត្ថលេខាអ្នកទិញ</strong>
-                  <div style="border-bottom: 1px dashed #94a3b8; height: 80px; margin-top: 10px;"></div>
-              </div>
-              <div style="width: 200px;">
-                  <strong>ហត្ថលេខាអ្នកលក់</strong>
-                  <div style="border-bottom: 1px dashed #94a3b8; height: 80px; margin-top: 10px;"></div>
-              </div>
-          </div>
+          <div class="print-footer" style="display: none;"></div>
       </div> <!-- បញ្ចប់ #invoiceCaptureWrapper -->
     </section>
 
@@ -535,7 +538,13 @@
     
     <!-- ================= Customers Tab ================= -->
     <section id="customerTab" class="tab-content">
-      <div class="page-heading"><div><h1>អតិថិជន</h1><p class="muted">CRM: តាមដានប្រវត្តិទិញ និងបំណុលរបស់អតិថិជនម្នាក់ៗ។</p></div><div class="heading-actions"><button class="btn primary" onclick="openModal('customerModal')"><i class='bx bx-plus'></i> បន្ថែមអតិថិជន</button></div></div>
+      <div class="page-heading">
+        <div><h1>អតិថិជន</h1><p class="muted">CRM: តាមដានប្រវត្តិទិញ និងបំណុលរបស់អតិថិជនម្នាក់ៗ។</p></div>
+        <div class="heading-actions">
+            <button class="btn secondary" onclick="exportCustomersCSV()"><i class='bx bx-export'></i> Export ទិន្នន័យ (CSV)</button>
+            <button class="btn primary" onclick="openModal('customerModal')"><i class='bx bx-plus'></i> បន្ថែមអតិថិជន</button>
+        </div>
+      </div>
       
       <div class="panel mb-4">
           <div class="panel-head border-bottom pb-3 mb-3">
@@ -555,7 +564,17 @@
       </div>
 
       <div class="panel">
-          <div class="panel-head flex-between border-bottom pb-3 mb-3 flex-mobile-col align-start"><div class="tabs-inline mb-mobile"><span class="active">អតិថិជនទាំងអស់</span></div><div class="search-box"><i class='bx bx-search'></i><input type="text" id="searchCustomer" placeholder="ស្វែងរកអតិថិជន..." oninput="renderCustomers()"></div></div>
+          <div class="panel-head flex-between border-bottom pb-3 mb-3 flex-mobile-col align-start">
+              <div class="tabs-inline mb-mobile">
+                  <!-- 🌟 ប្រអប់ Filter ចម្រាញ់អតិថិជន 🌟 -->
+                  <select id="filterCustomer" class="form-input" style="width: auto; padding: 6px 10px; font-weight: bold; color: var(--primary); border: 1px solid var(--line); background: var(--sidebar-hover);" onchange="renderCustomers()">
+                      <option value="all">👥 អតិថិជនទាំងអស់</option>
+                      <option value="debt">⚠️ អ្នកកំពុងជំពាក់</option>
+                      <option value="vip">👑 តែអតិថិជន VIP</option>
+                  </select>
+              </div>
+              <div class="search-box"><i class='bx bx-search'></i><input type="text" id="searchCustomer" placeholder="ស្វែងរកអតិថិជន..." oninput="renderCustomers()"></div>
+          </div>
           <div class="table-scroll"><table class="data-table">
               <thead><tr><th>អតិថិជន</th><th>លេខទូរស័ព្ទ</th><th class="text-right">ចំណាយសរុប</th><th class="text-center">ចំណាត់ថ្នាក់</th><th class="text-center">ស្ថានភាពបំណុល</th><th class="text-center">ជម្រើស</th></tr></thead>
               <tbody id="customersTableBody"></tbody>
@@ -632,46 +651,178 @@
       </div>
     </section>
     <!-- ================= Branch Ops Tab (ប្រតិបត្តិការសាខា) ================= -->
+   <!-- ================= Branch Ops Tab (ប្រតិបត្តិការសាខា) ================= -->
     <section id="branchTab" class="tab-content">
       <div class="page-heading flex-mobile-col align-start">
         <div>
-            <h1>បិទបញ្ជីសាច់ប្រាក់</h1>
-            <p class="muted">ផ្ទៀងផ្ទាត់បញ្ជីលក់ ចំណាយ និងសាច់ប្រាក់ជាក់ស្តែង (Daily Reconciliation)។</p>
+            <h1>ផ្ទៀងផ្ទាត់សាច់ប្រាក់ (Reconciliation)</h1>
+            <p class="muted">កន្លែងសម្រាប់បូកសរុបលុយក្នុងប្រព័ន្ធ ដើម្បីផ្ទៀងផ្ទាត់ជាមួយលុយជាក់ស្តែងក្នុងថត។</p>
         </div>
         <div class="heading-actions">
-            <!-- 🌟 មុខងាររើសកាលបរិច្ឆេទសម្រាប់បិទបញ្ជី -->
+            <!-- មុខងាររើសចន្លោះថ្ងៃសម្រាប់បិទបញ្ជីម្តង ២-៣ ថ្ងៃ -->
             <div style="display: flex; align-items: center; gap: 5px; background: var(--surface); padding: 4px 8px; border-radius: 8px; border: 1px solid var(--line); white-space: nowrap;">
                 <i class='bx bx-calendar muted'></i>
-                <input type="date" id="reconDate" class="form-input" style="padding: 6px; width: auto; font-size: 13px; border:none; font-weight: bold;" onchange="renderBranchOps()">
+                <input type="date" id="reconStartDate" class="form-input" style="padding: 6px; width: auto; font-size: 13px; border:none; font-weight: bold;" onchange="renderBranchOps()">
+                <span class="muted">-</span>
+                <input type="date" id="reconEndDate" class="form-input" style="padding: 6px; width: auto; font-size: 13px; border:none; font-weight: bold;" onchange="renderBranchOps()">
             </div>
         </div>
       </div>
       
-      <div class="dashboard-grid-main mt-4" style="grid-template-columns: 1fr; max-width: 600px; margin: 0 auto;">
-        <!-- ១. ផ្ទៀងផ្ទាត់បញ្ជីប្រចាំថ្ងៃ (Daily Reconciliation) -->
+      <!-- ចែកអេក្រង់ជា ២ (ឆ្វេង: ម៉ាស៊ីនគិតលេខ, ស្តាំ: ប្រវត្តិថ្ងៃ) -->
+      <div class="dashboard-grid-main mt-4" style="grid-template-columns: 1fr 1fr; gap: 20px;">
+        
+        <!-- ១. ម៉ាស៊ីនគិតលេខផ្ទៀងផ្ទាត់ (ខាងឆ្វេង) -->
         <div class="panel">
             <div class="panel-head border-bottom pb-3 mb-3">
-                <h3><i class='bx bx-check-shield' style="color:var(--success);"></i> របាយការណ៍បិទបញ្ជីប្រចាំថ្ងៃ</h3>
+                <h3><i class='bx bx-calculator' style="color:var(--primary);"></i> ម៉ាស៊ីនទូទាត់សាច់ប្រាក់</h3>
             </div>
-            <div id="dailyReconContainer" style="font-size: 15px;">
-                <!-- ទិន្នន័យនឹងលោតនៅទីនេះ -->
+            
+            <div style="background: rgba(79, 70, 229, 0.05); padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid rgba(79, 70, 229, 0.2);">
+                <h4 style="margin: 0 0 15px; color: var(--primary);"><i class='bx bx-log-out-circle'></i> វាយបញ្ចូលលុយដកចេញ (CASH OUT)</h4>
+                
+                <div style="display: grid; grid-template-columns: 1fr; gap: 10px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <label class="muted" style="margin:0; font-size: 13px;">🏦 ដាក់ធនាគារ (Deposit Bank):</label>
+                        <input type="number" id="depositBankAmt" class="form-input" placeholder="0" style="width: 140px; text-align: right; font-weight: bold; color: var(--primary);" oninput="renderBranchOps()">
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <label class="muted" style="margin:0; font-size: 13px;">🏢 ប្រគល់ក្រុមហ៊ុន (Head Office):</label>
+                        <input type="number" id="headOfficeAmt" class="form-input" placeholder="0" style="width: 140px; text-align: right; font-weight: bold; color: var(--primary);" oninput="renderBranchOps()">
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <label class="muted" style="margin:0; font-size: 13px;">🏪 ទុកក្នុងហាង (SHOP'S SAVE BOX):</label>
+                        <input type="number" id="shopSaveBox" class="form-input" placeholder="0" style="width: 140px; text-align: right; font-weight: bold; color: var(--success);" oninput="renderBranchOps()">
+                    </div>
+                </div>
             </div>
-            <div class="border-top pt-4 mt-4 text-right">
-                <button class="btn primary" style="background: #2AABEE; width: 100%; justify-content: center; font-size: 15px; padding: 12px;" onclick="copyReconReport()"><i class='bx bxl-telegram'></i> Copy របាយការណ៍បិទបញ្ជី</button>
+
+            <!-- ប្រអប់លទ្ធផលគណនានឹងលោតចូលទីនេះ -->
+            <div id="dailyReconContainer" style="font-size: 14px;"></div>
+        </div>
+
+        <!-- ២. ប្រវត្តិថ្ងៃមានការលក់ (ខាងស្តាំ) -->
+        <div class="panel">
+            <div class="panel-head border-bottom pb-3 mb-3">
+                <h3><i class='bx bx-history' style="color:var(--warning);"></i> ថ្ងៃដែលមានប្រតិបត្តិការលក់</h3>
+            </div>
+            <div class="table-scroll" style="max-height: 500px; overflow-y: auto;">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>កាលបរិច្ឆេទ</th>
+                            <th class="text-right">ចំណូល (៛)</th>
+                            <th class="text-center">ជម្រើស</th>
+                        </tr>
+                    </thead>
+                    <tbody id="reconHistoryContainer">
+                        <!-- ប្រវត្តិទិន្នន័យលោតទីនេះ -->
+                    </tbody>
+                </table>
             </div>
         </div>
+
       </div>
     </section>
-
+    <!-- ================= Settings Tab ================= -->
     <!-- ================= Settings Tab ================= -->
     <section id="settingsTab" class="tab-content">
-      <div class="page-heading"><div><h1>ការកំណត់</h1><p class="muted">តំណភ្ជាប់ និងប្រព័ន្ធ</p></div></div>
-      <div class="dashboard-grid-main">
+      <div class="page-heading"><div><h1>ការកំណត់ (Settings)</h1><p class="muted">គ្រប់គ្រងគណនី ទម្រង់វិក្កយបត្រ និងទិន្នន័យ</p></div></div>
+      
+      <div class="dashboard-grid-main mt-4" style="grid-template-columns: 1fr 1fr; gap: 20px;">
+          <!-- ១. ទម្រង់វិក្កយបត្រ -->
           <div class="panel">
-              <div class="panel-head border-bottom pb-3 mb-4"><h3>Client Portal Integration</h3></div>
+              <div class="panel-head border-bottom pb-3 mb-4"><h3><i class='bx bx-printer'></i> ព័ត៌មានលើវិក្កយបត្រ</h3></div>
+              <div class="form-grid" style="grid-template-columns: 1fr;">
+                  <label>ឈ្មោះហាង<input type="text" id="settingShopName" class="form-input"></label>
+                  <label>លេខទូរស័ព្ទ<input type="text" id="settingShopPhone" class="form-input"></label>
+                  <label>អាសយដ្ឋាន<input type="text" id="settingShopAddress" class="form-input"></label>
+                  <button class="btn primary mt-2" style="justify-content: center;" onclick="savePrintSettings()"><i class='bx bx-save'></i> រក្សាទុកព័ត៌មានហាង</button>
+              </div>
+          </div>
+
+          <!-- ២. សុវត្ថិភាពគណនី -->
+          <div class="panel">
+              <div class="panel-head border-bottom pb-3 mb-4"><h3><i class='bx bx-lock-alt'></i> សុវត្ថិភាព (Security)</h3></div>
+              
+              <h4 style="margin-bottom: 10px; font-size: 13px; color: var(--primary);">ប្តូរលេខកូដសម្ងាត់ (PIN) សម្រាប់ដោះសោរ</h4>
+              <div class="form-grid" style="grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px;">
+                  <label>PIN ចាស់<input type="password" id="oldPin" class="form-input"></label>
+                  <label>PIN ថ្មី (៤ខ្ទង់)<input type="password" id="newPin" class="form-input"></label>
+                  <div class="span-2 text-right"><button class="btn secondary small" onclick="updateAdminPin()">ផ្លាស់ប្តូរ PIN</button></div>
+              </div>
+
+              <h4 style="margin-bottom: 10px; font-size: 13px; color: var(--danger); border-top: 1px dashed var(--line); padding-top: 15px;">ប្តូរពាក្យសម្ងាត់ចូលគណនី (Password)</h4>
+              <div class="form-grid" style="grid-template-columns: 1fr; gap: 10px; margin-bottom: 10px;">
+                  <label>ពាក្យសម្ងាត់ថ្មី (៦ខ្ទង់ឡើង)<input type="password" id="newAccPassword" class="form-input"></label>
+                  <div class="text-right"><button class="btn secondary small" style="color:var(--danger); border-color:var(--danger);" onclick="updateAccountPassword()">ផ្លាស់ប្តូរ Password</button></div>
+              </div>
+          </div>
+
+          <!-- ៣. Client Portal -->
+          <div class="panel">
+              <div class="panel-head border-bottom pb-3 mb-4"><h3><i class='bx bx-link'></i> តំណភ្ជាប់សម្រាប់អតិថិជន</h3></div>
               <div style="display: flex; align-items: flex-start; gap: 20px;">
-                  <div class="icon-btn-round" style="width: 50px; height: 50px; background: rgba(79, 70, 229, 0.1); color: var(--primary); font-size: 24px; border: none;"><i class='bx bx-link'></i></div>
-                  <div><h4 style="margin: 0 0 8px; font-size: 16px;">Client Access Link</h4><p class="muted mb-3">ចម្លង Link នេះផ្ញើជូនអតិថិជន ដើម្បីឲ្យពួកគេអាចស្វែងរក និងមើលប្រវត្តិវិក្កយបត្រដោយខ្លួនឯងបាន។</p><button class="btn secondary" onclick="copyClientLink()"><i class='bx bx-copy'></i> Copy Link</button></div>
+                  <div class="icon-btn-round" style="width: 50px; height: 50px; background: rgba(79, 70, 229, 0.1); color: var(--primary); font-size: 24px; border: none;"><i class='bx bx-world'></i></div>
+                  <div>
+                      <p class="muted mb-3" style="font-size: 13px; line-height: 1.5;">ចម្លង Link នេះផ្ញើជូនអតិថិជន ដើម្បីឲ្យពួកគេអាចស្វែងរក និងមើលប្រវត្តិវិក្កយបត្រជំពាក់ដោយខ្លួនឯងបានតាមទូរស័ព្ទ។</p>
+                      <button class="btn secondary" onclick="copyClientLink()"><i class='bx bx-copy'></i> Copy Link ផ្ញើឱ្យម៉ូយ</button>
+                  </div>
+              </div>
+          </div>
+
+          <!-- ៤. អត្រាប្តូរប្រាក់ (Exchange Rate) -->
+          <div class="panel">
+              <div class="panel-head border-bottom pb-3 mb-4"><h3><i class='bx bx-money'></i> អត្រាប្តូរប្រាក់ (Exchange Rate)</h3></div>
+              <div class="form-grid" style="grid-template-columns: 1fr;">
+                  <label>អត្រាប្តូរប្រាក់ (១ដុល្លារ = ? រៀល)
+                      <div style="display: flex; gap: 10px; margin-top: 5px;">
+                          <input type="number" id="settingExchangeRate" class="form-input" placeholder="ឧ. 4100" style="font-weight: bold; color: var(--primary);">
+                          <button class="btn primary" style="white-space: nowrap;" onclick="saveExchangeRate()"><i class='bx bx-save'></i> រក្សាទុក</button>
+                      </div>
+                  </label>
+                  <small class="muted">ប្រើសម្រាប់បម្លែងប្រាក់ដុល្លារ ទៅជារៀល ក្នុងប្រអប់កំណត់ Target ប្រចាំឆ្នាំ។</small>
+              </div>
+          </div>
+
+          <!-- ៥. Data Backup & Restore -->
+          <div class="panel">
+              <div class="panel-head border-bottom pb-3 mb-4"><h3><i class='bx bx-data'></i> បម្រុងទុក និងទាញទិន្នន័យត្រឡប់ (Backup & Restore)</h3></div>
+              <div style="display: flex; flex-direction: column; gap: 20px;">
+                  
+                  <div style="display: flex; align-items: flex-start; gap: 15px; background: rgba(16, 185, 129, 0.05); padding: 15px; border-radius: 8px; border: 1px solid rgba(16, 185, 129, 0.2);">
+                      <div class="icon-btn-round" style="width: 40px; height: 40px; background: white; color: var(--success); font-size: 20px; border: none; flex-shrink: 0;"><i class='bx bx-cloud-download'></i></div>
+                      <div>
+                          <b style="display: block; margin-bottom: 5px; font-size: 14px; color: var(--success);">ទាញយក Backup (Export)</b>
+                          <p class="muted mb-3" style="font-size: 12px; line-height: 1.5;">ទាញយកទិន្នន័យទាំងអស់ជាឯកសារ JSON ទុកជា Backup ការពារបាត់បង់។</p>
+                          <button class="btn primary small" style="background: var(--success); color: white;" onclick="exportAllDataBackup()"><i class='bx bx-download'></i> ទាញយក Backup ទិន្នន័យ</button>
+                      </div>
+                  </div>
+
+                  <div style="display: flex; align-items: flex-start; gap: 15px; background: rgba(245, 158, 11, 0.05); padding: 15px; border-radius: 8px; border: 1px solid rgba(245, 158, 11, 0.2);">
+                      <div class="icon-btn-round" style="width: 40px; height: 40px; background: white; color: var(--warning); font-size: 20px; border: none; flex-shrink: 0;"><i class='bx bx-cloud-upload'></i></div>
+                      <div>
+                          <b style="display: block; margin-bottom: 5px; font-size: 14px; color: var(--warning);">ទាញទិន្នន័យត្រឡប់មកវិញ (Restore)</b>
+                          <p class="muted mb-3" style="font-size: 12px; line-height: 1.5;">បញ្ចូលឯកសារ JSON ពីមុនមកក្នុងប្រព័ន្ធវិញ (ទាមទារ PIN Code)។ <br><span style="color:var(--danger);">បញ្ជាក់៖ វានឹងលុបទិន្នន័យចាស់ក្នុងប្រព័ន្ធចេញទាំងអស់ មុននឹងបញ្ចូលទិន្នន័យថ្មី។</span></p>
+                          <input type="file" id="restoreBackupFile" accept=".json" style="display: none;" onchange="handleRestoreBackup(event)">
+                          <button class="btn secondary small" style="border-color: var(--warning); color: var(--warning);" onclick="document.getElementById('restoreBackupFile').click()"><i class='bx bx-upload'></i> ជ្រើសរើស File និង Restore</button>
+                      </div>
+                  </div>
+
+              </div>
+          </div>
+
+          <!-- ៦. Danger Zone (System Reset) -->
+          <div class="panel span-2" style="border: 1px dashed var(--danger); background: rgba(239, 68, 68, 0.02);">
+              <div class="panel-head border-bottom pb-3 mb-4">
+                  <h3 style="color: var(--danger);"><i class='bx bx-error-alt'></i> តំបន់គ្រោះថ្នាក់ (Danger Zone)</h3>
+              </div>
+              <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 15px;">
+                  <div>
+                      <b style="display: block; margin-bottom: 5px; color: var(--text);">លុបទិន្នន័យទាំងអស់ (Factory Reset)</b>
+                      <p class="muted" style="margin: 0; font-size: 13px;">លុបទិន្នន័យលក់ ចំណាយ ទំនិញ និងអតិថិជនទាំងអស់ ដើម្បីចាប់ផ្តើមប្រព័ន្ធជាថ្មី (ទាមទារ PIN Code)។</p>
+                  </div>
+                  <button class="btn primary" style="background: var(--danger); color: white;" onclick="factoryResetSystem()"><i class='bx bx-trash'></i> លុបទិន្នន័យទាំងអស់ (Reset)</button>
               </div>
           </div>
       </div>
@@ -804,7 +955,65 @@
         <div class="modal-actions border-top pt-3"><button class="btn secondary" onclick="closeModal('productModal')">បោះបង់</button><button class="btn primary" onclick="saveNewProduct()"><i class='bx bx-save'></i> រក្សាទុក</button></div>
     </div>
 </div>
-<div id="customerModal" class="modal"><div class="modal-card"><div class="modal-head"><h3>បន្ថែមអតិថិជនថ្មី</h3><button class="icon-btn-round" onclick="closeModal('customerModal')"><i class='bx bx-x'></i></button></div><div class="form-grid mb-4"><label class="span-3">ឈ្មោះ<input type="text" id="newCustName" class="form-input"></label><label class="span-3">លេខទូរស័ព្ទ<input type="text" id="newCustPhone" class="form-input"></label><label class="span-3">អាសយដ្ឋាន<input type="text" id="newCustAddress" class="form-input"></label></div><div class="modal-actions border-top pt-3"><button class="btn secondary" onclick="closeModal('customerModal')">បោះបង់</button><button class="btn primary" onclick="saveNewCustomer()">រក្សាទុក</button></div></div></div>
+<!-- 🌟 Modal សម្រាប់បន្ថែមអតិថិជនថ្មី 🌟 -->
+<div id="customerModal" class="modal">
+    <div class="modal-card">
+        <div class="modal-head"><h3>បន្ថែមអតិថិជនថ្មី</h3><button class="icon-btn-round" onclick="closeModal('customerModal')"><i class='bx bx-x'></i></button></div>
+        <div class="form-grid mb-4">
+            <label class="span-3">ឈ្មោះ<input type="text" id="newCustName" class="form-input"></label>
+            <label class="span-3">លេខទូរស័ព្ទ<input type="text" id="newCustPhone" class="form-input"></label>
+            <label class="span-2">អាសយដ្ឋាន<input type="text" id="newCustAddress" class="form-input"></label>
+            <label>ប្រភេទដំណាំ
+                <select id="newCustCrop" class="form-input">
+                    <option value="">មិនបញ្ជាក់</option>
+                    <option value="ស្វាយចន្ទី">ស្វាយចន្ទី</option>
+                    <option value="ទុរេន">ទុរេន</option>
+                    <option value="ស្រូវ">ស្រូវ</option>
+                    <option value="ពុទ្រា">ពុទ្រា</option>
+                    <option value="តាង៉ែន">តាង៉ែន</option>
+                    <option value="ស្វាយកែវរមៀត">ស្វាយកែវរមៀត</option>
+                    <option value="ផ្សេងៗ">ផ្សេងៗ</option>
+                </select>
+            </label>
+        </div>
+        <div class="modal-actions border-top pt-3"><button class="btn secondary" onclick="closeModal('customerModal')">បោះបង់</button><button class="btn primary" onclick="saveNewCustomer()">រក្សាទុក</button></div>
+    </div>
+</div>
+
+<!-- 🌟 Modal សម្រាប់កែប្រែ និងលុបអតិថិជន 🌟 -->
+<div id="editCustomerModal" class="modal">
+    <div class="modal-card" style="width: 500px;">
+        <div class="modal-head" style="border-bottom: 1px solid var(--line); padding-bottom: 15px; margin-bottom: 20px;">
+            <h3 style="margin: 0; color: #f59e0b;"><i class='bx bx-edit'></i> កែប្រែព័ត៌មានអតិថិជន</h3>
+            <button class="icon-btn-round" onclick="closeModal('editCustomerModal')"><i class='bx bx-x'></i></button>
+        </div>
+        <input type="hidden" id="editCustOldName">
+        <div class="form-grid mb-4" style="grid-template-columns: 1fr 1fr;">
+            <label class="span-2">ឈ្មោះអតិថិជន<input type="text" id="editCustName" class="form-input"></label>
+            <label class="span-2">លេខទូរស័ព្ទ<input type="text" id="editCustPhone" class="form-input"></label>
+            <label>អាសយដ្ឋាន<input type="text" id="editCustAddress" class="form-input"></label>
+            <label>ប្រភេទដំណាំ
+                <select id="editCustCrop" class="form-input">
+                    <option value="">មិនបញ្ជាក់</option>
+                    <option value="ស្វាយចន្ទី">ស្វាយចន្ទី</option>
+                    <option value="ទុរេន">ទុរេន</option>
+                    <option value="ស្រូវ">ស្រូវ</option>
+                    <option value="ពុទ្រា">ពុទ្រា</option>
+                    <option value="តាង៉ែន">តាង៉ែន</option>
+                    <option value="ស្វាយកែវរមៀត">ស្វាយកែវរមៀត</option>
+                    <option value="ផ្សេងៗ">ផ្សេងៗ</option>
+                </select>
+            </label>
+        </div>
+        <div class="modal-actions border-top pt-3" style="display: flex; justify-content: space-between;">
+            <button class="btn outline" style="color: var(--danger); border-color: var(--danger);" onclick="deleteCustomer()"><i class='bx bx-trash'></i> លុបអតិថិជននេះ</button>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn secondary" onclick="closeModal('editCustomerModal')">បោះបង់</button>
+                <button class="btn primary" onclick="saveEditedCustomer()"><i class='bx bx-save'></i> រក្សាទុកកែប្រែ</button>
+            </div>
+        </div>
+    </div>
+</div>
 <div id="editSaleModal" class="modal"><div class="modal-card" style="width: 600px;"><div class="modal-head"><h3>កែប្រែទិន្នន័យ</h3><button class="icon-btn-round" onclick="closeModal('editSaleModal')"><i class='bx bx-x'></i></button></div><input type="hidden" id="editSaleId"><div class="form-grid two mb-4"><label class="span-2">មុខទំនិញ<input type="text" id="editSaleItem" class="form-input" readonly style="background: rgba(0,0,0,0.05); color: var(--muted);"></label><label>ស្ថានភាព<select id="editPaymentStatus" class="form-input"><option value="Paid">ទូទាត់រួច</option><option value="Unpaid">ជំពាក់</option></select></label><label>ចំនួន<input type="number" id="editSaleQty" class="form-input" oninput="calculateEditTotal()"></label><label>តម្លៃ (៛)<input type="number" id="editSalePrice" class="form-input" oninput="calculateEditTotal()"></label><label>បញ្ចុះតម្លៃ (៛)<input type="number" id="editSaleDiscount" class="form-input" oninput="calculateEditTotal()"></label><label class="span-2">សរុប (៛)<input type="text" id="editSaleTotal" class="form-input" readonly style="color:var(--success); font-weight:bold; font-size: 16px;"></label></div><div class="modal-actions border-top pt-3"><button class="btn secondary" onclick="closeModal('editSaleModal')">បោះបង់</button><button class="btn primary" onclick="saveEditedSale()">កែប្រែ</button></div></div></div>
 <!-- Modal សម្រាប់បន្ថែមចំណាយថ្មី -->
 <div id="expenseModal" class="modal">
@@ -940,25 +1149,43 @@
         </div>
     </div>
 </div>
-<!-- 🌟 Modal សម្រាប់បង្ហាញបំណុលដល់ថ្ងៃកំណត់ (Promise-to-Pay) 🌟 -->
+
+<!-- 🌟 Modal សម្រាប់សេចក្តីជូនដំណឹងទូទៅ (Notification Center) 🌟 -->
 <div id="overdueModal" class="modal">
-    <div class="modal-card" style="width: 600px; max-width: 95%;">
+    <div class="modal-card" style="width: 750px; max-width: 95%;">
         <div class="modal-head" style="display: flex; align-items: center; border-bottom: 1px solid var(--line); padding-bottom: 15px;">
-            <h3 style="margin: 0; flex: 1; color: var(--danger);"><i class='bx bx-alarm-exclamation'></i> អតិថិជនដល់ថ្ងៃសន្យាសងប្រាក់</h3>
+            <h3 style="margin: 0; flex: 1; color: var(--primary);"><i class='bx bx-bell bx-tada'></i> សារជូនដំណឹង (Notifications)</h3>
             <button class="icon-btn-round" onclick="closeModal('overdueModal')"><i class='bx bx-x'></i></button>
         </div>
-        <div class="table-scroll" style="max-height: 400px; overflow-y: auto;">
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th>អតិថិជន</th>
-                        <th class="text-center">ថ្ងៃសន្យា</th>
-                        <th class="text-right">ទឹកប្រាក់ជំពាក់ (៛)</th>
-                        <th class="text-center">ជម្រើស</th>
-                    </tr>
-                </thead>
-                <tbody id="overdueContainer"></tbody>
-            </table>
+        
+        <div class="dashboard-grid-main" style="grid-template-columns: 1fr; gap: 15px; margin-top: 15px;">
+            
+            <!-- ផ្នែកទី ១៖ បំណុលហួសកំណត់ -->
+            <div style="border: 1px solid #fecaca; border-radius: 8px; overflow: hidden;">
+                <div style="background: #fef2f2; padding: 10px 15px; border-bottom: 1px solid #fecaca; font-weight: bold; color: var(--danger); font-size: 14px;">
+                    <i class='bx bx-alarm-exclamation'></i> អតិថិជនហួសកំណត់សងប្រាក់
+                </div>
+                <div class="table-scroll" style="max-height: 250px; overflow-y: auto;">
+                    <table class="data-table">
+                        <thead><tr><th>អតិថិជន</th><th class="text-right">ទឹកប្រាក់ជំពាក់ (៛)</th><th class="text-center">សកម្មភាព</th></tr></thead>
+                        <tbody id="overdueContainer"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ផ្នែកទី ២៖ Follow-up អតិថិជន -->
+            <div style="border: 1px solid #c7d2fe; border-radius: 8px; overflow: hidden;">
+                <div style="background: #eef2ff; padding: 10px 15px; border-bottom: 1px solid #c7d2fe; font-weight: bold; color: var(--primary); font-size: 14px;">
+                    <i class='bx bx-phone-call'></i> ការងារត្រូវ Follow-Up ថ្ងៃនេះ
+                </div>
+                <div class="table-scroll" style="max-height: 250px; overflow-y: auto;">
+                    <table class="data-table">
+                        <thead><tr><th>អតិថិជន</th><th class="text-center">ដំណាក់កាលថែទាំ</th><th class="text-center">សកម្មភាព</th></tr></thead>
+                        <tbody id="notiFollowUpContainer"></tbody>
+                    </table>
+                </div>
+            </div>
+
         </div>
     </div>
 </div>
