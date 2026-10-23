@@ -44,6 +44,31 @@ function showToast(message, type = 'success') {
 function formatDateForInput(d) {
     return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
 }
+window.handleCropTypeChange = function(selectEl, labelId, inputId) {
+    let val = selectEl.value;
+    let label = document.getElementById(labelId);
+    let input = document.getElementById(inputId);
+    if(!label || !input) return;
+    
+    let newText = "ទំហំ/ចំនួនដាំដុះ ";
+    let newPlaceholder = "ឧ. 10 ឬ 500";
+
+    if(val === 'ទុរេន' || val === 'តាង៉ែន' || val === 'ស្វាយកែវរមៀត') {
+        newText = "ចំនួន (ដើម) ";
+        newPlaceholder = "ឧ. 500";
+    } else if (val === 'ស្វាយចន្ទី' || val === 'ស្រូវ' || val === 'ពុទ្រា' || val === 'ផ្សេងៗ') {
+        newText = "ទំហំដី (ហិកតា) ";
+        newPlaceholder = "ឧ. 10";
+    }
+    
+    for (let i = 0; i < label.childNodes.length; i++) {
+        if (label.childNodes[i].nodeType === 3) { 
+            label.childNodes[i].nodeValue = newText;
+            break;
+        }
+    }
+    input.placeholder = newPlaceholder;
+};
 
 function toggleSidebar() {
   document.getElementById('adminSidebar').classList.toggle('active');
@@ -488,7 +513,8 @@ async function loadCustomers() {
         name: String(c.name || c['customer name'] || c.customer_name || ""), 
         phone: String(c.phone || c['phone '] || ""), 
         address: String(c.address || ""),
-        crop: String(c.crop_type || "")
+        crop: String(c.crop_type || ""),
+        crop_size: String(c.crop_size || "") // 🌟 ទាញយកទំហំដី
     }));
     updateCustomerDatalist(); 
     renderCustomers();
@@ -633,7 +659,8 @@ window.renderCustomers = function() {
         if (stats.spent >= 50000000) tierBadge = `<span class="status-badge" style="background: linear-gradient(135deg, #f59e0b, #fbbf24); color: white;"><i class='bx bx-medal'></i> Gold VIP</span>`;
         else if (stats.spent >= 15000000) tierBadge = `<span class="status-badge" style="background: linear-gradient(135deg, #94a3b8, #cbd5e1); color: white;"><i class='bx bx-medal'></i> Silver</span>`;
 
-        let cropBadge = c.crop ? `<br><span class="status-badge" style="background:#dcfce7; color:#16a34a; margin-top:4px; display:inline-block; font-size:11px;"><i class='bx bx-leaf'></i> ${esc(c.crop)}</span>` : '';
+        let sizeText = c.crop_size ? ` - ${esc(c.crop_size)}` : '';
+        let cropBadge = c.crop ? `<br><span class="status-badge" style="background:#dcfce7; color:#16a34a; margin-top:4px; display:inline-block; font-size:11px;"><i class='bx bx-leaf'></i> ${esc(c.crop)}${sizeText}</span>` : '';
 
         html += `<tr>
             <td><b>${esc(c.name)}</b>${c.address ? `<br><small class="muted"><i class='bx bx-map'></i> ${esc(c.address)}</small>` : ''}${cropBadge}</td>
@@ -696,36 +723,44 @@ window.saveNewCustomer = async function() {
     let phone=document.getElementById('newCustPhone').value; 
     let address=document.getElementById('newCustAddress').value; 
     let crop=document.getElementById('newCustCrop') ? document.getElementById('newCustCrop').value : ''; 
+    let cropSize=document.getElementById('newCustCropSize') ? document.getElementById('newCustCropSize').value : ''; // 🌟
     if(!name.trim()) return; 
     
     let btn = document.querySelector('#customerModal .btn.primary');
     let oldTxt = btn.innerHTML; btn.innerHTML = "រក្សាទុក..."; btn.disabled = true;
 
-    const {error} = await db.from(TABLE_CUSTOMERS).insert([{customer_name:name, phone:phone, address:address, crop_type:crop}]); 
+    const {error} = await db.from(TABLE_CUSTOMERS).insert([{customer_name:name, phone:phone, address:address, crop_type:crop, crop_size:cropSize}]); 
     if(!error){ showToast("បានបន្ថែមអតិថិជនជោគជ័យ!"); closeModal('customerModal'); loadCustomers(); } 
     btn.innerHTML = oldTxt; btn.disabled = false;
 };
 
-window.openEditCustomer = function(name, phone, address, crop) {
+window.openEditCustomer = function(name, phone, address, crop, cropSize) {
     document.getElementById('editCustOldName').value = name;
     document.getElementById('editCustName').value = name;
     document.getElementById('editCustPhone').value = phone;
     document.getElementById('editCustAddress').value = address;
     
-    // 🌟 ការពារ Error បើគ្មានប្រអប់ដំណាំ ឬតម្លៃ undefined 🌟
     let cropSelect = document.getElementById('editCustCrop');
     if(cropSelect) {
         cropSelect.value = (crop && crop !== 'undefined') ? crop : ''; 
+        if(typeof handleCropTypeChange === 'function') handleCropTypeChange(cropSelect, 'lblEditCropSize', 'editCustCropSize');
+    }
+    
+    let cropSizeInput = document.getElementById('editCustCropSize');
+    if(cropSizeInput) {
+        cropSizeInput.value = (cropSize && cropSize !== 'undefined') ? cropSize : '';
     }
     
     openModal('editCustomerModal');
 };
+
 window.saveEditedCustomer = async function() {
     let oldName = document.getElementById('editCustOldName').value;
     let newName = document.getElementById('editCustName').value.trim();
     let newPhone = document.getElementById('editCustPhone').value.trim();
     let newAddress = document.getElementById('editCustAddress').value.trim();
     let newCrop = document.getElementById('editCustCrop') ? document.getElementById('editCustCrop').value : '';
+    let newCropSize = document.getElementById('editCustCropSize') ? document.getElementById('editCustCropSize').value : ''; // 🌟
     
     if(!newName) { showToast("សូមបញ្ចូលឈ្មោះអតិថិជន!", "error"); return; }
     
@@ -733,7 +768,7 @@ window.saveEditedCustomer = async function() {
     let oldTxt = btn.innerHTML; btn.innerHTML = "កំពុងរក្សាទុក..."; btn.disabled = true;
     
     const { error } = await db.from(TABLE_CUSTOMERS)
-        .update({ customer_name: newName, phone: newPhone, address: newAddress, crop_type: newCrop })
+        .update({ customer_name: newName, phone: newPhone, address: newAddress, crop_type: newCrop, crop_size: newCropSize }) // 🌟
         .eq('customer_name', oldName);
         
     if(!error) {
@@ -820,8 +855,14 @@ window.onCustomerSelect = function() {
   if (found) { 
       document.getElementById('phone').value = found.phone || ""; 
       document.getElementById('address').value = found.address || ""; 
+      
       if(document.getElementById('saleCropType')) {
-          document.getElementById('saleCropType').value = found.crop || "";
+          let cropSelect = document.getElementById('saleCropType');
+          cropSelect.value = found.crop || "";
+          if(typeof handleCropTypeChange === 'function') handleCropTypeChange(cropSelect, 'lblSaleSize', 'saleCropSize');
+      }
+      if(document.getElementById('saleCropSize')) {
+          document.getElementById('saleCropSize').value = found.crop_size || "";
       }
 
       if(assistantBox && assistantText) {
@@ -904,6 +945,7 @@ window.onCustomerSelect = function() {
       document.getElementById('phone').value = ""; 
       document.getElementById('address').value = ""; 
       if(document.getElementById('saleCropType')) document.getElementById('saleCropType').value = "";
+      if(document.getElementById('saleCropSize')) document.getElementById('saleCropSize').value = "";
       if(assistantBox) assistantBox.style.display = 'none';
   }
 };
@@ -1094,7 +1136,8 @@ window.saveData = async function() {
   let phoneVal = document.getElementById('phone') ? document.getElementById('phone').value : ''; 
   let addressVal = document.getElementById('address') ? document.getElementById('address').value : '';
   let statusVal = document.getElementById('paymentStatus') ? document.getElementById('paymentStatus').value : 'Paid';
-  let cropTypeVal = document.getElementById('saleCropType') ? document.getElementById('saleCropType').value : ''; // NEW
+  let cropTypeVal = document.getElementById('saleCropType') ? document.getElementById('saleCropType').value : ''; 
+  let cropSizeVal = document.getElementById('saleCropSize') ? document.getElementById('saleCropSize').value : ''; // 🌟 បន្ថែមការចាប់យកទំហំដី
 
   let globalDiscountEl = document.getElementById('globalDiscount');
   let globalDiscount = globalDiscountEl ? parseFloat(globalDiscountEl.value) || 0 : 0;
@@ -1166,7 +1209,8 @@ window.saveData = async function() {
             id: maxId,
             invoice_no: currentInvoiceNo, 
             date: dateVal, cashier: cashierVal, customer_name: customerVal, phone: phoneVal, address: addressVal, 
-            crop_type: cropTypeVal, // NEW
+            crop_type: cropTypeVal,
+            crop_size: cropSizeVal, // 🌟 បញ្ជូនទំហំដីចូល Database
             item: data.prodName, 
             unit: data.row.querySelector('.item-unit') ? data.row.querySelector('.item-unit').value.trim() : '', 
             package_type: data.row.querySelector('.item-pkg') ? data.row.querySelector('.item-pkg').value.trim() : '', 
@@ -1191,7 +1235,8 @@ window.saveData = async function() {
     if(document.getElementById('customerInput')) document.getElementById('customerInput').value = ''; 
     if(document.getElementById('phone')) document.getElementById('phone').value = ''; 
     if(document.getElementById('address')) document.getElementById('address').value = '';
-    if(document.getElementById('saleCropType')) document.getElementById('saleCropType').value = ''; // NEW
+    if(document.getElementById('saleCropType')) document.getElementById('saleCropType').value = ''; 
+    if(document.getElementById('saleCropSize')) document.getElementById('saleCropSize').value = ''; // 🌟 Reset ប្រអប់
     resetFormRows(); 
     await refreshAllData(); 
   }
@@ -1524,7 +1569,18 @@ window.viewInvoiceDetail = function(invNo) {
     
     let first = items[0];
     document.getElementById('detailInvNo').innerText = invNo;
-    document.getElementById('detailCusName').innerText = first.customer_name || 'Walk-in';
+    
+    // 🌟 បង្ហាញប្រភេទដំណាំ និងទំហំដីនៅជាប់ឈ្មោះអតិថិជន
+    let cNameDisplay = first.customer_name || 'Walk-in';
+    let extraInfo = [];
+    if (first.crop_type) extraInfo.push(first.crop_type);
+    if (first.crop_size) extraInfo.push(first.crop_size);
+    
+    if (extraInfo.length > 0) {
+        cNameDisplay += ` <span style="font-size: 11px; background: #e0e7ff; color: #4f46e5; padding: 2px 6px; border-radius: 4px; margin-left: 5px;">${esc(extraInfo.join(' - '))}</span>`;
+    }
+    
+    document.getElementById('detailCusName').innerHTML = cNameDisplay;
     document.getElementById('detailDate').innerText = first.date;
     
     let grandTotal = 0; let paidTotal = 0; let html = '';
@@ -1557,7 +1613,6 @@ window.viewInvoiceDetail = function(invNo) {
     document.getElementById('detailItemsTable').innerHTML = html;
     openModal('invoiceDetailModal');
 };
-
 window.reprintCurrentInvoice = function() {
     let invNo = document.getElementById('detailInvNo').innerText;
     let items = salesData.filter(s => getInvoiceNo(s) === invNo);
