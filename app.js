@@ -2149,16 +2149,19 @@ function loadDashboard() {
           document.getElementById('myCommission').innerHTML = `ត្រីមាសនេះ (Q${currentQuarter + 1}): <br><b style="font-size:18px; color:var(--success);">${money(quarterBonusTotal)}</b>`;
       }
       if(document.getElementById('dashboardExpenses')) document.getElementById('dashboardExpenses').innerText = money(currentYearExpenses);
+      
       // 🌟 បង្ហាញចំណេញសុទ្ធមានទាំង រៀល និង ដុល្លារ
       if(document.getElementById('netEarnings')) {
-          let exRate = parseFloat(localStorage.getItem('exchangeRate')) || 4100;
+          let storedRate = localStorage.getItem('exchangeRate');
+          let exRate = (storedRate && !isNaN(storedRate) && parseFloat(storedRate) > 0) ? parseFloat(storedRate) : 4100;
           let netUsd = netEarnings / exRate;
           let sign = netEarnings < 0 ? "-" : "";
           let usdFormatted = `${sign}$${Math.abs(netUsd).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
           
           document.getElementById('netEarnings').innerHTML = `${money(netEarnings)} <span style="font-size: 13px; color: #f8fafc; font-weight: 500; margin-left: 4px;">(${usdFormatted})</span>`;
       }
-  }
+  } // <-- ត្រូវប្រាកដថាមានសញ្ញា } នេះនៅទីនេះ ដើម្បីបិទលក្ខខណ្ឌខាងលើកុំឱ្យគាំង
+
 
   let followUpContainer = document.getElementById('followUpContainer');
   
