@@ -392,11 +392,11 @@
                 </div>
             </label>
                 <label>អ្នកគិតលុយ<input type="text" id="cashier" value="Admin" class="form-input"></label>
-                <label class="span-2">អតិថិជន<input type="text" id="customerInput" list="customerListOptions" placeholder="ស្វែងរកអតិថិជន..." oninput="onCustomerSelect()" class="form-input"></label>
+                <label class="span-2">អតិថិជន<input type="text" id="customerInput" list="customerListOptions" placeholder="ស្វែងរកអតិថិជន..." onchange="onCustomerSelect()" class="form-input"></label>
                 <label>លេខទូរស័ព្ទ<input type="text" id="phone" class="form-input"></label>
-                <label class="span-2">អាសយដ្ឋាន<input type="text" id="address" class="form-input"></label>
+                <label>អាសយដ្ឋាន<input type="text" id="address" class="form-input"></label>
                 <label>ប្រភេទដំណាំ
-                    <select id="saleCropType" class="form-input">
+                    <select id="saleCropType" class="form-input" onchange="handleCropTypeChange(this, 'lblSaleSize', 'saleCropSize')">
                         <option value="">មិនបញ្ជាក់</option>
                         <option value="ស្វាយចន្ទី">ស្វាយចន្ទី</option>
                         <option value="ទុរេន">ទុរេន</option>
@@ -407,6 +407,7 @@
                         <option value="ផ្សេងៗ">ផ្សេងៗ</option>
                     </select>
                 </label>
+                <label id="lblSaleSize">ទំហំ/ចំនួនដាំដុះ<input type="text" id="saleCropSize" class="form-input" placeholder="ឧ. 10 ហិកតា ឬ 500 ដើម"></label>
               </div>
               
               <!-- 🌟 មុខងារថ្មីទី១៖ ជំនួយការលក់ឆ្លាតវៃ (Smart Assistant) 🌟 -->
@@ -964,9 +965,9 @@
         <div class="form-grid mb-4">
             <label class="span-3">ឈ្មោះ<input type="text" id="newCustName" class="form-input"></label>
             <label class="span-3">លេខទូរស័ព្ទ<input type="text" id="newCustPhone" class="form-input"></label>
-            <label class="span-2">អាសយដ្ឋាន<input type="text" id="newCustAddress" class="form-input"></label>
-            <label>ប្រភេទដំណាំ
-                <select id="newCustCrop" class="form-input">
+            <label class="span-3">អាសយដ្ឋាន<input type="text" id="newCustAddress" class="form-input"></label>
+            <label class="span-2">ប្រភេទដំណាំ
+                <select id="newCustCrop" class="form-input" onchange="handleCropTypeChange(this, 'lblNewCropSize', 'newCustCropSize')">
                     <option value="">មិនបញ្ជាក់</option>
                     <option value="ស្វាយចន្ទី">ស្វាយចន្ទី</option>
                     <option value="ទុរេន">ទុរេន</option>
@@ -977,6 +978,7 @@
                     <option value="ផ្សេងៗ">ផ្សេងៗ</option>
                 </select>
             </label>
+            <label id="lblNewCropSize">ទំហំ/ចំនួនដាំដុះ<input type="text" id="newCustCropSize" class="form-input" placeholder="ឧ. 10 ឬ 500"></label>
         </div>
         <div class="modal-actions border-top pt-3"><button class="btn secondary" onclick="closeModal('customerModal')">បោះបង់</button><button class="btn primary" onclick="saveNewCustomer()">រក្សាទុក</button></div>
     </div>
@@ -993,9 +995,9 @@
         <div class="form-grid mb-4" style="grid-template-columns: 1fr 1fr;">
             <label class="span-2">ឈ្មោះអតិថិជន<input type="text" id="editCustName" class="form-input"></label>
             <label class="span-2">លេខទូរស័ព្ទ<input type="text" id="editCustPhone" class="form-input"></label>
-            <label>អាសយដ្ឋាន<input type="text" id="editCustAddress" class="form-input"></label>
+            <label class="span-2">អាសយដ្ឋាន<input type="text" id="editCustAddress" class="form-input"></label>
             <label>ប្រភេទដំណាំ
-                <select id="editCustCrop" class="form-input">
+                <select id="editCustCrop" class="form-input" onchange="handleCropTypeChange(this, 'lblEditCropSize', 'editCustCropSize')">
                     <option value="">មិនបញ្ជាក់</option>
                     <option value="ស្វាយចន្ទី">ស្វាយចន្ទី</option>
                     <option value="ទុរេន">ទុរេន</option>
@@ -1006,6 +1008,7 @@
                     <option value="ផ្សេងៗ">ផ្សេងៗ</option>
                 </select>
             </label>
+            <label id="lblEditCropSize">ទំហំ/ចំនួនដាំដុះ<input type="text" id="editCustCropSize" class="form-input" placeholder="ឧ. 10 ឬ 500"></label>
         </div>
         <div class="modal-actions border-top pt-3" style="display: flex; justify-content: space-between;">
             <button class="btn outline" style="color: var(--danger); border-color: var(--danger);" onclick="deleteCustomer()"><i class='bx bx-trash'></i> លុបអតិថិជននេះ</button>
