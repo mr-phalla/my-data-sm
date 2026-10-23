@@ -202,7 +202,7 @@
     <datalist id="customerListOptions"></datalist>
     <datalist id="productListOptions"></datalist>
     
-    <!-- ================= Dashboard Tab ================= -->
+    
     <!-- ================= Dashboard Tab ================= -->
     <section id="dashboardTab" class="tab-content active">
       <div class="page-heading flex-mobile-col align-start">
@@ -210,7 +210,6 @@
             <div><h1>Sales Analytics</h1><p class="muted">ទិន្នន័យលក់ ចរន្តសាច់ប្រាក់ និងការវិភាគអតិថិជន។</p></div>
         </div>
         <div class="heading-actions flex-wrap">
-            <!-- 🌟 មុខងារកាលបរិច្ឆេទ Dashboard ចាស់ត្រឡប់មកវិញ 🌟 -->
             <div style="display: flex; align-items: center; gap: 5px;">
                 <input type="date" id="chartStartDate" class="form-input" style="padding: 6px; width: auto; font-size: 12px;" onchange="handleCustomDate()">
                 <span class="muted">-</span>
@@ -232,7 +231,7 @@
         </div>
       </div>
       
-      <!-- 🌟 កាតសង្ខេបថ្មី (បង្ហាញ Cash Flow) 🌟 -->
+      <!-- 🌟 កាតសង្ខេបខាងលើ (១ ជួរមាន ៤) 🌟 -->
       <div class="stats-grid">
         <div class="stat-card"><div><span>ចំណូលលក់សរុប</span><strong id="dashSalesTotal">0 ៛</strong><small class="trend primary" id="dateRangeLabelSales"><i class='bx bx-calendar'></i> ទិន្នន័យទាំងអស់</small></div><div class="stat-icon-light" style="color:#3b82f6; background:rgba(59,130,246,0.1);"><i class='bx bx-line-chart'></i></div></div>
         <div class="stat-card" style="border-bottom: 3px solid var(--success);"><div><span>សាច់ប្រាក់ទទួលបាន</span><strong id="dashCashCollected" style="color: var(--success);">0 ៛</strong><small class="trend success"><i class='bx bx-wallet'></i> ចូលថតជាក់ស្តែង</small></div><div class="stat-icon-light" style="color:#10b981; background:rgba(16,185,129,0.1);"><i class='bx bx-dollar'></i></div></div>
@@ -240,89 +239,91 @@
         <div class="stat-card"><div><span>អតិថិជនសរុប</span><strong id="dashCustomers">0</strong><small class="trend primary"><i class='bx bx-user-plus'></i> ក្នុងប្រព័ន្ធ</small></div><div class="stat-icon-light" style="color:#8b5cf6; background:rgba(139,92,246,0.1);"><i class='bx bx-user'></i></div></div>
       </div>
 
-      <!-- Yearly Target & Gamification (Bonus System) -->
-      <div class="panel mt-4" style="background: linear-gradient(135deg, #0284c7, #38bdf8); color: white;">
-          <div class="flex-between align-start mb-3">
-              <div>
-                  <h3 style="margin:0; color:white;">គោលដៅលក់ប្រចាំឆ្នាំ <span id="targetYearLabel"></span></h3>
-                  <p style="margin:5px 0 0 0; font-size:13px; opacity:0.8;">អត្រាប្រាក់ចំណេញ (Bonus សាខា): 40%</p>
-              </div>
-              <div style="text-align: right;">
-                  <button class="btn outline small" style="color: white; border-color: rgba(255,255,255,0.4); margin-bottom: 5px;" onclick="openTargetModal()">
-                      <i class='bx bx-edit'></i> កំណត់ Target
-                  </button>
-                  <br>
-                  <span style="font-size: 12px; opacity: 0.8;">សម្រេចបាន (Achieved)</span>
-                  <strong id="targetPercentage" style="display:block; font-size: 24px;">0%</strong>
-              </div>
-          </div>
-          <div style="width: 100%; background: rgba(255,255,255,0.2); height: 8px; border-radius: 4px; overflow: hidden; margin-bottom: 15px;">
-              <div id="targetProgressBar" style="width: 0%; background: #10b981; height: 100%; transition: width 0.5s;"></div>
-          </div>
-          
-          <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 10px; opacity: 0.9;">
-              <span>ចំណូលលក់ឆ្នាំនេះ: <b id="targetCurrentSales">0 ៛</b></span>
-              <span>គោលដៅ: <b id="targetAmountDisplay">មិនទាន់កំណត់</b></span>
-          </div>
-          
-          <div style="display: flex; justify-content: space-between; align-items: center; font-size: 14px; flex-wrap: wrap; gap: 10px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 12px;">
-              <span style="min-width: 160px;"><i class='bx bx-coin-stack'></i> លុយ Bonus សាខា: <br><b id="myCommission" style="color:#fcd34d; font-size: 16px;">0 ៛</b></span>
-              <span><i class='bx bx-money-withdraw'></i> ចំណាយសាខា: <br><b id="dashboardExpenses" style="color:#fca5a5; font-size: 16px;">0 ៛</b></span>
-              <span style="background: rgba(255,255,255,0.2); padding: 6px 14px; border-radius: 8px; font-weight: bold; font-size: 15px;">
-                  <i class='bx bx-wallet'></i> ចំណេញសុទ្ធ (Net): <br><b id="netEarnings" style="color:#6ee7b7; font-size: 16px;">0 ៛</b>
-              </span>
-          </div>
-      </div>
-
-      <!-- ជួរទី១: ក្រាហ្វិកចំណូល និង បំណុលហួសកំណត់ -->
+      <!-- 🌟 ជួរក្រាហ្វិក (Line Chart និង Pie Chart ដាក់ទន្ទឹមគ្នា 2fr 1fr) 🌟 -->
       <div class="dashboard-grid-main mt-4" style="grid-template-columns: 2fr 1fr;">
         <div class="panel">
-          <div class="panel-head border-bottom pb-3 mb-3 flex-wrap">
+          <div class="panel-head border-bottom pb-3 mb-3">
               <h3>📈 ក្រាហ្វិក ចំណូល ធៀបនឹង ចំណាយ និង Bonus</h3>
           </div>
           <div style="height: 300px; width: 100%; position: relative;"><canvas id="salesChart"></canvas></div>
         </div>
-
-        <!-- 🌟 បញ្ជីបំណុលហួសកំណត់នៅលើ Dashboard 🌟 -->
-        <div class="panel" style="border-top: 4px solid var(--danger);">
+        <div class="panel">
             <div class="panel-head border-bottom pb-3 mb-3">
-                <h3 style="color: var(--danger); margin: 0; font-size: 16px;"><i class='bx bx-alarm-exclamation'></i> បំណុលហួសកំណត់សង</h3>
+                <h3>📊 ចំណូលតាមប្រភេទ (Category)</h3>
             </div>
-            <div class="table-scroll" style="max-height: 300px; overflow-y: auto;">
+            <div style="height: 300px; width: 100%; position: relative;"><canvas id="categoryRevChart"></canvas></div>
+        </div>
+      </div>
+
+      <!-- 🌟 ប្រអប់គោលដៅ និងប្រាក់ចំណេញ (ម៉ូដថ្មី ស្រឡះភ្នែក) 🌟 -->
+      <div class="panel mt-4" style="background: var(--surface); border: 1px solid var(--line);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 15px;">
+              <div>
+                  <h3 style="margin:0 0 5px 0; color:var(--text); font-size: 16px;"><i class='bx bx-target-lock' style="color:var(--primary);"></i> គោលដៅលក់ប្រចាំឆ្នាំ <span id="targetYearLabel"></span> (Bonus សាខា: 40%)</h3>
+                  <span style="font-size: 13px; color: var(--muted);">ចំណូល: <b id="targetCurrentSales" style="color:var(--text);">0 ៛</b> / គោលដៅ: <b id="targetAmountDisplay">0 ៛</b></span>
+              </div>
+              <div style="text-align: right; display: flex; align-items: center; gap: 10px;">
+                  <div>
+                      <span style="font-size: 12px; color: var(--muted);">សម្រេចបាន</span>
+                      <strong id="targetPercentage" style="display:block; font-size: 22px; color: var(--primary);">0%</strong>
+                  </div>
+                  <button class="icon-btn-round" style="width: 32px; height: 32px; font-size: 16px; border-color: var(--primary); color: var(--primary);" onclick="openTargetModal()"><i class='bx bx-edit'></i></button>
+              </div>
+          </div>
+          
+          <!-- Progress Bar -->
+          <div style="width: 100%; background: var(--line); height: 8px; border-radius: 4px; overflow: hidden; margin-bottom: 20px;">
+              <div id="targetProgressBar" style="width: 0%; background: var(--primary); height: 100%; transition: width 0.5s;"></div>
+          </div>
+          
+          <!-- ប្រអប់លទ្ធផលហិរញ្ញវត្ថុ -->
+          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; background: var(--sidebar-hover); padding: 15px; border-radius: 8px; border: 1px solid var(--line);">
+              <div id="myCommission">
+                  <!-- JS នឹងទម្លាក់កូដ Q1, Q2 ចូលទីនេះ -->
+              </div>
+              <div style="border-left: 1px solid var(--line); padding-left: 15px;">
+                  <span class="muted" style="font-size:12px; display:block; margin-bottom:4px;"><i class='bx bx-money-withdraw'></i> ចំណាយសរុបប្រចាំឆ្នាំ</span>
+                  <b id="dashboardExpenses" style="font-size: 18px; color: var(--danger);">0 ៛</b>
+              </div>
+              <div style="border-left: 1px solid var(--line); padding-left: 15px;">
+                  <span class="muted" style="font-size:12px; display:block; margin-bottom:4px;"><i class='bx bx-wallet'></i> ចំណេញសុទ្ធ (Net Earnings)</span>
+                  <b id="netEarnings" style="font-size: 18px; color: var(--primary);">0 ៛</b>
+              </div>
+          </div>
+      </div>
+
+      <!-- 🌟 ជួរការងារត្រូវធ្វើ (បំណុល និង Follow up) 1fr 1fr 🌟 -->
+      <div class="dashboard-grid-main mt-4" style="grid-template-columns: 1fr 1fr;">
+        <div class="panel" style="border-top: 3px solid var(--danger);">
+            <div class="panel-head border-bottom pb-3 mb-3">
+                <h3 style="color: var(--danger); margin: 0; font-size: 15px;"><i class='bx bx-alarm-exclamation'></i> បំណុលហួសកំណត់សង</h3>
+            </div>
+            <div class="table-scroll" style="max-height: 250px; overflow-y: auto;">
                 <table class="data-table">
                     <thead><tr><th>អតិថិជន</th><th class="text-right">ប្រាក់ជំពាក់</th><th class="text-center">ខល</th></tr></thead>
                     <tbody id="dashOverdueContainer"></tbody>
                 </table>
             </div>
         </div>
-      </div>
-
-      <!-- ជួរទី២: ចំណូលតាមប្រភេទ និង Follow up -->
-      <div class="dashboard-grid-main mt-4" style="grid-template-columns: 1fr 1fr;">
-          <div class="panel">
-              <div class="panel-head border-bottom pb-3 mb-3">
-                  <h3>📊 ចំណូលតាមប្រភេទ (Category Revenue)</h3>
-              </div>
-              <div style="height: 250px; width: 100%; position: relative;"><canvas id="categoryRevChart"></canvas></div>
-          </div>
-          
-          <div class="panel">
+        <div class="panel" style="border-top: 3px solid var(--warning);">
             <div class="panel-head border-bottom pb-3 mb-3">
-                <h3 style="color: var(--warning); margin: 0; font-size: 16px;"><i class='bx bx-phone-call'></i> អតិថិជនត្រូវ Follow-Up</h3>
+                <h3 style="color: var(--warning); margin: 0; font-size: 15px;"><i class='bx bx-phone-call'></i> អតិថិជនត្រូវ Follow-Up</h3>
             </div>
             <div class="table-scroll" style="max-height: 250px; overflow-y: auto;">
                 <table class="data-table">
-                    <thead><tr><th>អតិថិជន</th><th class="text-center">ដំណាក់កាលថែទាំ</th><th class="text-right">សកម្មភាព</th></tr></thead>
+                    <thead><tr><th>អតិថិជន</th><th class="text-center">ដំណាក់កាល</th><th class="text-right">សកម្មភាព</th></tr></thead>
                     <tbody id="followUpContainer"></tbody>
                 </table>
             </div>
-          </div>
+        </div>
       </div>
       
-      <!-- ជួរទី៣: មុខទំនិញលក់ដាច់ (គិតតាមចំណូល) និង VIP -->
+      <!-- 🌟 ជួរចំណាត់ថ្នាក់ (Top Products & Top Customers) 1fr 1fr 🌟 -->
       <div class="dashboard-grid-main mt-4" style="grid-template-columns: 1fr 1fr;">
           <div class="panel">
-              <div class="panel-head border-bottom pb-3 mb-3"><h3>🔥 មុខទំនិញរកចំណូលបានច្រើនជាងគេ</h3></div>
+              <div class="panel-head border-bottom pb-3 mb-3">
+                  <h3 style="font-size: 15px;">🔥 ទំនិញរកចំណូលបានច្រើនជាងគេ</h3>
+              </div>
               <div class="table-scroll">
                   <table class="data-table">
                       <thead><tr><th>មុខទំនិញ</th><th class="text-center">ចំនួនលក់</th><th class="text-right">ចំណូលសរុប (៛)</th></tr></thead>
@@ -330,9 +331,10 @@
                   </table>
               </div>
           </div>
-
           <div class="panel">
-              <div class="panel-head border-bottom pb-3 mb-3"><h3>👑 អតិថិជន VIP កំពូល</h3></div>
+              <div class="panel-head border-bottom pb-3 mb-3">
+                  <h3 style="font-size: 15px;">👑 អតិថិជន VIP កំពូល</h3>
+              </div>
               <div class="table-scroll">
                   <table class="data-table">
                       <thead><tr><th>អតិថិជន</th><th class="text-right">ទឹកប្រាក់ទិញសរុប</th></tr></thead>
