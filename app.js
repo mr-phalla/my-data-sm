@@ -15,6 +15,10 @@ let expensesData = [];
 let currentGrandTotalValue = 0;
 let ADMIN_PIN = localStorage.getItem('admin_pin') || "8888";
 
+// 🌟 ការកំណត់ Telegram Bot 🌟
+const TELEGRAM_BOT_TOKEN = '8991576226:AAHuuY-kmUkn22BroT6COg6lQBVRrg7RoUQ'; 
+const TELEGRAM_CHAT_ID = '802636074';// សូមប្រាកដថាលេខ Chat ID នេះគឺជារបស់បងពិតប្រាកដដែលយកពី @userinfobot
+
 // ==========================================
 // 🌟 Utility Functions 🌟
 // ==========================================
@@ -39,6 +43,22 @@ function showToast(message, type = 'success') {
   const toast = document.getElementById("toast"); if(!toast) return;
   toast.innerText = message; toast.className = "show " + type;
   setTimeout(() => { toast.className = toast.className.replace("show " + type, ""); }, 3000);
+}
+
+// 🌟 មុខងារសម្រាប់បញ្ជូនសារទៅកាន់ Telegram 🌟
+async function sendToTelegram(message) {
+    if(!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) return;
+    
+    let url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
+    try {
+        await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ chat_id: TELEGRAM_CHAT_ID, text: message, parse_mode: 'HTML' })
+        });
+    } catch (err) {
+        console.error("មិនអាចផ្ញើសារទៅ Telegram បានទេ:", err);
+    }
 }
 
 function formatDateForInput(d) {
@@ -1232,6 +1252,14 @@ window.saveData = async function() {
       showToast("រក្សាទុកបរាជ័យ! សូមពិនិត្យ Database", "error"); console.error(error); 
   } else {
     showToast("រក្សាទុកជោគជ័យ!", "success");
+    // 🌟 ផ្ញើវិក្កយបត្រសង្ខេបចូល Telegram 🌟
+    let telegramMsg = `🔔 <b>មានការលក់ថ្មីចូលប្រព័ន្ធ!</b>\n`;
+    telegramMsg += `👤 អតិថិជន: <b>${customerVal || 'Walk-in'}</b>\n`;
+    telegramMsg += `💰 សរុបទឹកប្រាក់: <b>${money(subtotalInvoice - globalDiscount)}</b>\n`;
+    if(statusVal === 'Unpaid') telegramMsg += `⚠️ ស្ថានភាព: <b>ជំពាក់</b>\n`;
+    telegramMsg += `📅 លេខវិក្កយបត្រ: ${currentInvoiceNo}\n`;
+    sendToTelegram(telegramMsg);
+    // 🌟 បញ្ចប់ការផ្ញើ 🌟
     if(document.getElementById('customerInput')) document.getElementById('customerInput').value = ''; 
     if(document.getElementById('phone')) document.getElementById('phone').value = ''; 
     if(document.getElementById('address')) document.getElementById('address').value = '';
