@@ -1168,7 +1168,11 @@ window.saveData = async function() {
   let addressVal = document.getElementById('address') ? document.getElementById('address').value : '';
   let statusVal = document.getElementById('paymentStatus') ? document.getElementById('paymentStatus').value : 'Paid';
   let cropTypeVal = document.getElementById('saleCropType') ? document.getElementById('saleCropType').value : ''; 
-  let cropSizeVal = document.getElementById('saleCropSize') ? document.getElementById('saleCropSize').value : ''; // 🌟 បន្ថែមការចាប់យកទំហំដី
+  let cropSizeVal = document.getElementById('saleCropSize') ? document.getElementById('saleCropSize').value : ''; 
+
+  // 🌟 ទាញយកថ្ងៃសន្យាសងនៅខាងក្រៅ Loop ដើម្បីកុំឱ្យ Error "dueDateVal is not defined" 🌟
+  let dueDateEl = document.getElementById('dueDate');
+  let dueDateVal = (statusVal === 'Unpaid' && dueDateEl && dueDateEl.value) ? dueDateEl.value : null;
 
   let globalDiscountEl = document.getElementById('globalDiscount');
   let globalDiscount = globalDiscountEl ? parseFloat(globalDiscountEl.value) || 0 : 0;
@@ -1228,9 +1232,6 @@ window.saveData = async function() {
             if (remainingCashToApply >= finalAmount) { rowPaid = finalAmount; remainingCashToApply -= finalAmount; } 
             else if (remainingCashToApply > 0) { rowPaid = remainingCashToApply; remainingCashToApply = 0; }
         }
-        
-        let dueDateEl = document.getElementById('dueDate');
-        let dueDateVal = (statusVal === 'Unpaid' && dueDateEl && dueDateEl.value) ? dueDateEl.value : null;
 
         let prodObj = productsData.find(p => p.name === data.prodName);
         let currentBasePrice = prodObj && prodObj.base_price > 0 ? prodObj.base_price : data.price;
@@ -1241,7 +1242,7 @@ window.saveData = async function() {
             invoice_no: currentInvoiceNo, 
             date: dateVal, cashier: cashierVal, customer_name: customerVal, phone: phoneVal, address: addressVal, 
             crop_type: cropTypeVal,
-            crop_size: cropSizeVal, // 🌟 បញ្ជូនទំហំដីចូល Database
+            crop_size: cropSizeVal, 
             item: data.prodName, 
             unit: data.row.querySelector('.item-unit') ? data.row.querySelector('.item-unit').value.trim() : '', 
             package_type: data.row.querySelector('.item-pkg') ? data.row.querySelector('.item-pkg').value.trim() : '', 
@@ -1250,7 +1251,7 @@ window.saveData = async function() {
             standard_unit_value: data.row.querySelector('.item-suv') ? parseFloat(data.row.querySelector('.item-suv').value) || 0 : 0, 
             standard_unit_measure: data.row.querySelector('.item-sum') ? data.row.querySelector('.item-sum').value.trim() : '', 
             qty: data.qty, price: data.price, discount: rowDiscount, total: finalAmount, paid_amount: rowPaid, status: statusVal,
-            due_date: dueDateVal,
+            due_date: dueDateVal, // 🌟 ប្រើប្រាស់អថេរដែលប្រកាសខាងក្រៅ
             base_price: currentBasePrice
         });
   });
@@ -1263,7 +1264,8 @@ window.saveData = async function() {
       showToast("រក្សាទុកបរាជ័យ! សូមពិនិត្យ Database", "error"); console.error(error); 
   } else {
     showToast("រក្សាទុកជោគជ័យ!", "success");
-    // 🌟 ផ្ញើវិក្កយបត្រលម្អិតចូល Telegram (Advanced) 🌟
+    
+    // 🌟 ផ្ញើវិក្កយបត្រលម្អិតចូល Telegram 
     let saleDataObj = {
         invoiceNo: currentInvoiceNo,
         customerName: customerVal,
@@ -1277,12 +1279,13 @@ window.saveData = async function() {
         cashier: cashierVal
     };
     sendToTelegram('', 'sale', saleDataObj);
-    // 🌟 បញ្ចប់ការផ្ញើ 🌟
+    
+    // 🌟 បញ្ចប់ការផ្ញើ & ជម្រះប្រអប់ឱ្យស្អាត ដើម្បីវាយបញ្ចូលបន្ត 🌟
     if(document.getElementById('customerInput')) document.getElementById('customerInput').value = ''; 
     if(document.getElementById('phone')) document.getElementById('phone').value = ''; 
     if(document.getElementById('address')) document.getElementById('address').value = '';
     if(document.getElementById('saleCropType')) document.getElementById('saleCropType').value = ''; 
-    if(document.getElementById('saleCropSize')) document.getElementById('saleCropSize').value = ''; // 🌟 Reset ប្រអប់
+    if(document.getElementById('saleCropSize')) document.getElementById('saleCropSize').value = ''; 
     resetFormRows(); 
     await refreshAllData(); 
   }
