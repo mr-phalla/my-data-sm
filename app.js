@@ -45,16 +45,61 @@ function showToast(message, type = 'success') {
   setTimeout(() => { toast.className = toast.className.replace("show " + type, ""); }, 3000);
 }
 
-// 🌟 មុខងារសម្រាប់បញ្ជូនសារទៅកាន់ Telegram 🌟
-async function sendToTelegram(message) {
+// 🌟 មុខងារសម្រាប់បញ្ជូនសារទៅកាន់ Telegram (Advanced Version) 🌟
+async function sendToTelegram(message, type = 'sale', data = null) {
     if(!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) return;
     
     let url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
+    let finalMessage = message;
+    
+    // បង្កើតទម្រង់សារឱ្យកាន់តែសម្បូរបែប ទៅតាមប្រភេទសកម្មភាព
+    if (type === 'sale' && data) {
+        let itemsText = '';
+        data.items.forEach(item => {
+            itemsText += `➖ ${item.qty} x ${item.prodName} (${money(item.price)})\n`;
+        });
+        
+        finalMessage = `🛍 <b>ការលក់ថ្មីចូលប្រព័ន្ធ!</b>\n\n`;
+        finalMessage += `🧾 លេខវិក្កយបត្រ: #${data.invoiceNo}\n`;
+        finalMessage += `👤 អតិថិជន: <b>${data.customerName || 'Walk-in'}</b>\n`;
+        if (data.phone) finalMessage += `📱 ទូរស័ព្ទ: ${data.phone}\n`;
+        finalMessage += `---------------------------------\n`;
+        finalMessage += `🛒 <b>ទំនិញលក់ចេញ:</b>\n${itemsText}`;
+        finalMessage += `---------------------------------\n`;
+        finalMessage += `💰 សរុបទឹកប្រាក់: <b>${money(data.total)}</b>\n`;
+        if (data.discount > 0) finalMessage += `🔻 បញ្ចុះតម្លៃ: ${money(data.discount)}\n`;
+        finalMessage += `💵 បានទទួល: ${money(data.paid)}\n`;
+        
+        if (data.status === 'Unpaid') {
+            let debt = data.total - data.discount - data.paid;
+            finalMessage += `⚠️ <b>ជំពាក់សរុប: ${money(debt)}</b>\n`;
+            if (data.dueDate) finalMessage += `🗓 ថ្ងៃសន្យាសង: ${data.dueDate}\n`;
+        } else {
+            finalMessage += `✅ <b>ស្ថានភាព: ទូទាត់រួច</b>\n`;
+        }
+        finalMessage += `\n👤 អ្នកបញ្ចូល: ${data.cashier}\n`;
+        finalMessage += `⏰ ម៉ោង: ${new Date().toLocaleTimeString('en-US', {hour12: true})}\n`;
+        finalMessage += `🔗 <a href="${window.location.href.split('?')[0]}">បើកប្រព័ន្ធ CRM</a>`;
+    } 
+    else if (type === 'expense' && data) {
+        finalMessage = `💸 <b>មានការចំណាយថ្មីត្រូវបានកត់ត្រា!</b>\n\n`;
+        finalMessage += `🏷 ប្រភេទ: <b>${data.category}</b>\n`;
+        finalMessage += `👤 អ្នកចំណាយ: <b>${data.spender || 'មិនបញ្ជាក់'}</b>\n`;
+        finalMessage += `💰 ទឹកប្រាក់: <b style="color:red;">${money(data.amount)}</b>\n`;
+        if (data.note) finalMessage += `📝 កំណត់សម្គាល់: ${data.note}\n`;
+        finalMessage += `\n⏰ ម៉ោង: ${new Date().toLocaleTimeString('en-US', {hour12: true})}\n`;
+    }
+
     try {
         await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ chat_id: TELEGRAM_CHAT_ID, text: message, parse_mode: 'HTML' })
+            body: JSON.stringify({ 
+                chat_id: TELEGRAM_CHAT_ID, 
+                text: finalMessage, 
+                parse_mode: 'HTML',
+                disable_web_page_preview: true
+            })
         });
     } catch (err) {
         console.error("មិនអាចផ្ញើសារទៅ Telegram បានទេ:", err);
@@ -540,40 +585,6 @@ async function loadCustomers() {
     renderCustomers();
   }
 }
-
-// 🌟 មុខងារសម្រាប់ប្រមូលឈ្មោះម៉ូយទាំងអស់ (ទាំងក្នុងបញ្ជី និងប្រវត្តិលក់) រួចរៀបចំដាក់ក្នុង Dropdown 🌟
-window.updateCustomerDatalist = function() {
-    let datalist = document.getElementById('customerListOptions');
-    if(!datalist) return;
-    
-    let uniqueNames = new Set();
-    
-    // ១. ទាញឈ្មោះពី Customers Data
-    if(customersData) {
-        customersData.forEach(c => {
-            let cName = String(c.name || "").trim(); // ការពារ Error ពេលឈ្មោះជាលេខ
-            if (cName !== '') uniqueNames.add(cName);
-        });
-    }
-    
-    // ២. ទាញឈ្មោះពី Sales Data ក្រែងលោម៉ូយខ្លះយើងភ្លេចចុច Add Customer
-    if(salesData) {
-        salesData.forEach(s => {
-            let cName = String(s.customer_name || s['customer-name'] || '').trim(); // ការពារ Error ពេលឈ្មោះជាលេខ
-            if (cName !== '' && cName.toLowerCase() !== 'walk-in') {
-                uniqueNames.add(cName);
-            }
-        });
-    }
-    
-    let opts = '';
-    // តម្រៀបឈ្មោះតាមអក្ខរក្រម
-    let sortedNames = Array.from(uniqueNames).sort();
-    sortedNames.forEach(name => {
-        opts += `<option value="${esc(name)}"></option>`; 
-    });
-    datalist.innerHTML = opts;
-};
 
 // 🌟 មុខងារថ្មីសម្រាប់ប្រមូលឈ្មោះម៉ូយទាំងអស់ ទាំងក្នុងបញ្ជី និងក្នុងប្រវត្តិលក់ 🌟
 window.updateCustomerDatalist = function() {
@@ -1252,13 +1263,20 @@ window.saveData = async function() {
       showToast("រក្សាទុកបរាជ័យ! សូមពិនិត្យ Database", "error"); console.error(error); 
   } else {
     showToast("រក្សាទុកជោគជ័យ!", "success");
-    // 🌟 ផ្ញើវិក្កយបត្រសង្ខេបចូល Telegram 🌟
-    let telegramMsg = `🔔 <b>មានការលក់ថ្មីចូលប្រព័ន្ធ!</b>\n`;
-    telegramMsg += `👤 អតិថិជន: <b>${customerVal || 'Walk-in'}</b>\n`;
-    telegramMsg += `💰 សរុបទឹកប្រាក់: <b>${money(subtotalInvoice - globalDiscount)}</b>\n`;
-    if(statusVal === 'Unpaid') telegramMsg += `⚠️ ស្ថានភាព: <b>ជំពាក់</b>\n`;
-    telegramMsg += `📅 លេខវិក្កយបត្រ: ${currentInvoiceNo}\n`;
-    sendToTelegram(telegramMsg);
+    // 🌟 ផ្ញើវិក្កយបត្រលម្អិតចូល Telegram (Advanced) 🌟
+    let saleDataObj = {
+        invoiceNo: currentInvoiceNo,
+        customerName: customerVal,
+        phone: phoneVal,
+        items: activeRows,
+        total: subtotalInvoice,
+        discount: globalDiscount,
+        paid: totalCashReceived,
+        status: statusVal,
+        dueDate: dueDateVal,
+        cashier: cashierVal
+    };
+    sendToTelegram('', 'sale', saleDataObj);
     // 🌟 បញ្ចប់ការផ្ញើ 🌟
     if(document.getElementById('customerInput')) document.getElementById('customerInput').value = ''; 
     if(document.getElementById('phone')) document.getElementById('phone').value = ''; 
@@ -1993,6 +2011,8 @@ window.saveNewExpense = async function() {
 
     if(!error) {
         showToast("រក្សាទុកចំណាយជោគជ័យ!", "success");
+        // 🌟 ផ្ញើរបាយការណ៍ចំណាយចូល Telegram
+        sendToTelegram('', 'expense', { category: cat, spender: spender, amount: amt, note: finalNote });
         closeModal('expenseModal');
         document.getElementById('expAmount').value = '';
         document.getElementById('expNote').value = '';
