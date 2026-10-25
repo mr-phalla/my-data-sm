@@ -294,14 +294,20 @@
 
       <!-- 🌟 ជួរការងារត្រូវធ្វើ (បំណុល និង Follow up) 1fr 1fr 🌟 -->
       <div class="dashboard-grid-main mt-4" style="grid-template-columns: 1fr 1fr;">
-        <div class="panel" style="border-top: 3px solid var(--danger);">
+        <div class="panel" style="border-top: 3px solid var(--primary);">
             <div class="panel-head border-bottom pb-3 mb-3">
-                <h3 style="color: var(--danger); margin: 0; font-size: 15px;"><i class='bx bx-alarm-exclamation'></i> បំណុលហួសកំណត់សង</h3>
+                <h3 style="color: var(--primary); margin: 0; font-size: 15px;"><i class='bx bx-list-check'></i> របាយការណ៍ទំនិញលក់ចេញ</h3>
             </div>
             <div class="table-scroll" style="max-height: 250px; overflow-y: auto;">
                 <table class="data-table">
-                    <thead><tr><th>អតិថិជន</th><th class="text-right">ប្រាក់ជំពាក់</th><th class="text-center">ខល</th></tr></thead>
-                    <tbody id="dashOverdueContainer"></tbody>
+                    <thead style="position: sticky; top: 0; background: var(--surface);">
+                        <tr>
+                            <th>មុខទំនិញ</th>
+                            <th class="text-center">ចំនួនលក់</th>
+                            <th class="text-right">ចំណូលសរុប (៛)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dashItemReportContainer"></tbody>
                 </table>
             </div>
         </div>
