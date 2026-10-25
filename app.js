@@ -2469,7 +2469,10 @@ window.updateChart = function() {
       cContainer.innerHTML = htmlC || '<tr><td colspan="2" class="text-center muted pt-4">គ្មានទិន្នន័យ</td></tr>';
   }
 
-  let sortedProducts = Object.keys(prodStats).map(k => ({ name: k, qty: prodStats[k].qty, revenue: prodStats[k].revenue })).sort((a,b) => b.revenue - a.revenue).slice(0, 5);
+  let allSortedProducts = Object.keys(prodStats).map(k => ({ name: k, qty: prodStats[k].qty, revenue: prodStats[k].revenue })).sort((a,b) => b.revenue - a.revenue);
+  
+  // ១. បង្ហាញ Top 5 ខាងក្រោមដដែល
+  let sortedProducts = allSortedProducts.slice(0, 5);
   let pContainer = document.getElementById('topProductsContainer');
   if(pContainer) {
       let htmlP = '';
@@ -2481,6 +2484,20 @@ window.updateChart = function() {
           </tr>`; 
       });
       pContainer.innerHTML = htmlP || '<tr><td colspan="3" class="text-center muted pt-4">គ្មានទិន្នន័យ</td></tr>';
+  }
+
+  // ២. 🌟 បង្ហាញរបាយការណ៍ទំនិញទាំងអស់ចូលក្នុងផ្ទាំងថ្មី (ជំនួសផ្ទាំងបំណុល) 🌟
+  let itemReportContainer = document.getElementById('dashItemReportContainer');
+  if(itemReportContainer) {
+      let htmlAll = '';
+      allSortedProducts.forEach(p => {
+          htmlAll += `<tr style="border-bottom: 1px solid var(--line);">
+              <td><b style="font-size: 13px; color: var(--text);">${esc(p.name)}</b></td>
+              <td class="text-center"><b>${p.qty}</b></td>
+              <td class="text-right"><b style="color:var(--success);">${money(p.revenue)}</b></td>
+          </tr>`;
+      });
+      itemReportContainer.innerHTML = htmlAll || '<tr><td colspan="3" class="text-center muted pt-4">មិនមានការលក់ក្នុងចន្លោះពេលនេះទេ</td></tr>';
   }
 
   let allDates = new Set([...Object.keys(groupedByDate), ...Object.keys(expenseByDate)]);
