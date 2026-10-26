@@ -1025,7 +1025,30 @@
         </div>
     </div>
 </div>
-<div id="editSaleModal" class="modal"><div class="modal-card" style="width: 600px;"><div class="modal-head"><h3>កែប្រែទិន្នន័យ</h3><button class="icon-btn-round" onclick="closeModal('editSaleModal')"><i class='bx bx-x'></i></button></div><input type="hidden" id="editSaleId"><div class="form-grid two mb-4"><label class="span-2">មុខទំនិញ<input type="text" id="editSaleItem" class="form-input" readonly style="background: rgba(0,0,0,0.05); color: var(--muted);"></label><label>ស្ថានភាព<select id="editPaymentStatus" class="form-input"><option value="Paid">ទូទាត់រួច</option><option value="Unpaid">ជំពាក់</option></select></label><label>ចំនួន<input type="number" id="editSaleQty" class="form-input" oninput="calculateEditTotal()"></label><label>តម្លៃ (៛)<input type="number" id="editSalePrice" class="form-input" oninput="calculateEditTotal()"></label><label>បញ្ចុះតម្លៃ (៛)<input type="number" id="editSaleDiscount" class="form-input" oninput="calculateEditTotal()"></label><label class="span-2">សរុប (៛)<input type="text" id="editSaleTotal" class="form-input" readonly style="color:var(--success); font-weight:bold; font-size: 16px;"></label></div><div class="modal-actions border-top pt-3"><button class="btn secondary" onclick="closeModal('editSaleModal')">បោះបង់</button><button class="btn primary" onclick="saveEditedSale()">កែប្រែ</button></div></div></div>
+<div id="editSaleModal" class="modal"><!-- 🌟 Modal កែប្រែទិន្នន័យលក់ (មានថែមប្រអប់កាលបរិច្ឆេទ) 🌟 -->
+
+    <div class="modal-card" style="width: 600px;">
+        <div class="modal-head">
+            <h3><i class='bx bx-edit' style="color:var(--primary); margin-right:5px;"></i> កែប្រែទិន្នន័យវិក្កយបត្រ</h3>
+            <button class="icon-btn-round" onclick="closeModal('editSaleModal')"><i class='bx bx-x'></i></button>
+        </div>
+        <input type="hidden" id="editSaleId">
+        <div class="form-grid two mb-4">
+            <label class="span-2">មុខទំនិញ<input type="text" id="editSaleItem" class="form-input" readonly style="background: rgba(0,0,0,0.05); color: var(--muted);"></label>
+            <!-- 🌟 ប្រអប់ថ្ងៃខែ ដែលទើបបន្ថែមថ្មី 🌟 -->
+            <label>កាលបរិច្ឆេទ<input type="date" id="editSaleDate" class="form-input"></label>
+            <label>ស្ថានភាព<select id="editPaymentStatus" class="form-input"><option value="Paid">ទូទាត់រួច</option><option value="Unpaid">ជំពាក់</option></select></label>
+            <label>ចំនួន<input type="number" id="editSaleQty" class="form-input" oninput="calculateEditTotal()"></label>
+            <label>តម្លៃ (៛)<input type="number" id="editSalePrice" class="form-input" oninput="calculateEditTotal()"></label>
+            <label>បញ្ចុះតម្លៃ (៛)<input type="number" id="editSaleDiscount" class="form-input" oninput="calculateEditTotal()"></label>
+            <label class="span-2">សរុប (៛)<input type="text" id="editSaleTotal" class="form-input" readonly style="color:var(--success); font-weight:bold; font-size: 16px;"></label>
+        </div>
+        <div class="modal-actions border-top pt-3">
+            <button class="btn secondary" onclick="closeModal('editSaleModal')">បោះបង់</button>
+            <button class="btn primary" onclick="saveEditedSale()"><i class='bx bx-save'></i> រក្សាទុកកែប្រែ</button>
+        </div>
+    </div>
+</div>
 <!-- Modal សម្រាប់បន្ថែមចំណាយថ្មី -->
 <div id="expenseModal" class="modal">
     <div class="modal-card" style="width: 600px;">
