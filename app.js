@@ -45,24 +45,24 @@ function showToast(message, type = 'success') {
   setTimeout(() => { toast.className = toast.className.replace("show " + type, ""); }, 3000);
 }
 
-// 🌟 មុខងារសម្រាប់បញ្ជូនសារទៅកាន់ Telegram (Advanced Version) 🌟
+// 🌟 មុខងារសម្រាប់បញ្ជូនសារទៅកាន់ Telegram (បានកែសម្រួលបញ្ហា HTML Error) 🌟
 async function sendToTelegram(message, type = 'sale', data = null) {
     if(!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) return;
     
     let url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
     let finalMessage = message;
     
-    // បង្កើតទម្រង់សារឱ្យកាន់តែសម្បូរបែប ទៅតាមប្រភេទសកម្មភាព
     if (type === 'sale' && data) {
         let itemsText = '';
         data.items.forEach(item => {
-            itemsText += `➖ ${item.qty} x ${item.prodName} (${money(item.price)})\n`;
+            // ប្រើ esc() ដើម្បីការពារកុំឱ្យសញ្ញាពិសេសធ្វើឱ្យ Telegram គាំង
+            itemsText += `➖ ${item.qty} x ${esc(item.prodName)} (${money(item.price)})\n`;
         });
         
         finalMessage = `🛍 <b>ការលក់ថ្មីចូលប្រព័ន្ធ!</b>\n\n`;
         finalMessage += `🧾 លេខវិក្កយបត្រ: #${data.invoiceNo}\n`;
-        finalMessage += `👤 អតិថិជន: <b>${data.customerName || 'Walk-in'}</b>\n`;
-        if (data.phone) finalMessage += `📱 ទូរស័ព្ទ: ${data.phone}\n`;
+        finalMessage += `👤 អតិថិជន: <b>${esc(data.customerName) || 'Walk-in'}</b>\n`;
+        if (data.phone) finalMessage += `📱 ទូរស័ព្ទ: ${esc(data.phone)}\n`;
         finalMessage += `---------------------------------\n`;
         finalMessage += `🛒 <b>ទំនិញលក់ចេញ:</b>\n${itemsText}`;
         finalMessage += `---------------------------------\n`;
@@ -77,21 +77,21 @@ async function sendToTelegram(message, type = 'sale', data = null) {
         } else {
             finalMessage += `✅ <b>ស្ថានភាព: ទូទាត់រួច</b>\n`;
         }
-        finalMessage += `\n👤 អ្នកបញ្ចូល: ${data.cashier}\n`;
+        finalMessage += `\n👤 អ្នកបញ្ចូល: ${esc(data.cashier)}\n`;
         finalMessage += `⏰ ម៉ោង: ${new Date().toLocaleTimeString('en-US', {hour12: true})}\n`;
         finalMessage += `🔗 <a href="${window.location.href.split('?')[0]}">បើកប្រព័ន្ធ CRM</a>`;
     } 
     else if (type === 'expense' && data) {
         finalMessage = `💸 <b>មានការចំណាយថ្មីត្រូវបានកត់ត្រា!</b>\n\n`;
-        finalMessage += `🏷 ប្រភេទ: <b>${data.category}</b>\n`;
-        finalMessage += `👤 អ្នកចំណាយ: <b>${data.spender || 'មិនបញ្ជាក់'}</b>\n`;
+        finalMessage += `🏷 ប្រភេទ: <b>${esc(data.category)}</b>\n`;
+        finalMessage += `👤 អ្នកចំណាយ: <b>${esc(data.spender) || 'មិនបញ្ជាក់'}</b>\n`;
         finalMessage += `💰 ទឹកប្រាក់: <b style="color:red;">${money(data.amount)}</b>\n`;
-        if (data.note) finalMessage += `📝 កំណត់សម្គាល់: ${data.note}\n`;
+        if (data.note) finalMessage += `📝 កំណត់សម្គាល់: ${esc(data.note)}\n`;
         finalMessage += `\n⏰ ម៉ោង: ${new Date().toLocaleTimeString('en-US', {hour12: true})}\n`;
     }
 
     try {
-        await fetch(url, {
+        let res = await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
@@ -101,6 +101,10 @@ async function sendToTelegram(message, type = 'sale', data = null) {
                 disable_web_page_preview: true
             })
         });
+        if (!res.ok) {
+            let errData = await res.text();
+            console.error("Telegram API Error:", errData);
+        }
     } catch (err) {
         console.error("មិនអាចផ្ញើសារទៅ Telegram បានទេ:", err);
     }
@@ -1017,6 +1021,32 @@ window.onProductSelect = function(input) {
   }
   calculateRow(priceInput);
 };
+// 🌟 មុខងារថ្មីសម្រាប់ចាប់យកតម្លៃ ពេលយើងប្តូរខ្នាតទំនិញ (ដោះស្រាយបញ្ហាតម្លៃអត់លោតតាម) 🌟
+window.onUnitChange = function(selectEl) {
+    let row = selectEl.closest('tr');
+    let selectedOption = selectEl.options[selectEl.selectedIndex];
+
+    // ទាញយកទិន្នន័យដែលបង្កប់ក្នុង Option ដែលយើងបានរើស
+    let price = selectedOption.getAttribute('data-price');
+    let pkg = selectedOption.getAttribute('data-pkg');
+    let uv = selectedOption.getAttribute('data-uv');
+    let um = selectedOption.getAttribute('data-um');
+    let suv = selectedOption.getAttribute('data-suv');
+    let sum = selectedOption.getAttribute('data-sum');
+
+    // បោះតម្លៃថ្មីចូលទៅក្នុងប្រអប់
+    let priceInput = row.querySelector('.item-price');
+    if (priceInput) priceInput.value = price || 0;
+
+    if (row.querySelector('.item-pkg')) row.querySelector('.item-pkg').value = pkg || "";
+    if (row.querySelector('.item-uv')) row.querySelector('.item-uv').value = uv || 0;
+    if (row.querySelector('.item-um')) row.querySelector('.item-um').value = um || "";
+    if (row.querySelector('.item-suv')) row.querySelector('.item-suv').value = suv || 0;
+    if (row.querySelector('.item-sum')) row.querySelector('.item-sum').value = sum || "";
+
+    // បញ្ជាឱ្យគណនាលុយសរុបឡើងវិញ
+    calculateRow(priceInput);
+};
 
 window.addItemRow = function(item='', unit='', qty=1, price=0, pkg='', uv=0, um='', suv=0, sum='') {
   let tbody = document.getElementById('itemTable'); 
@@ -1265,7 +1295,6 @@ window.saveData = async function() {
   } else {
     showToast("រក្សាទុកជោគជ័យ!", "success");
     
-    // 🌟 ផ្ញើវិក្កយបត្រលម្អិតចូល Telegram 
     let saleDataObj = {
         invoiceNo: currentInvoiceNo,
         customerName: customerVal,
@@ -1278,14 +1307,26 @@ window.saveData = async function() {
         dueDate: dueDateVal,
         cashier: cashierVal
     };
+    // ផ្ញើសារទៅ Telegram 
     sendToTelegram('', 'sale', saleDataObj);
     
-    // 🌟 បញ្ចប់ការផ្ញើ & ជម្រះប្រអប់ឱ្យស្អាត ដើម្បីវាយបញ្ចូលបន្ត 🌟
-    if(document.getElementById('customerInput')) document.getElementById('customerInput').value = ''; 
+    // 🌟 ការជម្រះទិន្នន័យ (Reload) ឱ្យស្អាត ១០០% ដើម្បីវាយវិក្កយបត្រថ្មីបន្ត 🌟
+    let cusInput = document.getElementById('customerInput');
+    if(cusInput) { cusInput.value = ''; cusInput.focus(); } // ទាញ Cursor ទៅប្រអប់ឈ្មោះម៉ូយវិញ
+    
     if(document.getElementById('phone')) document.getElementById('phone').value = ''; 
     if(document.getElementById('address')) document.getElementById('address').value = '';
     if(document.getElementById('saleCropType')) document.getElementById('saleCropType').value = ''; 
     if(document.getElementById('saleCropSize')) document.getElementById('saleCropSize').value = ''; 
+    
+    
+    // Reset ស្ថានភាពបង់ប្រាក់មក Paid វិញ
+    let paymentStatusEl = document.getElementById('paymentStatus');
+    if(paymentStatusEl) {
+        paymentStatusEl.value = 'Paid';
+        if(typeof toggleDueDate === 'function') toggleDueDate();
+    }
+    
     resetFormRows(); 
     await refreshAllData(); 
   }
@@ -1800,7 +1841,27 @@ window.exportToCSV = function() {
 };
 
 window.handleEditBtn = function(btn) { openEditSale(btn.getAttribute('data-id'), btn.getAttribute('data-item'), btn.getAttribute('data-qty'), btn.getAttribute('data-price'), btn.getAttribute('data-discount'), btn.getAttribute('data-status')); };
-window.openEditSale = function(id, item, qty, price, discount, status) { document.getElementById('editSaleId').value = id; document.getElementById('editSaleItem').value = item; document.getElementById('editSaleQty').value = qty || 1; document.getElementById('editSalePrice').value = price || 0; document.getElementById('editSaleDiscount').value = discount || 0; if(document.getElementById('editPaymentStatus')) document.getElementById('editPaymentStatus').value = cleanStatus(status); calculateEditTotal(); openModal('editSaleModal'); }
+window.openEditSale = function(id, item, qty, price, discount, status) { 
+    document.getElementById('editSaleId').value = id; 
+    document.getElementById('editSaleItem').value = item; 
+    document.getElementById('editSaleQty').value = qty || 1; 
+    document.getElementById('editSalePrice').value = price || 0; 
+    document.getElementById('editSaleDiscount').value = discount || 0; 
+    
+    if(document.getElementById('editPaymentStatus')) {
+        document.getElementById('editPaymentStatus').value = cleanStatus(status);
+    }
+    
+    // 🌟 ចាប់យកថ្ងៃខែពី Database មកបង្ហាញក្នុងប្រអប់កែប្រែ 🌟
+    let sInfo = salesData.find(s => String(s.id) === String(id));
+    if (sInfo && document.getElementById('editSaleDate')) {
+        document.getElementById('editSaleDate').value = sInfo.date || '';
+    }
+
+    calculateEditTotal(); 
+    openModal('editSaleModal'); 
+};
+
 window.saveEditedSale = async function() { 
     let id = document.getElementById('editSaleId').value; 
     let item = salesData.find(s => String(s.id) === String(id));
@@ -1814,14 +1875,39 @@ window.saveEditedSale = async function() {
     }
     window.unlockedInvoiceId = null; 
 
+    // 🌟 ចាប់យកតម្លៃកាលបរិច្ឆេទថ្មី ដែលបងទើបនឹងកែប្រែ 🌟
+    let newDate = document.getElementById('editSaleDate') ? document.getElementById('editSaleDate').value : (item.date || todayStr);
+    
     let qty = parseFloat(document.getElementById('editSaleQty').value) || 0; 
     let price = parseFloat(document.getElementById('editSalePrice').value) || 0; 
     let discount = parseFloat(document.getElementById('editSaleDiscount').value) || 0; 
     let statusVal = document.getElementById('editPaymentStatus') ? document.getElementById('editPaymentStatus').value : 'Paid'; 
     let total = Math.max(0, (qty * price) - discount); 
-    const { error } = await db.from(TABLE_SALES).update({ qty: qty, price: price, discount: discount, total: total, status: statusVal }).eq('id', id); 
-    if(error) { showToast("កែប្រែបរាជ័យ!", "error"); } else { showToast("កែប្រែជោគជ័យ!", "success"); closeModal('editSaleModal'); await refreshAllData(); } 
-}
+    
+    let btn = document.querySelector('#editSaleModal .btn.primary');
+    let oldTxt = btn.innerHTML; btn.innerHTML = "កំពុងរក្សាទុក..."; btn.disabled = true;
+
+    // 🌟 បញ្ជូនថ្ងៃខែថ្មី (date: newDate) ចូលទៅអាប់ដេតក្នុង Supabase 🌟
+    const { error } = await db.from(TABLE_SALES).update({ 
+        date: newDate, 
+        qty: qty, 
+        price: price, 
+        discount: discount, 
+        total: total, 
+        status: statusVal 
+    }).eq('id', id); 
+    
+    btn.innerHTML = oldTxt; btn.disabled = false;
+    
+    if(error) { 
+        showToast("កែប្រែបរាជ័យ សូមពិនិត្យមើលប្រព័ន្ធ!", "error"); 
+    } else { 
+        showToast("កែប្រែជោគជ័យ!", "success"); 
+        closeModal('editSaleModal'); 
+        await refreshAllData(); 
+    } 
+};
+
 
 window.calculateEditTotal = function() { let qty = parseFloat(document.getElementById('editSaleQty').value) || 0; let price = parseFloat(document.getElementById('editSalePrice').value) || 0; let discount = parseFloat(document.getElementById('editSaleDiscount').value) || 0; document.getElementById('editSaleTotal').value = money(Math.max(0, (qty * price) - discount)); }
 
