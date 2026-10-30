@@ -463,13 +463,9 @@
                         </div>
                     </div>
                     
-                    <div class="no-print" style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px;">
-                      <button class="btn secondary" style="border-color: #8b5cf6; color: #8b5cf6;" onclick="downloadInvoiceImage()"><i class='bx bx-image-download'></i> ទាញជារូបភាព</button>
-                      <button class="btn secondary" style="border-color: #f59e0b; color: #f59e0b;" onclick="prepareAndPrint(true)"><i class='bx bx-file'></i> បង្កើត Quotation</button>
-                      <button class="btn" style="background: #2AABEE; color: white;" onclick="copyInvoiceToTelegram()"><i class='bx bxl-telegram'></i> Copy</button>
-                      <button class="btn secondary" onclick="prepareAndPrint(false)"><i class='bx bx-printer'></i> បោះពុម្ព</button>
-                      <button class="btn primary" id="btnSave" onclick="saveData()"><i class='bx bx-save'></i> រក្សាទុកការលក់</button>
-                    </div>
+                        <div class="no-print" style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px;">
+                        <button class="btn primary" id="btnSave" onclick="saveData()"><i class='bx bx-save'></i> រក្សាទុកការលក់</button>
+                        </div>
                 </div>
               </div>
             </div>
@@ -937,10 +933,14 @@
             </div>
         </div>
 
-        <div class="modal-actions border-top pt-3">
-            <button class="btn secondary" onclick="closeModal('invoiceDetailModal')">បិទ</button>
-            <button class="btn" style="background: #2AABEE; color: white;" onclick="copyHistoricalInvoiceToTelegram()"><i class='bx bxl-telegram'></i> Copy ផ្ញើ Telegram</button>
-            <button class="btn primary" onclick="reprintCurrentInvoice()"><i class='bx bx-printer'></i> បោះពុម្ព</button>
+       <div class="modal-actions border-top pt-3" style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: flex-end;">
+            <!-- 🌟 ប៊ូតុងថ្មីទាំង ៤ ដែលប្តូរមកពី New Sale 🌟 -->
+            <button class="btn secondary" style="border-color: #8b5cf6; color: #8b5cf6;" onclick="downloadHistoricalInvoiceImage()"><i class='bx bx-image-download'></i> រូបភាព</button>
+            <button class="btn secondary" style="border-color: #f59e0b; color: #f59e0b;" onclick="reprintHistoricalInvoice(true)"><i class='bx bx-file'></i> Quotation</button>
+            <button class="btn" style="background: #2AABEE; color: white;" onclick="copyHistoricalInvoiceToTelegram()"><i class='bx bxl-telegram'></i> Copy</button>
+            <button class="btn primary" onclick="reprintHistoricalInvoice(false)"><i class='bx bx-printer'></i> បោះពុម្ព</button>
+            
+            <button class="btn secondary" onclick="closeModal('invoiceDetailModal')" style="margin-left: auto;">បិទ</button>
         </div>
     </div>
 </div>
@@ -1284,6 +1284,27 @@
                 <button class="btn secondary" onclick="closeModal('editProductModal')">បោះបង់</button>
                 <button class="btn primary" onclick="saveEditedProduct()"><i class='bx bx-save'></i> រក្សាទុកកែប្រែ</button>
             </div>
+        </div>
+    </div>
+</div>
+<!-- 🌟 Modal កែប្រែថ្ងៃទីវិក្កយបត្រទាំងមូល (Bulk Date Edit) 🌟 -->
+<div id="editInvoiceDateModal" class="modal">
+    <div class="modal-card" style="width: 450px;">
+        <div class="modal-head">
+            <h3><i class='bx bx-calendar-edit' style="color:var(--warning); margin-right:5px;"></i> កែប្រែថ្ងៃទីវិក្កយបត្រទាំងមូល</h3>
+            <button class="icon-btn-round" onclick="closeModal('editInvoiceDateModal')"><i class='bx bx-x'></i></button>
+        </div>
+        <input type="hidden" id="bulkEditInvNo">
+        <div class="form-group mb-4">
+            <label>សូមជ្រើសរើសកាលបរិច្ឆេទថ្មី៖</label>
+            <input type="date" id="bulkEditNewDate" class="form-input" style="font-size: 16px; padding: 12px; font-weight: bold; color: var(--primary);">
+            <small class="muted mt-3 block" style="color: var(--danger); line-height: 1.5;">
+                <i class='bx bx-info-circle'></i> ចំណាំ៖ ការរក្សាទុកនេះ នឹងប្តូរថ្ងៃខែនៃ <b>គ្រប់មុខទំនិញទាំងអស់</b> ដែលស្ថិតក្នុងវិក្កយបត្រនេះព្រមៗគ្នាតែម្តង!
+            </small>
+        </div>
+        <div class="modal-actions border-top pt-3">
+            <button class="btn secondary" onclick="closeModal('editInvoiceDateModal')">បោះបង់</button>
+            <button class="btn primary" onclick="saveBulkInvoiceDate()"><i class='bx bx-save'></i> រក្សាទុកកែប្រែ</button>
         </div>
     </div>
 </div>
