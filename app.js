@@ -1671,7 +1671,8 @@ window.viewInvoiceDetail = function(invNo) {
     }
     
     document.getElementById('detailCusName').innerHTML = cNameDisplay;
-    document.getElementById('detailDate').innerText = first.date;
+    // 🌟 បង្ហាញថ្ងៃទី ព្រមទាំងប៊ូតុងកែប្រែថ្ងៃទីវិក្កយបត្រទាំងមូល 🌟
+    document.getElementById('detailDate').innerHTML = `${first.date} <button class="icon-btn-round" style="width:24px; height:24px; display:inline-flex; vertical-align:middle; margin-left:8px; font-size:14px; border-color:var(--warning); color:var(--warning);" onclick="openBulkDateEdit('${invNo}', '${first.date}')" title="កែប្រែថ្ងៃទីវិក្កយបត្រទាំងមូល"><i class='bx bx-edit'></i></button>`;
     
     let grandTotal = 0; let paidTotal = 0; let html = '';
     let todayStr = new Date().toISOString().slice(0, 10);
@@ -1703,67 +1704,43 @@ window.viewInvoiceDetail = function(invNo) {
     document.getElementById('detailItemsTable').innerHTML = html;
     openModal('invoiceDetailModal');
 };
-window.reprintCurrentInvoice = function() {
+// 🌟 មុខងារបោះពុម្ព និងបង្កើត Quotation សម្រាប់វិក្កយបត្រចាស់ 🌟
+window.reprintHistoricalInvoice = function(isQuotation) {
+    let s = getShopSettings();
     let invNo = document.getElementById('detailInvNo').innerText;
-    let items = salesData.filter(s => getInvoiceNo(s) === invNo);
+    let items = salesData.filter(sale => getInvoiceNo(sale) === invNo);
     if(items.length === 0) return;
     
     let first = items[0];
     let grandTotal = 0; let paidTotal = 0; let printItemsHtml = '';
     
     items.forEach(item => {
-        let rowTotal = parseFloat(item.total || 0);
-        grandTotal += rowTotal;
+        let rowTotal = parseFloat(item.total || 0); grandTotal += rowTotal;
         let isPaid = cleanStatus(item.status).toLowerCase() === 'paid';
         paidTotal += isPaid ? rowTotal : parseFloat(item.paid_amount || 0);
-        
         let unitDisplay = item.unit ? ` (${item.unit})` : '';
-        printItemsHtml += `<tr style="border-bottom: 1px dotted #ccc;">
-            <td style="padding: 2px 1px; width: 45%;">${esc(item.item)}${unitDisplay}</td>
-            <td style="padding: 2px 1px; width: 15%; text-align: center;">${item.qty}</td>
-            <td style="padding: 2px 1px; width: 20%; text-align: right;">${money(item.price)}</td>
-            <td style="padding: 2px 1px; width: 20%; text-align: right;">${money(rowTotal)}</td>
-        </tr>`;
+        printItemsHtml += `<tr style="border-bottom: 1px dotted #ccc;"><td style="padding: 2px 1px; width: 45%;">${esc(item.item)}${unitDisplay}</td><td style="padding: 2px 1px; width: 15%; text-align: center;">${item.qty}</td><td style="padding: 2px 1px; width: 20%; text-align: right;">${money(item.price)}</td><td style="padding: 2px 1px; width: 20%; text-align: right;">${money(rowTotal)}</td></tr>`;
     });
     
     let debt = grandTotal - paidTotal;
     let statusText = debt > 0 ? 'Unpaid / ជំពាក់' : 'Paid / ទូទាត់រួច';
+    let docTitle = isQuotation ? "សម្រង់តម្លៃ (QUOTATION)" : "វិក្កយបត្រ (INVOICE) - ថតចម្លង";
     
     let printContent = `
     <html><head><title>Reprint Invoice</title>
     <link href="https://fonts.googleapis.com/css2?family=Kantumruy+Pro:wght@400;600&display=swap" rel="stylesheet">
-    <style>
-        @page { margin: 0; size: 80mm auto; }
-        body { font-family: 'Kantumruy Pro', sans-serif; font-size: 11px; padding: 2mm; width: 76mm; color: #000; background: white; }
-        table { width: 100%; border-collapse: collapse; table-layout: fixed; }
-        td, th { word-wrap: break-word; font-size: 10px; color: #000; }
-        .border-bottom { border-bottom: 1px dashed #000; padding-bottom: 5px; margin-bottom: 5px; }
-    </style>
+    <style>@page { margin: 0; size: 80mm auto; } body { font-family: 'Kantumruy Pro', sans-serif; font-size: 11px; padding: 2mm; width: 76mm; color: #000; background: white; } table { width: 100%; border-collapse: collapse; table-layout: fixed; } td, th { word-wrap: break-word; font-size: 10px; color: #000; } .border-bottom { border-bottom: 1px dashed #000; padding-bottom: 5px; margin-bottom: 5px; }</style>
     </head><body>
         <div style="text-align: center;" class="border-bottom">
-            <h1 style="margin: 0; font-size: 16px;">ស្រែមាស ចំការលើ</h1>
-            <p style="margin: 2px 0 0; font-size: 10px;">អាសយដ្ឋាន: ចំការលើ, កំពង់ចាម<br>ទូរស័ព្ទ: 088 433 7888</p>
-            <h2 style="margin: 5px 0 0; font-size: 14px;">វិក្កយបត្រ (INVOICE) - ថតចម្លង</h2>
-            <p style="margin: 2px 0; font-size: 10px;">កាលបរិច្ឆេទ: ${first.date || '-'}</p>
-            <p style="margin: 2px 0; font-size: 10px;">លេខ: <b>${invNo}</b></p>
+            <h1 style="margin: 0; font-size: 16px;">${esc(s.name)}</h1>
+            <p style="margin: 2px 0 0; font-size: 10px;">អាសយដ្ឋាន: ${esc(s.address)}<br>ទូរស័ព្ទ: ${esc(s.phone)}</p>
+            <h2 style="margin: 5px 0 0; font-size: 14px;">${docTitle}</h2>
+            <p style="margin: 2px 0; font-size: 10px;">កាលបរិច្ឆេទ: ${first.date || '-'}</p><p style="margin: 2px 0; font-size: 10px;">លេខ: <b>${invNo}</b></p>
         </div>
-        <div class="border-bottom" style="font-size: 10px;">
-            អតិថិជន: <b>${esc(first.customer_name || 'Walk-in')}</b><br>
-            ទូរស័ព្ទ: ${esc(first.phone || '-')}<br>
-            ស្ថានភាព: <b>${statusText}</b>
-        </div>
-        <table style="margin-bottom: 5px;">
-            <thead style="border-bottom: 1px dashed #000;">
-                <tr><th style="text-align:left;">មុខទំនិញ</th><th>ចំនួន</th><th style="text-align:right;">តម្លៃ</th><th style="text-align:right;">សរុប</th></tr>
-            </thead>
-            <tbody>${printItemsHtml}</tbody>
-        </table>
-        <div style="border-top: 1px dashed #000; padding-top: 5px; text-align:right; font-size: 12px;">
-            សរុបទឹកប្រាក់: <b>${money(grandTotal)}</b>
-        </div>
-        <div style="text-align: center; margin-top: 15px; font-weight: bold; border-top: 1px dashed #000; padding-top: 10px;">
-            🙏 សូមអរគុណសម្រាប់ការគាំទ្រ!
-        </div>
+        <div class="border-bottom" style="font-size: 10px;">អតិថិជន: <b>${esc(first.customer_name || 'Walk-in')}</b><br>ទូរស័ព្ទ: ${esc(first.phone || '-')}<br>ស្ថានភាព: <b>${statusText}</b></div>
+        <table style="margin-bottom: 5px;"><thead style="border-bottom: 1px dashed #000;"><tr><th style="text-align:left;">មុខទំនិញ</th><th>ចំនួន</th><th style="text-align:right;">តម្លៃ</th><th style="text-align:right;">សរុប</th></tr></thead><tbody>${printItemsHtml}</tbody></table>
+        <div style="border-top: 1px dashed #000; padding-top: 5px; text-align:right; font-size: 12px;">សរុបទឹកប្រាក់: <b>${money(grandTotal)}</b></div>
+        <div style="text-align: center; margin-top: 15px; font-weight: bold; border-top: 1px dashed #000; padding-top: 10px;">🙏 សូមអរគុណសម្រាប់ការគាំទ្រ!</div>
     </body></html>`;
 
     let printWindow = window.open('', '', 'width=400,height=600');
@@ -1771,6 +1748,55 @@ window.reprintCurrentInvoice = function() {
     printWindow.document.close();
     printWindow.focus();
     setTimeout(() => { printWindow.print(); printWindow.close(); }, 500);
+};
+
+// 🌟 មុខងារទាញយករូបភាពសម្រាប់វិក្កយបត្រចាស់ 🌟
+window.downloadHistoricalInvoiceImage = function() {
+    let s = getShopSettings();
+    let invNo = document.getElementById('detailInvNo').innerText;
+    let items = salesData.filter(sale => getInvoiceNo(sale) === invNo);
+    if(items.length === 0) return;
+    
+    let first = items[0];
+    let grandTotal = 0; let paidTotal = 0; let printItemsHtml = '';
+    
+    items.forEach(item => {
+        let rowTotal = parseFloat(item.total || 0); grandTotal += rowTotal;
+        let isPaid = cleanStatus(item.status).toLowerCase() === 'paid';
+        paidTotal += isPaid ? rowTotal : parseFloat(item.paid_amount || 0);
+        let unitDisplay = item.unit ? ` (${item.unit})` : '';
+        printItemsHtml += `<tr style="border-bottom: 1px dotted #ccc;"><td style="padding: 4px 2px; width: 45%;">${esc(item.item)}${unitDisplay}</td><td style="padding: 4px 2px; width: 15%; text-align: center;">${item.qty}</td><td style="padding: 4px 2px; width: 20%; text-align: right;">${money(item.price)}</td><td style="padding: 4px 2px; width: 20%; text-align: right;">${money(rowTotal)}</td></tr>`;
+    });
+    
+    let debt = grandTotal - paidTotal;
+    let statusText = debt > 0 ? 'Unpaid / ជំពាក់' : 'Paid / ទូទាត់រួច';
+
+    let printContent = `
+    <html><head><title>Invoice Capture</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kantumruy+Pro:wght@400;600&display=swap" rel="stylesheet">
+    <style>body { font-family: 'Kantumruy Pro', sans-serif; font-size: 13px; padding: 15px; width: 350px; color: #000; background: white; margin: 0 auto; } table { width: 100%; border-collapse: collapse; table-layout: fixed; margin-top: 10px; } td, th { word-wrap: break-word; font-size: 12px; color: #000; } .border-bottom { border-bottom: 1px dashed #000; padding-bottom: 8px; margin-bottom: 8px; }</style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    </head><body>
+      <div id="captureArea" style="background: white; padding: 10px;">
+        <div style="text-align: center;" class="border-bottom">
+            <h1 style="margin: 0; font-size: 20px; color: #1e3a8a;">${esc(s.name)}</h1>
+            <p style="margin: 4px 0 0; font-size: 12px;">អាសយដ្ឋាន: ${esc(s.address)}<br>ទូរស័ព្ទ: ${esc(s.phone)}</p>
+            <h2 style="margin: 8px 0 0; font-size: 16px;">វិក្កយបត្រ (INVOICE)</h2>
+            <p style="margin: 4px 0; font-size: 12px;">កាលបរិច្ឆេទ: <b>${first.date || '-'}</b></p>
+            <p style="margin: 4px 0; font-size: 12px;">លេខ: <b>${invNo}</b></p>
+        </div>
+        <div class="border-bottom" style="font-size: 12px;">អតិថិជន: <b>${esc(first.customer_name || 'Walk-in')}</b><br>ទូរស័ព្ទ: ${esc(first.phone || '-')}<br>ស្ថានភាព: <b>${statusText}</b></div>
+        <table style="margin-bottom: 8px;"><thead style="border-bottom: 1px dashed #000;"><tr><th style="text-align:left; padding-bottom:4px;">មុខទំនិញ</th><th style="padding-bottom:4px;">ចំនួន</th><th style="text-align:right; padding-bottom:4px;">តម្លៃ</th><th style="text-align:right; padding-bottom:4px;">សរុប</th></tr></thead><tbody>${printItemsHtml}</tbody></table>
+        <div style="border-top: 1px dashed #000; padding-top: 8px; text-align:right; font-size: 14px;"><div style="margin-top: 5px;">សរុបទឹកប្រាក់: <b style="font-size: 18px;">${money(grandTotal)}</b></div></div>
+        <div style="text-align: center; margin-top: 20px; font-weight: bold; border-top: 1px dashed #000; padding-top: 15px;">🙏 សូមអរគុណសម្រាប់ការគាំទ្រ!</div>
+      </div>
+      <script>window.onload = function() { setTimeout(() => { html2canvas(document.getElementById('captureArea'), { scale: 3 }).then(canvas => { let link = document.createElement('a'); link.download = 'Invoice_${esc(first.customer_name || 'Walk-in')}_${first.date}.png'; link.href = canvas.toDataURL('image/png'); link.click(); window.close(); }); }, 500); };</script>
+    </body></html>`;
+
+    let captureWindow = window.open('', '', 'width=400,height=600');
+    captureWindow.document.write(printContent);
+    captureWindow.document.close();
+    showToast("កំពុងរៀបចំទាញយករូបភាព...", "success");
 };
 
 window.copyHistoricalInvoiceToTelegram = function() {
@@ -2254,65 +2280,53 @@ function loadDashboard() {
   let today = new Date(); let currentMonth = today.getMonth(); let currentYear = today.getFullYear();
   let lastMonth = currentMonth === 0 ? 11 : currentMonth - 1; let lastMonthYear = currentMonth === 0 ? currentYear - 1 : currentYear;
 
+  let currentYearSalesTotal = 0;
+  let yearlyBonusTotal = 0;
+  let currentYearExpenses = 0;
+
   salesData.forEach(row => {
     let rowTotal = parseFloat(row.total || row.Total || 0); 
+    let rowQty = parseFloat(row.qty || 1);
+    
     if(row.date) {
         let d = new Date(row.date);
+        // សរុបសម្រាប់ខែនេះ និងខែមុន
         if(d.getMonth() === currentMonth && d.getFullYear() === currentYear) currentMonthSales += rowTotal;
         if(d.getMonth() === lastMonth && d.getFullYear() === lastMonthYear) lastMonthSales += rowTotal;
+        
+        // សរុបសម្រាប់ប្រចាំឆ្នាំ (ដើម្បីគណនាគោលដៅ និងចំណេញសុទ្ធ)
+        if(d.getFullYear() === currentYear) {
+            currentYearSalesTotal += rowTotal;
+            let historicalBasePrice = parseFloat(row.base_price) > 0 ? parseFloat(row.base_price) : (parseFloat(row.price) || 0);
+            let rowCost = historicalBasePrice * rowQty;
+            let rowProfit = rowTotal - rowCost;
+            let rowBonus = rowProfit > 0 ? rowProfit * 0.40 : 0;
+            yearlyBonusTotal += rowBonus;
+        }
     }
   });
 
-  let growthText = "កើនឡើង"; let growthClass = "up";
-  if(lastMonthSales > 0) {
-      let percent = ((currentMonthSales - lastMonthSales) / lastMonthSales) * 100;
-      if(percent < 0) { growthText = `ធ្លាក់ចុះ ${Math.abs(percent).toFixed(1)}%`; growthClass = "danger"; } else { growthText = `កើនឡើង ${percent.toFixed(1)}%`; growthClass = "up"; }
-  }
-
-  if(document.getElementById('dashSalesMonth')) document.getElementById('dashSalesMonth').innerText = money(currentMonthSales);
-  if(document.getElementById('dashCustomers')) document.getElementById('dashCustomers').innerText = customersData.length;
-  let momEl = document.getElementById('momGrowth'); if(momEl) { momEl.innerHTML = `<i class='bx bx-${growthClass==="up"?"up":"down"}-arrow-alt'></i> ${growthText}`; momEl.className = `trend ${growthClass}`; }
-
-  let currentQuarter = Math.floor(currentMonth / 3); 
-  let currentYearSalesTotal = 0;
-  let yearlyBonusTotal = 0;
-  let quarterBonusTotal = 0;
-
-  salesData.forEach(row => {
-      let rowTotal = parseFloat(row.total || row.Total || 0); 
-      let rowQty = parseFloat(row.qty || 1);
-      
-      if(row.date) {
-          let d = new Date(row.date);
-          if(d.getFullYear() === currentYear) {
-              currentYearSalesTotal += rowTotal;
-              
-              let historicalBasePrice = parseFloat(row.base_price) > 0 ? parseFloat(row.base_price) : (parseFloat(row.price) || 0);
-              let rowCost = historicalBasePrice * rowQty;
-              let rowProfit = rowTotal - rowCost;
-              let rowBonus = rowProfit > 0 ? rowProfit * 0.40 : 0;
-              
-              yearlyBonusTotal += rowBonus;
-
-              if (Math.floor(d.getMonth() / 3) === currentQuarter) {
-                  quarterBonusTotal += rowBonus;
-              }
-          }
-      }
-  });
-
-  let currentYearExpenses = 0;
   expensesData.forEach(exp => {
       if(exp.date && new Date(exp.date).getFullYear() === currentYear) {
           currentYearExpenses += parseFloat(exp.amount || 0);
       }
   });
 
+  let growthText = "កើនឡើង"; let growthClass = "up";
+  if(lastMonthSales > 0) {
+      let percent = ((currentMonthSales - lastMonthSales) / lastMonthSales) * 100;
+      if(percent < 0) { growthText = `ធ្លាក់ចុះ ${Math.abs(percent).toFixed(1)}%`; growthClass = "danger"; } 
+      else { growthText = `កើនឡើង ${percent.toFixed(1)}%`; growthClass = "up"; }
+  }
+
+  if(document.getElementById('dashSalesMonth')) document.getElementById('dashSalesMonth').innerText = money(currentMonthSales);
+  if(document.getElementById('dashCustomers')) document.getElementById('dashCustomers').innerText = customersData.length;
+  let momEl = document.getElementById('momGrowth'); 
+  if(momEl) { momEl.innerHTML = `<i class='bx bx-${growthClass==="up"?"up":"down"}-arrow-alt'></i> ${growthText}`; momEl.className = `trend ${growthClass}`; }
+
   let yearlyTarget = parseFloat(localStorage.getItem('salesTarget_' + currentYear)) || 0; 
   let targetProgress = 0;
-  if (yearlyTarget > 0) {
-      targetProgress = (currentYearSalesTotal / yearlyTarget) * 100;
-  }
+  if (yearlyTarget > 0) { targetProgress = (currentYearSalesTotal / yearlyTarget) * 100; }
   
   let netEarnings = yearlyBonusTotal - currentYearExpenses; 
   
@@ -2337,27 +2351,20 @@ function loadDashboard() {
           }
       }
 
-      if(document.getElementById('myCommission')) {
-          document.getElementById('myCommission').innerHTML = `ត្រីមាសនេះ (Q${currentQuarter + 1}): <br><b style="font-size:18px; color:var(--success);">${money(quarterBonusTotal)}</b>`;
-      }
       if(document.getElementById('dashboardExpenses')) document.getElementById('dashboardExpenses').innerText = money(currentYearExpenses);
       
-      // 🌟 បង្ហាញចំណេញសុទ្ធមានទាំង រៀល និង ដុល្លារ
       if(document.getElementById('netEarnings')) {
           let storedRate = localStorage.getItem('exchangeRate');
           let exRate = (storedRate && !isNaN(storedRate) && parseFloat(storedRate) > 0) ? parseFloat(storedRate) : 4100;
           let netUsd = netEarnings / exRate;
           let sign = netEarnings < 0 ? "-" : "";
           let usdFormatted = `${sign}$${Math.abs(netUsd).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
-          
           document.getElementById('netEarnings').innerHTML = `${money(netEarnings)} <span style="font-size: 13px; color: #f8fafc; font-weight: 500; margin-left: 4px;">(${usdFormatted})</span>`;
       }
-  } // <-- ត្រូវប្រាកដថាមានសញ្ញា } នេះនៅទីនេះ ដើម្បីបិទលក្ខខណ្ឌខាងលើកុំឱ្យគាំង
+  }
 
-
+  // Follow-up Notification Logic (រក្សាទុកដដែល មិនកែប្រែ)
   let followUpContainer = document.getElementById('followUpContainer');
-  
-  // 🌟 ទាញយកបញ្ជីនេះមកប្រកាសនៅខាងក្រៅសិន ដើម្បីកុំឱ្យប្រព័ន្ធកណ្តឹងលោត Error គាំង
   let dormantCustomers = [];
   let cusPhonesFromSales = {}; 
 
@@ -2406,7 +2413,7 @@ function loadDashboard() {
       followUpContainer.innerHTML = htmlFollowUp || '<tr><td colspan="3" class="text-center muted pt-4">មិនមានអតិថិជនត្រូវ Follow up ទេ</td></tr>';
   }
 
- let overdueDashContainer = document.getElementById('dashOverdueContainer');
+  let overdueDashContainer = document.getElementById('dashOverdueContainer');
   let overdueModalContainer = document.getElementById('overdueContainer'); 
   let notiFollowUpContainer = document.getElementById('notiFollowUpContainer');
   let notiBadge = document.getElementById('notificationBadge');
@@ -2444,7 +2451,6 @@ function loadDashboard() {
   if (overdueDashContainer) overdueDashContainer.innerHTML = htmlOverdue || emptyMsg;
   if (overdueModalContainer) overdueModalContainer.innerHTML = htmlOverdue || emptyMsg;
 
-  // 🌟 រុញទិន្នន័យ Follow-up ចូលទៅក្នុងកណ្តឹង
   if(notiFollowUpContainer) {
       let htmlFollowUpModal = '';
       dormantCustomers.sort((a,b) => b.urgency - a.urgency).forEach(c => {
@@ -2459,7 +2465,6 @@ function loadDashboard() {
       notiFollowUpContainer.innerHTML = htmlFollowUpModal || '<tr><td colspan="3" class="text-center muted pt-4 pb-4">មិនមានអតិថិជនត្រូវ Follow up ទេ</td></tr>';
   }
 
-  // 🌟 បូកសរុបចំនួនកណ្តឹង (ជំពាក់ + Follow-up)
   let totalNotiCount = debtCusCount + dormantCustomers.length;
   if(totalNotiCount > 0 && notiBadge) { 
       notiBadge.style.display = 'block'; 
@@ -2493,6 +2498,9 @@ window.updateChart = function() {
   let groupedByDate = {};
   let bonusByDate = {}; 
   let expenseByDate = {}; 
+  
+  // 🌟 បន្ថែមអថេរសម្រាប់បូកសរុប Bonus តាម Filter 🌟
+  let filteredBonusTotal = 0;
 
   if (expensesData) {
       expensesData.forEach(exp => {
@@ -2523,6 +2531,9 @@ window.updateChart = function() {
       let rowCost = historicalBasePrice * rowQty;
       let rowProfit = rev - rowCost;
       let rowBonus = rowProfit > 0 ? rowProfit * 0.40 : 0;
+      
+      // 🌟 បូក Bonus សរុបនៅក្នុងចន្លោះថ្ងៃនេះ 🌟
+      filteredBonusTotal += rowBonus;
 
       groupedByDate[dateStr] = (groupedByDate[dateStr] || 0) + rev; 
       bonusByDate[dateStr] = (bonusByDate[dateStr] || 0) + rowBonus; 
@@ -2535,6 +2546,12 @@ window.updateChart = function() {
       }
       if(cusName !== 'Walk-in') cusCount[cusName] = (cusCount[cusName] || 0) + rev;
   });
+
+  // 🌟 បញ្ចេញលទ្ធផល Bonus ចូលក្នុងប្រអប់ Dashboard 🌟
+  if(document.getElementById('myCommission')) {
+      let filterLabel = (startDate && endDate) ? `ចន្លោះថ្ងៃនេះ (Filter)` : `Bonus សរុប`;
+      document.getElementById('myCommission').innerHTML = `${filterLabel}: <br><b style="font-size:18px; color:var(--success);">${money(filteredBonusTotal)}</b>`;
+  }
 
   if(document.getElementById('dashSalesTotal')) document.getElementById('dashSalesTotal').innerText = money(totalSales);
   if(document.getElementById('dashCashCollected')) document.getElementById('dashCashCollected').innerText = money(cashCollected);
@@ -2557,7 +2574,6 @@ window.updateChart = function() {
 
   let allSortedProducts = Object.keys(prodStats).map(k => ({ name: k, qty: prodStats[k].qty, revenue: prodStats[k].revenue })).sort((a,b) => b.revenue - a.revenue);
   
-  // ១. បង្ហាញ Top 5 ខាងក្រោមដដែល
   let sortedProducts = allSortedProducts.slice(0, 5);
   let pContainer = document.getElementById('topProductsContainer');
   if(pContainer) {
@@ -2572,7 +2588,6 @@ window.updateChart = function() {
       pContainer.innerHTML = htmlP || '<tr><td colspan="3" class="text-center muted pt-4">គ្មានទិន្នន័យ</td></tr>';
   }
 
-  // ២. 🌟 បង្ហាញរបាយការណ៍ទំនិញទាំងអស់ចូលក្នុងផ្ទាំងថ្មី (ជំនួសផ្ទាំងបំណុល) 🌟
   let itemReportContainer = document.getElementById('dashItemReportContainer');
   if(itemReportContainer) {
       let htmlAll = '';
@@ -3545,4 +3560,48 @@ window.factoryResetSystem = async function() {
     } else if(pass !== null) {
         showToast("លេខកូដមិនត្រឹមត្រូវទេ! ប្រតិបត្តិការត្រូវបានលុបចោល។", "error");
     }
+};
+// ==========================================
+// 🌟 មុខងារកែប្រែថ្ងៃទីវិក្កយបត្រម្តងទាំងអស់ (Bulk Edit Date) 🌟
+// ==========================================
+window.openBulkDateEdit = function(invNo, currentDate) {
+    let pass = prompt("🔒 សូមបញ្ចូលលេខកូដថៅកែ (PIN) ដើម្បីកែប្រែថ្ងៃទីវិក្កយបត្រទាំងមូល៖");
+    if(pass === ADMIN_PIN) {
+        document.getElementById('bulkEditInvNo').value = invNo;
+        document.getElementById('bulkEditNewDate').value = currentDate;
+        openModal('editInvoiceDateModal');
+    } else if(pass !== null) { 
+        showToast("លេខកូដមិនត្រឹមត្រូវទេ!", "error"); 
+    }
+};
+
+window.saveBulkInvoiceDate = async function() {
+    let invNo = document.getElementById('bulkEditInvNo').value;
+    let newDate = document.getElementById('bulkEditNewDate').value;
+    
+    if(!newDate) { showToast("សូមជ្រើសរើសថ្ងៃខែថ្មី!", "error"); return; }
+    
+    let btn = document.querySelector('#editInvoiceDateModal .btn.primary');
+    let oldTxt = btn.innerHTML; btn.innerHTML = "កំពុងរក្សាទុក..."; btn.disabled = true;
+
+    // 🌟 រកគ្រប់ទំនិញទាំងអស់ដែលស្ថិតក្នុងវិក្កយបត្រនេះ
+    let items = salesData.filter(s => getInvoiceNo(s) === invNo);
+    let updatePromises = [];
+    
+    // 🌟 បង្កើតបញ្ជា Update សម្រាប់ទំនិញរាល់ជួរ
+    for(let s of items) {
+        updatePromises.push(db.from(TABLE_SALES).update({ date: newDate }).eq('id', s.id));
+    }
+    
+    // 🌟 បាញ់បញ្ជាទៅ Supabase ឱ្យ Update ព្រមគ្នាទាំងអស់ម្តង
+    await Promise.all(updatePromises);
+    
+    btn.innerHTML = oldTxt; btn.disabled = false;
+    showToast(`បានកែប្រែថ្ងៃទីវិក្កយបត្រជោគជ័យ!`, "success");
+    closeModal('editInvoiceDateModal');
+    
+    await refreshAllData(); 
+    
+    // បើកផ្ទាំងលម្អិតឡើងវិញដើម្បីបង្ហាញកាលបរិច្ឆេទថ្មី
+    viewInvoiceDetail(invNo); 
 };
