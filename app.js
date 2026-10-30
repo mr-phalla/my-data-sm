@@ -2359,7 +2359,7 @@ function loadDashboard() {
           let netUsd = netEarnings / exRate;
           let sign = netEarnings < 0 ? "-" : "";
           let usdFormatted = `${sign}$${Math.abs(netUsd).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
-          document.getElementById('netEarnings').innerHTML = `${money(netEarnings)} <span style="font-size: 13px; color: #f8fafc; font-weight: 500; margin-left: 4px;">(${usdFormatted})</span>`;
+          document.getElementById('netEarnings').innerHTML = `${money(netEarnings)} <span style="font-size: 13px; color: var(--muted); font-weight: 500; margin-left: 4px;">(${usdFormatted})</span>`;
       }
   }
 
@@ -2499,15 +2499,18 @@ window.updateChart = function() {
   let bonusByDate = {}; 
   let expenseByDate = {}; 
   
-  // 🌟 បន្ថែមអថេរសម្រាប់បូកសរុប Bonus តាម Filter 🌟
+  // 🌟 អថេរសម្រាប់បូកសរុប Bonus តាម Filter 🌟
   let filteredBonusTotal = 0;
+  let filteredExpenseTotal = 0;
 
   if (expensesData) {
       expensesData.forEach(exp => {
           if(exp.date) {
               let d = new Date(exp.date);
               if (d >= start && d <= end) {
-                  expenseByDate[exp.date] = (expenseByDate[exp.date] || 0) + parseFloat(exp.amount || 0);
+                  let amt = parseFloat(exp.amount || 0);
+                  expenseByDate[exp.date] = (expenseByDate[exp.date] || 0) + amt;
+                  filteredExpenseTotal += amt;
               }
           }
       });
@@ -2532,7 +2535,7 @@ window.updateChart = function() {
       let rowProfit = rev - rowCost;
       let rowBonus = rowProfit > 0 ? rowProfit * 0.40 : 0;
       
-      // 🌟 បូក Bonus សរុបនៅក្នុងចន្លោះថ្ងៃនេះ 🌟
+      // 🌟 បូក Bonus សរុបនៅក្នុងចន្លោះថ្ងៃ (Filter) នេះ 🌟
       filteredBonusTotal += rowBonus;
 
       groupedByDate[dateStr] = (groupedByDate[dateStr] || 0) + rev; 
@@ -2547,12 +2550,61 @@ window.updateChart = function() {
       if(cusName !== 'Walk-in') cusCount[cusName] = (cusCount[cusName] || 0) + rev;
   });
 
-  // 🌟 បញ្ចេញលទ្ធផល Bonus ចូលក្នុងប្រអប់ Dashboard 🌟
-  if(document.getElementById('myCommission')) {
-      let filterLabel = (startDate && endDate) ? `ចន្លោះថ្ងៃនេះ (Filter)` : `Bonus សរុប`;
-      document.getElementById('myCommission').innerHTML = `${filterLabel}: <br><b style="font-size:18px; color:var(--success);">${money(filteredBonusTotal)}</b>`;
+  // ==========================================
+  // 🌟 អាប់ដេតប្រអប់ គោលដៅ Bonus និង ចំណេញសុទ្ធ ឱ្យស៊ីគ្នានឹង Filter 🌟
+  // ==========================================
+  let activeYear = start.getFullYear(); 
+  let yearlyTarget = parseFloat(localStorage.getItem('salesTarget_' + activeYear)) || 0; 
+  let targetProgress = 0;
+  
+  if (yearlyTarget > 0) { 
+      targetProgress = (totalSales / yearlyTarget) * 100; // គិតតាមចំណូលក្នុង Filter ធៀបនឹង Target ឆ្នាំ
+  }
+  
+  let netEarnings = filteredBonusTotal - filteredExpenseTotal; 
+  
+  if(document.getElementById('targetProgressBar')) {
+      let dateText = (startDate && endDate) ? `កាលបរិច្ឆេទ: ${startDate} - ${endDate}` : `ប្រចាំឆ្នាំ ${activeYear}`;
+      document.getElementById('targetYearLabel').innerText = `(${dateText})`;
+      document.getElementById('targetProgressBar').style.width = Math.min(targetProgress, 100) + '%';
+      document.getElementById('targetPercentage').innerText = targetProgress.toFixed(1) + '%';
+      
+      if(document.getElementById('targetCurrentSales')) document.getElementById('targetCurrentSales').innerText = money(totalSales);
+      
+      if(document.getElementById('targetAmountDisplay')) {
+          let isUSD = localStorage.getItem('salesTargetCurrency_' + activeYear) === 'USD';
+          if (yearlyTarget > 0) {
+              if(isUSD) {
+                  let usdAmount = yearlyTarget / 4100;
+                  document.getElementById('targetAmountDisplay').innerText = money(yearlyTarget) + ` ($${usdAmount.toLocaleString('en-US')})`;
+              } else {
+                  document.getElementById('targetAmountDisplay').innerText = money(yearlyTarget);
+              }
+          } else {
+              document.getElementById('targetAmountDisplay').innerText = "មិនទាន់កំណត់";
+          }
+      }
+
+      if(document.getElementById('myCommission')) {
+          document.getElementById('myCommission').innerHTML = `Bonus តាម Filter:<br><b style="font-size:18px; color:var(--success);">${money(filteredBonusTotal)}</b>`;
+      }
+      if(document.getElementById('dashboardExpenses')) {
+          document.getElementById('dashboardExpenses').innerText = money(filteredExpenseTotal);
+      }
+      
+      if(document.getElementById('netEarnings')) {
+          let storedRate = localStorage.getItem('exchangeRate');
+          let exRate = (storedRate && !isNaN(storedRate) && parseFloat(storedRate) > 0) ? parseFloat(storedRate) : 4100;
+          let netUsd = netEarnings / exRate;
+          let sign = netEarnings < 0 ? "-" : "";
+          let usdFormatted = `${sign}$${Math.abs(netUsd).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+          document.getElementById('netEarnings').innerHTML = `${money(netEarnings)} <span style="font-size: 13px; color: var(--muted); font-weight: 500; margin-left: 4px;">(${usdFormatted})</span>`;
+      }
   }
 
+  // ==========================================
+  // អាប់ដេតប្រអប់ផ្សេងៗនៅលើ Dashboard
+  // ==========================================
   if(document.getElementById('dashSalesTotal')) document.getElementById('dashSalesTotal').innerText = money(totalSales);
   if(document.getElementById('dashCashCollected')) document.getElementById('dashCashCollected').innerText = money(cashCollected);
   if(document.getElementById('dashOutstanding')) document.getElementById('dashOutstanding').innerText = money(outstandingDebt);
