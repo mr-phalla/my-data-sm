@@ -231,12 +231,33 @@
         </div>
       </div>
       
-      <!-- 🌟 កាតសង្ខេបខាងលើ (១ ជួរមាន ៤) 🌟 -->
-      <div class="stats-grid">
-        <div class="stat-card"><div><span>ចំណូលលក់សរុប</span><strong id="dashSalesTotal">0 ៛</strong><small class="trend primary" id="dateRangeLabelSales"><i class='bx bx-calendar'></i> ទិន្នន័យទាំងអស់</small></div><div class="stat-icon-light" style="color:#3b82f6; background:rgba(59,130,246,0.1);"><i class='bx bx-line-chart'></i></div></div>
-        <div class="stat-card" style="border-bottom: 3px solid var(--success);"><div><span>សាច់ប្រាក់ទទួលបាន</span><strong id="dashCashCollected" style="color: var(--success);">0 ៛</strong><small class="trend success"><i class='bx bx-wallet'></i> ចូលថតជាក់ស្តែង</small></div><div class="stat-icon-light" style="color:#10b981; background:rgba(16,185,129,0.1);"><i class='bx bx-dollar'></i></div></div>
-        <div class="stat-card" style="border-bottom: 3px solid var(--warning);"><div><span>ប្រាក់កំពុងជំពាក់</span><strong id="dashOutstanding" style="color: var(--warning);">0 ៛</strong><small class="trend warning"><i class='bx bx-time'></i> មិនទាន់ទូទាត់សង</small></div><div class="stat-icon-light" style="color:#f59e0b; background:rgba(245,158,11,0.1);"><i class='bx bx-credit-card'></i></div></div>
-        <div class="stat-card"><div><span>អតិថិជនសរុប</span><strong id="dashCustomers">0</strong><small class="trend primary"><i class='bx bx-user-plus'></i> ក្នុងប្រព័ន្ធ</small></div><div class="stat-icon-light" style="color:#8b5cf6; background:rgba(139,92,246,0.1);"><i class='bx bx-user'></i></div></div>
+      <!-- 🌟 កាតសង្ខេបខាងលើ (១ ជួរមាន ៥ ប្រអប់) 🌟 -->
+      <div class="stats-grid" style="grid-template-columns: repeat(4, 1fr);">
+        <!-- 🌟 កាតសង្ខេបខាងលើ (ត្រឡប់មក ១ ជួរមាន ៤ ប្រអប់វិញ យ៉ាងស្រឡះល្អ) 🌟 -->
+        <!-- 1. ចំណូលលក់សរុប -->
+        <div class="stat-card">
+            <div><span>ចំណូលលក់សរុប</span><strong id="dashSalesTotal">0 ៛</strong><small class="trend primary" id="dateRangeLabelSales"><i class='bx bx-calendar'></i> ទិន្នន័យទាំងអស់</small></div>
+            <div class="stat-icon-light" style="color:#3b82f6; background:rgba(59,130,246,0.1);"><i class='bx bx-line-chart'></i></div>
+        </div>
+        
+        <!-- 2. សាច់ប្រាក់ទទួលបាន -->
+        <div class="stat-card" style="border-bottom: 3px solid var(--success);">
+            <div><span>សាច់ប្រាក់ទទួលបាន</span><strong id="dashCashCollected" style="color: var(--success);">0 ៛</strong><small class="trend success"><i class='bx bx-wallet'></i> ចូលថតជាក់ស្តែង</small></div>
+            <div class="stat-icon-light" style="color:#10b981; background:rgba(16,185,129,0.1);"><i class='bx bx-dollar'></i></div>
+        </div>
+        
+        <!-- 3. ប្រាក់ចំណេញក្នុងហាង (ដាក់ជំនួសកន្លែងប្រាក់ជំពាក់ចាស់) -->
+        <div class="stat-card" style="border-bottom: 3px solid #8b5cf6;">
+            <div><span style="color: #8b5cf6; font-weight: bold;">ប្រាក់ចំណេញក្នុងហាង</span><strong id="dashGrossProfitTotal" style="color: #8b5cf6;">0 ៛</strong><small class="trend" style="color: #8b5cf6;"><i class='bx bx-coin-stack'></i> ចំណេញដុលសរុប</small></div>
+            <div class="stat-icon-light" style="color:#8b5cf6; background:rgba(139,92,246,0.1);"><i class='bx bx-trending-up'></i></div>
+        </div>
+        
+        <!-- 4. អតិថិជនសរុប -->
+        <div class="stat-card">
+            <div><span>អតិថិជនសរុប</span><strong id="dashCustomers">0</strong><small class="trend primary"><i class='bx bx-user-plus'></i> ក្នុងប្រព័ន្ធ</small></div>
+            <div class="stat-icon-light" style="color:#64748b; background:rgba(100,116,139,0.1);"><i class='bx bx-user'></i></div>
+        </div>
+        
       </div>
 
       <!-- 🌟 ជួរក្រាហ្វិក (Line Chart និង Pie Chart ដាក់ទន្ទឹមគ្នា 2fr 1fr) 🌟 -->
