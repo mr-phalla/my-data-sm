@@ -300,14 +300,14 @@ async function loadProducts(callback) {
         if (!display_unit && uVal && uMea && pType) display_unit = `${uVal}${uMea}/${pType}`;
         else if (!display_unit && uVal && uMea) display_unit = `${uVal}${uMea}`;
 
-        // 🌟 ចាប់យកទិន្នន័យពី Column ថ្មី prod_status
         let currentStatus = p.prod_status || 'active';
 
         return { 
             id: p.id, 
             name: p['Product Name'] || p.name, 
-            price: parseFloat(String(p['Price'] || p.price).replace(/,/g, '')) || 0,
-            base_price: parseFloat(p.base_price) || 0, 
+            price: parseFloat(String(p['Price'] || p.price || 0).replace(/,/g, '')) || 0,
+            // 🌟 ធានាថាទាញយកតម្លៃក្រុមហ៊ុនបាន១០០% ទោះឈ្មោះ Column ប្រែប្រួលក៏ដោយ 🌟
+            base_price: parseFloat(String(p.base_price || p.Base_price || p['Base Price'] || 0).replace(/,/g, '')) || 0, 
             wholesale_price: parseFloat(p.wholesale_price) || parseFloat(p.Wholesale_price) || 0, 
             status: currentStatus, 
             unit: display_unit,
@@ -2496,11 +2496,11 @@ window.updateChart = function() {
   let unpaidCount = 0; let catRev = {}; let prodStats = {}; let cusCount = {}; 
   
   let groupedByDate = {};
-  let bonusByDate = {}; 
+  let grossProfitByDate = {}; 
   let expenseByDate = {}; 
   
-  // 🌟 អថេរសម្រាប់បូកសរុប Bonus តាម Filter 🌟
-  let filteredBonusTotal = 0;
+  // 🌟 អថេរសម្រាប់គណនាចំណេញដុល ចំណាយ និង Bonus សុទ្ធ 🌟
+  let filteredGrossProfit = 0;
   let filteredExpenseTotal = 0;
 
   if (expensesData) {
@@ -2518,28 +2518,46 @@ window.updateChart = function() {
 
   filteredData.forEach(item => { 
       const dateStr = item.date || 'មិនស្គាល់'; 
-      let rev = parseFloat(item.total || item.Total || 0);
-      let paidAmt = cleanStatus(item.status) === 'Paid' ? rev : parseFloat(item.paid_amount || 0);
-      let rowQty = parseFloat(item.qty || item.Qty || 1);
+      let rev = parseFloat(String(item.total || item.Total || 0).replace(/,/g, ''));
+      let paidAmt = cleanStatus(item.status) === 'Paid' ? rev : parseFloat(String(item.paid_amount || 0).replace(/,/g, ''));
+      let rowQty = parseFloat(String(item.qty || item.Qty || 1).replace(/,/g, ''));
       let cusName = item.customer_name || item['customer-name'] || 'Walk-in';
-      let categoryName = item.agro_chemicals || 'ផ្សេងៗ'; 
+      
+      let cleanItemName = String(item.item || '').trim().toLowerCase();
+      let matchedProduct = productsData.find(p => String(p.name || '').trim().toLowerCase() === cleanItemName);
+      let categoryName = item.agro_chemicals || (matchedProduct ? matchedProduct.category : 'ផ្សេងៗ'); 
       
       totalSales += rev; 
       cashCollected += paidAmt;
       outstandingDebt += (rev - paidAmt);
-      
       if(cleanStatus(item.status) === 'Unpaid') unpaidCount++; 
       
-      let historicalBasePrice = parseFloat(item.base_price) > 0 ? parseFloat(item.base_price) : (parseFloat(item.price) || 0);
-      let rowCost = historicalBasePrice * rowQty;
-      let rowProfit = rev - rowCost;
-      let rowBonus = rowProfit > 0 ? rowProfit * 0.40 : 0;
+      // 🌟 រូបមន្តថ្មី សម្រាប់ទាញយក "តម្លៃក្រុមហ៊ុន (Base Price)" ឱ្យបានសុក្រឹតបំផុត 🌟
+      let rawBasePrice = String(item.base_price || item.Base_price || item['Base Price'] || '').trim().toUpperCase();
+      let historicalBasePrice = 0;
       
-      // 🌟 បូក Bonus សរុបនៅក្នុងចន្លោះថ្ងៃ (Filter) នេះ 🌟
-      filteredBonusTotal += rowBonus;
+      // បើទិន្នន័យមានពាក្យ EMPTY, NULL ឬទទេ គឺរំលងអត់យកមកគិតលេខទេ
+      if (rawBasePrice !== 'EMPTY' && rawBasePrice !== 'NULL' && rawBasePrice !== '') {
+          historicalBasePrice = parseFloat(rawBasePrice.replace(/,/g, ''));
+      }
+      
+      // បើ Base Price ក្នុងប្រវត្តិលក់ស្មើ ០ ឬរកមិនឃើញ ទៅទាញពីបញ្ជី "មុខទំនិញ (Products)" មកប្រើ
+      if (isNaN(historicalBasePrice) || historicalBasePrice <= 0) {
+          historicalBasePrice = (matchedProduct && matchedProduct.base_price > 0) ? matchedProduct.base_price : 0;
+      }
+      
+      // បើនៅតែ ០ ទៀត បានន័យថាទំនិញហ្នឹងអត់មានថ្លៃដើមមែន ទើបយកថ្លៃលក់ធ្វើថ្លៃដើម (ចំណេញ = ០)
+      if (isNaN(historicalBasePrice) || historicalBasePrice <= 0) {
+          historicalBasePrice = parseFloat(String(item.price || item.Price || 0).replace(/,/g, ''));
+      }
+      
+      let rowCost = historicalBasePrice * rowQty;
+      let rowProfit = rev - rowCost; // ចំណេញដុលសរុប (Gross Profit) ប្រចាំវិក្កយបត្រនីមួយៗ
+      
+      filteredGrossProfit += rowProfit;
 
       groupedByDate[dateStr] = (groupedByDate[dateStr] || 0) + rev; 
-      bonusByDate[dateStr] = (bonusByDate[dateStr] || 0) + rowBonus; 
+      grossProfitByDate[dateStr] = (grossProfitByDate[dateStr] || 0) + rowProfit; 
       
       catRev[categoryName] = (catRev[categoryName] || 0) + rev;
       if(item.item) {
@@ -2550,22 +2568,32 @@ window.updateChart = function() {
       if(cusName !== 'Walk-in') cusCount[cusName] = (cusCount[cusName] || 0) + rev;
   });
 
+  // 🌟 អាប់ដេតប្រអប់ "ប្រាក់ចំណេញក្នុងហាង" ថ្មី 🌟
+  if(document.getElementById('dashGrossProfitTotal')) {
+      let storedRate = localStorage.getItem('exchangeRate');
+      let exRate = (storedRate && !isNaN(storedRate) && parseFloat(storedRate) > 0) ? parseFloat(storedRate) : 4100;
+      let grossUsd = filteredGrossProfit / exRate;
+      let usdFormattedGross = `$${grossUsd.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+      document.getElementById('dashGrossProfitTotal').innerHTML = `${money(filteredGrossProfit)} <span style="font-size: 13px; color: var(--muted); font-weight: 500;">(${usdFormattedGross})</span>`;
+  }
+
   // ==========================================
-  // 🌟 អាប់ដេតប្រអប់ គោលដៅ Bonus និង ចំណេញសុទ្ធ ឱ្យស៊ីគ្នានឹង Filter 🌟
+  // 🌟 ការគណនា Bonus ៤០% តាមរូបមន្តពិតប្រាកដ (ចំណេញដុល - ចំណាយសរុប) * 40% 🌟
   // ==========================================
+  let netEarnings = filteredGrossProfit - filteredExpenseTotal; 
+  let filteredBonusTotal = netEarnings > 0 ? netEarnings * 0.40 : 0;
+
   let activeYear = start.getFullYear(); 
   let yearlyTarget = parseFloat(localStorage.getItem('salesTarget_' + activeYear)) || 0; 
   let targetProgress = 0;
   
   if (yearlyTarget > 0) { 
-      targetProgress = (totalSales / yearlyTarget) * 100; // គិតតាមចំណូលក្នុង Filter ធៀបនឹង Target ឆ្នាំ
+      targetProgress = (totalSales / yearlyTarget) * 100; 
   }
   
-  let netEarnings = filteredBonusTotal - filteredExpenseTotal; 
-  
   if(document.getElementById('targetProgressBar')) {
-      let dateText = (startDate && endDate) ? `កាលបរិច្ឆេទ: ${startDate} - ${endDate}` : `ប្រចាំឆ្នាំ ${activeYear}`;
-      document.getElementById('targetYearLabel').innerText = `(${dateText})`;
+      let dateText = (startDate && endDate) ? `${startDate} ដល់ ${endDate}` : `ទិន្នន័យទាំងអស់`;
+      document.getElementById('targetYearLabel').innerText = `(កាលបរិច្ឆេទ: ${dateText})`;
       document.getElementById('targetProgressBar').style.width = Math.min(targetProgress, 100) + '%';
       document.getElementById('targetPercentage').innerText = targetProgress.toFixed(1) + '%';
       
@@ -2585,16 +2613,22 @@ window.updateChart = function() {
           }
       }
 
+      let storedRate = localStorage.getItem('exchangeRate');
+      let exRate = (storedRate && !isNaN(storedRate) && parseFloat(storedRate) > 0) ? parseFloat(storedRate) : 4100;
+
       if(document.getElementById('myCommission')) {
-          document.getElementById('myCommission').innerHTML = `Bonus តាម Filter:<br><b style="font-size:18px; color:var(--success);">${money(filteredBonusTotal)}</b>`;
+          let bonusUsd = filteredBonusTotal / exRate;
+          let usdFormattedBonus = `$${bonusUsd.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+          document.getElementById('myCommission').innerHTML = `Bonus តាម Filter (40%):<br><b style="font-size:18px; color:var(--success);">${money(filteredBonusTotal)} <span style="font-size: 13px; color: var(--muted); font-weight: 500;">(${usdFormattedBonus})</span></b>`;
       }
+      
       if(document.getElementById('dashboardExpenses')) {
           document.getElementById('dashboardExpenses').innerText = money(filteredExpenseTotal);
+          let expLabel = document.getElementById('dashboardExpenses').previousElementSibling;
+          if(expLabel) expLabel.innerHTML = `<i class='bx bx-money-withdraw'></i> ចំណាយតាម Filter`;
       }
       
       if(document.getElementById('netEarnings')) {
-          let storedRate = localStorage.getItem('exchangeRate');
-          let exRate = (storedRate && !isNaN(storedRate) && parseFloat(storedRate) > 0) ? parseFloat(storedRate) : 4100;
           let netUsd = netEarnings / exRate;
           let sign = netEarnings < 0 ? "-" : "";
           let usdFormatted = `${sign}$${Math.abs(netUsd).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
@@ -2602,9 +2636,7 @@ window.updateChart = function() {
       }
   }
 
-  // ==========================================
   // អាប់ដេតប្រអប់ផ្សេងៗនៅលើ Dashboard
-  // ==========================================
   if(document.getElementById('dashSalesTotal')) document.getElementById('dashSalesTotal').innerText = money(totalSales);
   if(document.getElementById('dashCashCollected')) document.getElementById('dashCashCollected').innerText = money(cashCollected);
   if(document.getElementById('dashOutstanding')) document.getElementById('dashOutstanding').innerText = money(outstandingDebt);
@@ -2656,7 +2688,7 @@ window.updateChart = function() {
   let allDates = new Set([...Object.keys(groupedByDate), ...Object.keys(expenseByDate)]);
   const sortedDates = Array.from(allDates).sort((a,b) => new Date(a) - new Date(b));
   const chartValues = sortedDates.map(date => groupedByDate[date] || 0);
-  const bonusValues = sortedDates.map(date => bonusByDate[date] || 0);
+  const grossValues = sortedDates.map(date => grossProfitByDate[date] || 0);
   const expenseValues = sortedDates.map(date => expenseByDate[date] || 0);
 
   const ctx = document.getElementById('salesChart'); 
@@ -2676,8 +2708,8 @@ window.updateChart = function() {
                     borderColor: '#4f46e5', backgroundColor: 'rgba(79, 70, 229, 0.1)', borderWidth: 2, fill: true, tension: 0.3, pointBackgroundColor: '#4f46e5' 
                 },
                 { 
-                    label: 'Bonus សាខា (៛)', 
-                    data: bonusValues.length > 0 ? bonusValues : [0], 
+                    label: 'ចំណេញដុល (Gross Profit)', 
+                    data: grossValues.length > 0 ? grossValues : [0], 
                     borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.1)', borderWidth: 2, fill: true, tension: 0.3, pointBackgroundColor: '#10b981' 
                 },
                 { 
@@ -2949,9 +2981,12 @@ window.viewProductDetail = function(productName) {
     let unitCountForProd = {};
     let grandTotalByMeasure = {}; 
     let grandTotalRevenue = 0;
-    
     filteredData.forEach(row => {
-        if (row.item === productName) {
+        // 🌟 ស្វែងរកប្រភេទថ្នាំពីបញ្ជីផលិតផល 🌟
+        let matchedProduct = productsData.find(p => p.name === row.item);
+        let cat = (matchedProduct && matchedProduct.category) ? matchedProduct.category : (row.agro_chemicals || 'ផ្សេងៗ');
+        
+        if (cat === categoryName && row.item) {
             let rowQty = parseFloat(row.qty || row.Qty || 1);
             let rev = parseFloat(row.total || row.Total || 0);
             let stdValue = parseFloat(row.standard_unit_value || 0);
@@ -2967,30 +3002,31 @@ window.viewProductDetail = function(productName) {
                 else if (u.includes('can')) pkg = 'Can';
             }
             
-            let unitName = row.unit ? row.unit : 'មិនបញ្ជាក់ខ្នាត'; 
+            let unitDisplay = row.unit ? ` (${row.unit})` : '';
+            let itemName = row.item + unitDisplay; 
             let totalStdValue = rowQty * stdValue;
 
-            if (!unitCountForProd[unitName]) {
-                unitCountForProd[unitName] = { stdTotal: 0, stdMeasure: stdMeasure, sortQty: 0, revenue: 0, lastDate: '', pkg: pkg };
+            if (!prodCountInCategory[itemName]) {
+                prodCountInCategory[itemName] = { stdTotal: 0, stdMeasure: stdMeasure, sortQty: 0, revenue: 0, lastDate: '', pkg: pkg };
             }
             
-            unitCountForProd[unitName].sortQty += rowQty; 
-            unitCountForProd[unitName].revenue += rev;
+            prodCountInCategory[itemName].sortQty += rowQty; 
+            prodCountInCategory[itemName].revenue += rev;
             grandTotalRevenue += rev;
             
             if (dateStr) {
-                if (!unitCountForProd[unitName].lastDate || new Date(dateStr) > new Date(unitCountForProd[unitName].lastDate)) {
-                    unitCountForProd[unitName].lastDate = dateStr;
+                if (!prodCountInCategory[itemName].lastDate || new Date(dateStr) > new Date(prodCountInCategory[itemName].lastDate)) {
+                    prodCountInCategory[itemName].lastDate = dateStr;
                 }
             }
 
             if(stdValue > 0 && stdMeasure !== '') {
-                unitCountForProd[unitName].stdTotal += totalStdValue;
-                unitCountForProd[unitName].stdMeasure = stdMeasure;
+                prodCountInCategory[itemName].stdTotal += totalStdValue;
+                prodCountInCategory[itemName].stdMeasure = stdMeasure;
                 grandTotalByMeasure[stdMeasure] = (grandTotalByMeasure[stdMeasure] || 0) + totalStdValue;
             } else {
-                unitCountForProd[unitName].stdTotal += rowQty;
-                unitCountForProd[unitName].stdMeasure = 'ឯកតា';
+                prodCountInCategory[itemName].stdTotal += rowQty;
+                prodCountInCategory[itemName].stdMeasure = 'ឯកតា';
                 grandTotalByMeasure['ឯកតា'] = (grandTotalByMeasure['ឯកតា'] || 0) + rowQty;
             }
         }
