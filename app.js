@@ -7,11 +7,13 @@ const TABLE_SALES = 'sale-history';
 const TABLE_PRODUCTS = 'products';
 const TABLE_CUSTOMERS = 'customer_name';
 const TABLE_EXPENSES = 'expenses'; 
+const TABLE_RECEIPTS = 'receipts'; // 🌟 បន្ថែមថ្មី
 
 let customersData = [];
 let productsData = [];
 let salesData = [];
 let expensesData = []; 
+let receiptsData = []; // 🌟 បន្ថែមថ្មី
 let currentGrandTotalValue = 0;
 let ADMIN_PIN = localStorage.getItem('admin_pin') || "8888";
 
@@ -246,13 +248,23 @@ window.onload = async function() {
   }
 };
 
+async function loadReceipts() {
+    const { data, error } = await db.from(TABLE_RECEIPTS).select('*').order('date', { ascending: false });
+    if (!error) receiptsData = data;
+}
+
 async function refreshAllData() {
     await loadSalesData();
     await loadExpenses(); 
+    await loadReceipts(); // 🌟 បន្ថែមថ្មី
+    
     loadDashboard();
     renderCustomers();
     performSearch();
     loadRecentHistory();
+    
+    // 🌟 បើកផ្ទាំងណា ឱ្យវា render ផ្ទាំងនោះ
+    if(document.getElementById('receiptTab') && document.getElementById('receiptTab').classList.contains('active')) renderReceipts();
 }
 
 async function loadSalesData() {
@@ -713,6 +725,7 @@ window.renderCustomers = function() {
     tbody.innerHTML = html || '<tr><td colspan="6" class="text-center muted pt-4 pb-4">គ្មានទិន្នន័យអតិថិជនទេ</td></tr>';
 };
 
+// 🌟 មុខងារបង្ហាញប្រវត្តិ និងប៊ូតុងទូទាត់ប្រាក់ម៉ូយ 🌟
 window.viewCustomerDetail = function(name, orders, spent, lastDate) {
     document.getElementById('modalCusName').innerText = name;
     document.getElementById('modalCusOrders').innerText = orders;
@@ -730,7 +743,14 @@ window.viewCustomerDetail = function(name, orders, spent, lastDate) {
     let unpaidItems = customerSales.filter(row => cleanStatus(row.status).toLowerCase() === 'unpaid');
     if (unpaidItems.length > 0) {
         let totalDebt = unpaidItems.reduce((sum, item) => sum + (parseFloat(item.total || 0) - parseFloat(item.paid_amount || 0)), 0);
-        btnArea.innerHTML = `<div style="text-align:center; margin-bottom:15px;"><p style="color:var(--danger); font-weight:600; margin-bottom:10px;">កំពុងជំពាក់ប្រាក់សរុប: ${money(totalDebt)}</p><button class="btn primary" style="background:#2AABEE; color:white; width:100%; justify-content:center;" onclick="copyCustomerDebtStatement('${esc(name)}')"><i class='bx bxl-telegram'></i> ចម្លងសារទារបំណុលម៉ូយនេះ</button></div>`;
+        btnArea.innerHTML = `
+        <div style="text-align:center; margin-bottom:15px;">
+            <p style="color:var(--danger); font-weight:600; margin-bottom:10px;">កំពុងជំពាក់ប្រាក់សរុប: ${money(totalDebt)}</p>
+            <div style="display: flex; gap: 10px; justify-content: center;">
+                <button class="btn primary" style="background:var(--success); color:white; flex: 1;" onclick="openCustomerPayment('${esc(name)}', ${totalDebt})"><i class='bx bx-wallet'></i> ទូទាត់ប្រាក់សង</button>
+                <button class="btn primary" style="background:#2AABEE; color:white; flex: 1;" onclick="copyCustomerDebtStatement('${esc(name)}')"><i class='bx bxl-telegram'></i> ទារបំណុល</button>
+            </div>
+        </div>`;
     } else {
         btnArea.innerHTML = `<div style="text-align:center; margin-bottom:15px;"><p style="color:var(--success); font-weight:600; margin-top:10px;">✅ អតិថិជននេះគ្មានបំណុលជំពាក់ទេ</p></div>`;
     }
@@ -753,6 +773,71 @@ window.viewCustomerDetail = function(name, orders, spent, lastDate) {
     openModal('customerDetailModal');
 };
 
+// 🌟 មុខងារកត់ត្រាការទូទាត់បំណុលម៉ូយ (កាត់វិក្កយបត្រចាស់ៗដោយស្វ័យប្រវត្តិ) 🌟
+window.openCustomerPayment = function(name, totalDebt) {
+    document.getElementById('payCusName').value = name;
+    document.getElementById('payCusTotalDebt').innerText = money(totalDebt);
+    document.getElementById('payCusAmount').value = '';
+    openModal('customerPaymentModal');
+};
+
+window.saveCustomerPayment = async function() {
+    let cName = document.getElementById('payCusName').value;
+    let inputAmount = parseFloat(document.getElementById('payCusAmount').value);
+    
+    // 🌟 ចាប់យកប្រភេទលុយដែលទើបបន្ថែមក្នុង HTML
+    let curEl = document.getElementById('payCusCurrency');
+    let cur = curEl ? curEl.value : 'KHR';
+    let exRate = parseFloat(localStorage.getItem('exchangeRate')) || 4100;
+    
+    // 🌟 បើម៉ូយសងជាដុល្លារ យើងយកអត្រាប្តូរប្រាក់មកគុណឱ្យទៅជារៀល ដើម្បីកាត់កងបំណុល
+    let payAmount = cur === 'USD' ? Math.round(inputAmount * exRate) : inputAmount;
+    
+    if (!payAmount || payAmount <= 0) { showToast("សូមបញ្ចូលទឹកប្រាក់សងឱ្យបានត្រឹមត្រូវ!", "error"); return; }
+    
+    let btn = document.querySelector('#customerPaymentModal .btn.primary');
+    let oldText = btn.innerHTML; btn.innerHTML = "កំពុងកាត់កង..."; btn.disabled = true;
+
+    // ទាញវិក្កយបត្រម៉ូយ ដែលនៅជំពាក់ រួចតម្រៀបពីចាស់ទៅថ្មី
+    let unpaidItems = salesData.filter(s => {
+        let n = (s.customer_name || s['customer-name'] || '').trim().toLowerCase();
+        return n === cName.trim().toLowerCase() && cleanStatus(s.status).toLowerCase() === 'unpaid';
+    }).sort((a,b) => new Date(a.date || 0) - new Date(b.date || 0));
+
+    let remainingToDistribute = payAmount;
+    let updatePromises = [];
+
+    for (let s of unpaidItems) {
+        if (remainingToDistribute <= 0) break;
+        
+        // 🌟 ធានាថាលេខដែលទាញមក គឺជាលេខសុទ្ធ គ្មានជាប់សញ្ញា ឬក្បៀស
+        let itemTotal = parseFloat(String(s.total || 0).replace(/,/g, ''));
+        let itemPaid = parseFloat(String(s.paid_amount || 0).replace(/,/g, ''));
+        let itemDebt = itemTotal - itemPaid;
+        
+        // 🌟 ការពារករណីលេខទសភាគមិនសុក្រឹត (Floating Point Issues)
+        if (itemDebt > 0.01) { 
+            let payForThisItem = Math.min(itemDebt, remainingToDistribute);
+            let newItemPaid = itemPaid + payForThisItem;
+            
+            // 🌟 ប្រើប្រាស់ភាពល្អៀង 0.01 ដើម្បីបញ្ជាក់ថា Paid ព្រោះជួនកាលលេខទសភាគវាគិតខ្វះ 0.0001
+            let newStatus = (itemTotal - newItemPaid) <= 0.01 ? 'Paid' : 'Unpaid';
+            
+            updatePromises.push(db.from(TABLE_SALES).update({ status: newStatus, paid_amount: newItemPaid }).eq('id', s.id));
+            remainingToDistribute -= payForThisItem;
+        }
+    }
+
+    await Promise.all(updatePromises);
+    
+    btn.innerHTML = oldText; btn.disabled = false;
+    showToast("បានកត់ត្រាប្រាក់សងជោគជ័យ!", "success");
+    closeModal('customerPaymentModal');
+    
+    // បិទផ្ទាំង Profile ម៉ូយ ដើម្បីឱ្យវា Refresh ទិន្នន័យ
+    closeModal('customerDetailModal'); 
+    await refreshAllData();
+};
 window.saveNewCustomer = async function() { 
     let name=document.getElementById('newCustName').value; 
     let phone=document.getElementById('newCustPhone').value; 
@@ -985,6 +1070,50 @@ window.onCustomerSelect = function() {
   }
 };
 
+// 🌟 មុខងារបម្លែងលុយសម្រាប់ Invoice 🌟
+window.formatInvoiceMoney = function(n) {
+    let cur = document.getElementById('invoiceCurrency') ? document.getElementById('invoiceCurrency').value : 'KHR';
+    if (cur === 'USD') return `$${Number(n || 0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+    return `${Number(n || 0).toLocaleString('en-US')}\u00A0៛`;
+};
+
+window.changeInvoiceCurrency = function() {
+    let cur = document.getElementById('invoiceCurrency').value;
+    let sym = cur === 'USD' ? '($)' : '(៛)';
+    
+    // ប្តូរក្បាលតារាង និង Label ផ្សេងៗទៅតាមរូបិយប័ណ្ណ
+    if(document.getElementById('thPrice')) document.getElementById('thPrice').innerText = `តម្លៃ ${sym}`;
+    if(document.getElementById('thTotal')) document.getElementById('thTotal').innerText = `សរុប ${sym}`;
+    if(document.getElementById('lblDiscount')) document.getElementById('lblDiscount').innerText = `បញ្ចុះតម្លៃ ${sym}`;
+    if(document.getElementById('lblReceived')) document.getElementById('lblReceived').innerText = `ប្រាក់ទទួលជាក់ស្តែង ${sym}`;
+    if(document.getElementById('lblChange')) document.getElementById('lblChange').innerText = `ប្រាក់អាប់ ${sym}`;
+    
+    resetFormRows(); 
+};
+
+// 🌟 មុខងារបាញ់អត្រាប្តូរប្រាក់ (Exchange Rate) បញ្ចូលទៅក្នុងប្រអប់ Select (Option ដុល្លារ) តែម្តង 🌟
+window.updateCurrencyOptionText = function() {
+    let usdOpt = document.getElementById('usdOption');
+    if (usdOpt) {
+        let exRate = parseFloat(localStorage.getItem('exchangeRate')) || 4100;
+        usdOpt.innerText = `ដុល្លារ ($) • 1$ = ${exRate}៛`;
+    }
+};
+
+// 🌟 ដាក់ឱ្យដំណើរការមុខងារនេះពេលបើកវេបសាយ ដោយមិនប៉ះពាល់ Onload ចាស់ 🌟
+if (typeof existingOnloadForCurrency === 'undefined') {
+    window.existingOnloadForCurrency = window.onload;
+}
+window.onload = async function() {
+    if (typeof window.existingOnloadForCurrency === 'function') {
+        await window.existingOnloadForCurrency();
+    }
+    // ត្រូវប្រាកដថាដំណើរការមុខងារនេះបាន ទោះបីជាបើកពីទូរស័ព្ទក៏ដោយ
+    setTimeout(() => {
+        if(typeof updateCurrencyOptionText === 'function') updateCurrencyOptionText();
+    }, 500); 
+};
+
 window.onProductSelect = function(input) {
   let row = input.closest('tr'); 
   let val = input.value.trim();
@@ -1012,7 +1141,11 @@ window.onProductSelect = function(input) {
           unitContainer.innerHTML = `<input type="text" class="form-input item-unit" value="${esc(v.unit)}" readonly style="padding: 10px 8px; background:#f1f5f9; color:var(--muted);">`;
       }
       
-      if(priceInput) priceInput.value = v.price; 
+      let exRate = parseFloat(localStorage.getItem('exchangeRate')) || 4100;
+      let cur = document.getElementById('invoiceCurrency') ? document.getElementById('invoiceCurrency').value : 'KHR';
+      let displayPrice = cur === 'USD' ? (v.price / exRate).toFixed(2) : v.price;
+      
+      if(priceInput) priceInput.value = displayPrice; 
       if(row.querySelector('.item-pkg')) row.querySelector('.item-pkg').value = v.package_type || "";
       if(row.querySelector('.item-uv')) row.querySelector('.item-uv').value = v.unit_value || 0;
       if(row.querySelector('.item-um')) row.querySelector('.item-um').value = v.unit_measure || "";
@@ -1021,12 +1154,11 @@ window.onProductSelect = function(input) {
   }
   calculateRow(priceInput);
 };
-// 🌟 មុខងារថ្មីសម្រាប់ចាប់យកតម្លៃ ពេលយើងប្តូរខ្នាតទំនិញ (ដោះស្រាយបញ្ហាតម្លៃអត់លោតតាម) 🌟
+
 window.onUnitChange = function(selectEl) {
     let row = selectEl.closest('tr');
     let selectedOption = selectEl.options[selectEl.selectedIndex];
 
-    // ទាញយកទិន្នន័យដែលបង្កប់ក្នុង Option ដែលយើងបានរើស
     let price = selectedOption.getAttribute('data-price');
     let pkg = selectedOption.getAttribute('data-pkg');
     let uv = selectedOption.getAttribute('data-uv');
@@ -1034,9 +1166,13 @@ window.onUnitChange = function(selectEl) {
     let suv = selectedOption.getAttribute('data-suv');
     let sum = selectedOption.getAttribute('data-sum');
 
-    // បោះតម្លៃថ្មីចូលទៅក្នុងប្រអប់
+    let exRate = parseFloat(localStorage.getItem('exchangeRate')) || 4100;
+    let cur = document.getElementById('invoiceCurrency') ? document.getElementById('invoiceCurrency').value : 'KHR';
+    let rawPrice = parseFloat(price) || 0;
+    let displayPrice = cur === 'USD' ? (rawPrice / exRate).toFixed(2) : rawPrice;
+
     let priceInput = row.querySelector('.item-price');
-    if (priceInput) priceInput.value = price || 0;
+    if (priceInput) priceInput.value = displayPrice;
 
     if (row.querySelector('.item-pkg')) row.querySelector('.item-pkg').value = pkg || "";
     if (row.querySelector('.item-uv')) row.querySelector('.item-uv').value = uv || 0;
@@ -1044,7 +1180,6 @@ window.onUnitChange = function(selectEl) {
     if (row.querySelector('.item-suv')) row.querySelector('.item-suv').value = suv || 0;
     if (row.querySelector('.item-sum')) row.querySelector('.item-sum').value = sum || "";
 
-    // បញ្ជាឱ្យគណនាលុយសរុបឡើងវិញ
     calculateRow(priceInput);
 };
 
@@ -1067,7 +1202,7 @@ window.addItemRow = function(item='', unit='', qty=1, price=0, pkg='', uv=0, um=
     </td>
     <td style="padding: 10px;"><input type="number" class="form-input item-qty text-center" value="${qty}" oninput="calculateRow(this)" style="padding: 10px 8px;"></td>
     <td style="padding: 10px;"><input type="number" class="form-input item-price text-right" value="${price}" oninput="calculateRow(this)" style="padding: 10px 8px; min-width: 90px;"></td>
-    <td style="padding: 10px;"><input type="text" class="form-input item-amount text-right" readonly value="${money(Math.max(0,amount))}" style="border:none; background:transparent; font-weight:bold; color:var(--text); padding: 10px 4px;"></td>
+    <td style="padding: 10px;"><input type="text" class="form-input item-amount text-right" readonly value="${formatInvoiceMoney(Math.max(0,amount))}" style="border:none; background:transparent; font-weight:bold; color:var(--text); padding: 10px 4px;"></td>
     <td class="text-center no-print" style="padding: 10px;"><button class="btn outline small no-print" style="color:var(--danger); border-color:var(--danger);" onclick="removeRow(this)"><i class='bx bx-trash'></i></button></td>
   `;
   tbody.appendChild(tr); 
@@ -1086,8 +1221,12 @@ window.calculateRow = function(input) {
   if(input.value < 0) input.value = 0; 
   let qty = parseFloat(row.querySelector('.item-qty').value) || 0; 
   let price = parseFloat(row.querySelector('.item-price').value) || 0; 
+  
+  // 🌟 គណនាលុយសរុបតាមជួរនីមួយៗ (Qty x Price)
   let amount = qty * price; 
-  row.querySelector('.item-amount').value = money(Math.max(0, amount));
+  
+  // 🌟 បង្ហាញលុយដុល្លារ ឬរៀល អាស្រ័យលើអ្វីដែលរើស
+  row.querySelector('.item-amount').value = formatInvoiceMoney(Math.max(0, amount));
   calculateGrandTotal();
 };
 
@@ -1095,59 +1234,112 @@ window.calculateGrandTotal = function() {
   let rows = document.querySelectorAll('#itemTable tr'); 
   let subtotalRevenue = 0;
   let totalCost = 0;
+  
+  let cur = document.getElementById('invoiceCurrency') ? document.getElementById('invoiceCurrency').value : 'KHR';
+  let exRate = parseFloat(localStorage.getItem('exchangeRate')) || 4100;
+  let multiplier = cur === 'USD' ? exRate : 1;
 
   rows.forEach(row => {
-    let prodName = row.querySelector('.item-input').value.trim();
+    let inputEl = row.querySelector('.item-input');
+    if(!inputEl) return;
+    let prodName = inputEl.value.trim().toLowerCase();
+    if(prodName === "") return; 
+
     let qty = parseFloat(row.querySelector('.item-qty').value) || 0; 
     let price = parseFloat(row.querySelector('.item-price').value) || 0; 
     let amount = qty * price; 
     
-    let prodObj = productsData.find(p => p.name === prodName);
-    let basePrice = prodObj && prodObj.base_price > 0 ? prodObj.base_price : price;
+    // 🌟 ទាញយកខ្នាត (Unit) ដែលកំពុងរើសយកមកផ្ទៀងផ្ទាត់
+    let unitEl = row.querySelector('.item-unit');
+    let unitVal = unitEl ? unitEl.value.trim() : '';
     
-    totalCost += (basePrice * qty);
-    subtotalRevenue += amount;
+    // 🌟 ស្វែងរកទំនិញឱ្យចំ ឈ្មោះ + ខ្នាត (Unit) ឱ្យច្បាស់លាស់
+    let prodObj = productsData.find(p => p.name.trim().toLowerCase() === prodName && p.unit.trim() === unitVal && p.status !== 'inactive');
+    if (!prodObj) prodObj = productsData.find(p => p.name.trim().toLowerCase() === prodName && p.status !== 'inactive');
+    if (!prodObj) prodObj = productsData.find(p => p.name.trim().toLowerCase() === prodName);
+    
+    let basePriceKHR = prodObj && prodObj.base_price > 0 ? prodObj.base_price : (price * multiplier);
+    totalCost += (basePriceKHR * qty);
+    subtotalRevenue += amount; 
   });
   
   let globalDiscountEl = document.getElementById('globalDiscount');
   let globalDiscount = globalDiscountEl ? parseFloat(globalDiscountEl.value) || 0 : 0;
   let totalRevenue = Math.max(0, subtotalRevenue - globalDiscount);
-  let totalProfit = totalRevenue - totalCost;
+  
+  let totalRevenueKHR = totalRevenue * multiplier;
+  let totalProfitKHR = totalRevenueKHR - totalCost;
 
-  currentGrandTotalValue = totalRevenue; 
-  let branchBonusValue = totalProfit > 0 ? totalProfit * 0.40 : 0; 
+  currentGrandTotalValue = totalRevenue;
+  let branchBonusValueKHR = totalProfitKHR > 0 ? totalProfitKHR * 0.40 : 0; 
 
-  if(document.getElementById('grandTotal')) document.getElementById('grandTotal').innerText = money(totalRevenue);
-  if(document.getElementById('invoiceTotalProfit')) document.getElementById('invoiceTotalProfit').innerText = money(totalProfit);
-  if(document.getElementById('branchBonusTotal')) document.getElementById('branchBonusTotal').innerText = money(branchBonusValue);
+  if(document.getElementById('grandTotal')) {
+      if (cur === 'USD') {
+          document.getElementById('grandTotal').innerHTML = `${formatInvoiceMoney(totalRevenue)} <span style="font-size: 14px; color: var(--muted); display: block; margin-top: 4px;">(${money(totalRevenueKHR)})</span>`;
+      } else {
+          document.getElementById('grandTotal').innerHTML = formatInvoiceMoney(totalRevenue);
+      }
+  }
+  
+  if(document.getElementById('invoiceTotalProfit')) document.getElementById('invoiceTotalProfit').innerText = money(totalProfitKHR);
+  if(document.getElementById('branchBonusTotal')) document.getElementById('branchBonusTotal').innerText = money(branchBonusValueKHR);
 
   calculateChange();
 };
+window.changeInvoiceCurrency = function() {
+    let cur = document.getElementById('invoiceCurrency').value;
+    let sym = cur === 'USD' ? '($)' : '(៛)';
+    
+    if(document.getElementById('thPrice')) document.getElementById('thPrice').innerText = `តម្លៃ ${sym}`;
+    if(document.getElementById('thTotal')) document.getElementById('thTotal').innerText = `សរុប ${sym}`;
+    if(document.getElementById('lblDiscount')) document.getElementById('lblDiscount').innerText = `បញ្ចុះតម្លៃ ${sym}`;
+    if(document.getElementById('lblReceived')) document.getElementById('lblReceived').innerText = `ប្រាក់ទទួលជាក់ស្តែង ${sym}`;
+    if(document.getElementById('lblChange')) document.getElementById('lblChange').innerText = `ប្រាក់អាប់ ${sym}`;
+    
+    // 🌟 បង្ហាញអត្រាប្តូរប្រាក់ ពេលរើសយកដុល្លារ 🌟
+    let exRateDisplay = document.getElementById('exRateDisplay');
+    if(exRateDisplay) {
+        if(cur === 'USD') {
+            let exRate = parseFloat(localStorage.getItem('exchangeRate')) || 4100;
+            exRateDisplay.innerHTML = `<i class='bx bx-transfer'></i> 1$ = ${exRate}៛`;
+            exRateDisplay.style.display = 'block';
+        } else {
+            exRateDisplay.style.display = 'none';
+        }
+    }
+    
+    resetFormRows(); 
+};
+
 
 window.calculateChange = function() {
     let receivedEl = document.getElementById('cashReceived'); 
     let changeEl = document.getElementById('cashChange');
     let statusEl = document.getElementById('paymentStatus');
+    let cur = document.getElementById('invoiceCurrency') ? document.getElementById('invoiceCurrency').value : 'KHR';
+    let sym = cur === 'USD' ? '($)' : '(៛)';
     
     if(!receivedEl || !changeEl) return;
     
     let labelEl = changeEl.previousElementSibling; 
     let received = parseFloat(receivedEl.value) || 0; 
+    
+    // 🌟 កែកំហុសការគណនា៖ ពេលរើស $ លុយទទួល និងលុយសរុប សុទ្ធតែជា $ រួចហើយ មិនបាច់គុណ Rate ទៀតទេ 🌟
     let change = received - currentGrandTotalValue;
     
     if (receivedEl.value === '') {
-        changeEl.value = "0 ៛";
+        changeEl.value = formatInvoiceMoney(0);
         changeEl.style.color = "var(--text)";
-        if(labelEl) labelEl.innerText = "ប្រាក់អាប់ (៛)";
+        if(labelEl) labelEl.innerText = `ប្រាក់អាប់ ${sym}`;
     } else if (change >= 0) {
-        changeEl.value = money(change);
+        changeEl.value = formatInvoiceMoney(change);
         changeEl.style.color = "var(--success)"; 
-        if(labelEl) labelEl.innerText = "ប្រាក់អាប់ (៛)";
+        if(labelEl) labelEl.innerText = `ប្រាក់អាប់ ${sym}`;
         if(statusEl) statusEl.value = 'Paid';
     } else {
-        changeEl.value = money(Math.abs(change));
+        changeEl.value = formatInvoiceMoney(Math.abs(change));
         changeEl.style.color = "var(--warning)"; 
-        if(labelEl) labelEl.innerText = "នៅខ្វះ/ជំពាក់ (៛)";
+        if(labelEl) labelEl.innerText = `នៅខ្វះ/ជំពាក់ ${sym}`;
         if(statusEl) statusEl.value = 'Unpaid';
     }
 };
@@ -1174,7 +1366,7 @@ window.resetFormRows = function() {
   if(receivedEl) receivedEl.value = ''; 
   
   let changeEl = document.getElementById('cashChange');
-  if(changeEl) changeEl.value = '0 ៛';
+  if(changeEl) changeEl.value = formatInvoiceMoney(0);
   
   let discountEl = document.getElementById('globalDiscount');
   if(discountEl) discountEl.value = '';
@@ -1185,12 +1377,17 @@ window.resetFormRows = function() {
   calculateGrandTotal();
 };
 
+
 window.saveData = async function() {
   let items = [];
   let dateEl = document.getElementById('date');
   let dateVal = dateEl ? dateEl.value : new Date().toISOString().slice(0,10); 
   
   if (!dateVal) { showToast("សូមជ្រើសរើសកាលបរិច្ឆេទលក់!", "error"); return; }
+
+  let cur = document.getElementById('invoiceCurrency') ? document.getElementById('invoiceCurrency').value : 'KHR';
+  let exRate = parseFloat(localStorage.getItem('exchangeRate')) || 4100;
+  let multiplier = cur === 'USD' ? exRate : 1;
 
   let cashierVal = document.getElementById('cashier') ? document.getElementById('cashier').value : 'Admin';
   let customerVal = document.getElementById('customerInput') ? document.getElementById('customerInput').value.trim() : ''; 
@@ -1200,7 +1397,6 @@ window.saveData = async function() {
   let cropTypeVal = document.getElementById('saleCropType') ? document.getElementById('saleCropType').value : ''; 
   let cropSizeVal = document.getElementById('saleCropSize') ? document.getElementById('saleCropSize').value : ''; 
 
-  // 🌟 ទាញយកថ្ងៃសន្យាសងនៅខាងក្រៅ Loop ដើម្បីកុំឱ្យ Error "dueDateVal is not defined" 🌟
   let dueDateEl = document.getElementById('dueDate');
   let dueDateVal = (statusVal === 'Unpaid' && dueDateEl && dueDateEl.value) ? dueDateEl.value : null;
 
@@ -1208,7 +1404,8 @@ window.saveData = async function() {
   let globalDiscount = globalDiscountEl ? parseFloat(globalDiscountEl.value) || 0 : 0;
 
   let cashReceivedEl = document.getElementById('cashReceived');
-  let totalCashReceived = cashReceivedEl ? (parseFloat(cashReceivedEl.value) || 0) : 0;
+  let rawReceived = cashReceivedEl ? (parseFloat(cashReceivedEl.value) || 0) : 0;
+  let totalCashReceived = rawReceived * multiplier;
   let remainingCashToApply = totalCashReceived;
 
   let maxId = 0;
@@ -1250,21 +1447,38 @@ window.saveData = async function() {
         
         if (globalDiscount > 0) {
             if (index === activeRows.length - 1) { rowDiscount = globalDiscount - totalDiscountApplied; } 
-            else { rowDiscount = subtotalInvoice > 0 ? Math.round((amount / subtotalInvoice) * globalDiscount) : 0; }
+            else { rowDiscount = subtotalInvoice > 0 ? (amount / subtotalInvoice) * globalDiscount : 0; }
         }
         totalDiscountApplied += rowDiscount;
         
         let finalAmount = Math.max(0, amount - rowDiscount);
-        let rowPaid = 0;
         
-        if (statusVal === 'Paid') { rowPaid = finalAmount; } 
+        let dbPrice = Math.round(data.price * multiplier);
+        let dbDiscount = Math.round(rowDiscount * multiplier);
+        let dbTotal = Math.round(finalAmount * multiplier);
+        
+        let rowPaid = 0;
+        if (statusVal === 'Paid') { rowPaid = dbTotal; } 
         else {
-            if (remainingCashToApply >= finalAmount) { rowPaid = finalAmount; remainingCashToApply -= finalAmount; } 
-            else if (remainingCashToApply > 0) { rowPaid = remainingCashToApply; remainingCashToApply = 0; }
+            if (remainingCashToApply >= dbTotal) { rowPaid = dbTotal; remainingCashToApply -= dbTotal; } 
+            else if (remainingCashToApply > 0) { rowPaid = Math.round(remainingCashToApply); remainingCashToApply = 0; }
         }
 
-        let prodObj = productsData.find(p => p.name === data.prodName);
-        let currentBasePrice = prodObj && prodObj.base_price > 0 ? prodObj.base_price : data.price;
+        // 🌟 កែតម្រូវ: រកទំនិញតាម ឈ្មោះ + ខ្នាត ឱ្យបានត្រឹមត្រូវមុននឹង Save 🌟
+        let prodNameStr = data.prodName.trim().toLowerCase();
+        let unitEl = data.row.querySelector('.item-unit');
+        let unitVal = unitEl ? unitEl.value.trim() : '';
+
+        let prodObj = productsData.find(p => p.name.trim().toLowerCase() === prodNameStr && p.unit.trim() === unitVal && p.status !== 'inactive');
+        if (!prodObj) prodObj = productsData.find(p => p.name.trim().toLowerCase() === prodNameStr && p.status !== 'inactive');
+        if (!prodObj) prodObj = productsData.find(p => p.name.trim().toLowerCase() === prodNameStr);
+        
+        let currentBasePrice = 0;
+        if (prodObj && parseFloat(prodObj.base_price) > 0) {
+            currentBasePrice = Math.round(parseFloat(prodObj.base_price));
+        } else {
+            currentBasePrice = dbPrice; 
+        }
 
         maxId++; 
         items.push({ 
@@ -1274,14 +1488,20 @@ window.saveData = async function() {
             crop_type: cropTypeVal,
             crop_size: cropSizeVal, 
             item: data.prodName, 
-            unit: data.row.querySelector('.item-unit') ? data.row.querySelector('.item-unit').value.trim() : '', 
+            unit: unitVal, 
             package_type: data.row.querySelector('.item-pkg') ? data.row.querySelector('.item-pkg').value.trim() : '', 
             unit_value: data.row.querySelector('.item-uv') ? parseFloat(data.row.querySelector('.item-uv').value) || 0 : 0, 
             unit_measure: data.row.querySelector('.item-um') ? data.row.querySelector('.item-um').value.trim() : '', 
             standard_unit_value: data.row.querySelector('.item-suv') ? parseFloat(data.row.querySelector('.item-suv').value) || 0 : 0, 
             standard_unit_measure: data.row.querySelector('.item-sum') ? data.row.querySelector('.item-sum').value.trim() : '', 
-            qty: data.qty, price: data.price, discount: rowDiscount, total: finalAmount, paid_amount: rowPaid, status: statusVal,
-            due_date: dueDateVal, // 🌟 ប្រើប្រាស់អថេរដែលប្រកាសខាងក្រៅ
+            
+            qty: data.qty, 
+            price: dbPrice, 
+            discount: dbDiscount, 
+            total: dbTotal, 
+            paid_amount: rowPaid, 
+            status: statusVal,
+            due_date: dueDateVal,
             base_price: currentBasePrice
         });
   });
@@ -1299,32 +1519,33 @@ window.saveData = async function() {
         invoiceNo: currentInvoiceNo,
         customerName: customerVal,
         phone: phoneVal,
-        items: activeRows,
-        total: subtotalInvoice,
-        discount: globalDiscount,
-        paid: totalCashReceived,
+        items: activeRows.map(r => ({ qty: r.qty, prodName: r.prodName, price: Math.round(r.price * multiplier) })),
+        total: Math.round(subtotalInvoice * multiplier),
+        discount: Math.round(globalDiscount * multiplier),
+        paid: Math.round(totalCashReceived),
         status: statusVal,
         dueDate: dueDateVal,
         cashier: cashierVal
     };
-    // ផ្ញើសារទៅ Telegram 
     sendToTelegram('', 'sale', saleDataObj);
     
-    // 🌟 ការជម្រះទិន្នន័យ (Reload) ឱ្យស្អាត ១០០% ដើម្បីវាយវិក្កយបត្រថ្មីបន្ត 🌟
     let cusInput = document.getElementById('customerInput');
-    if(cusInput) { cusInput.value = ''; cusInput.focus(); } // ទាញ Cursor ទៅប្រអប់ឈ្មោះម៉ូយវិញ
+    if(cusInput) { cusInput.value = ''; cusInput.focus(); } 
     
     if(document.getElementById('phone')) document.getElementById('phone').value = ''; 
     if(document.getElementById('address')) document.getElementById('address').value = '';
     if(document.getElementById('saleCropType')) document.getElementById('saleCropType').value = ''; 
     if(document.getElementById('saleCropSize')) document.getElementById('saleCropSize').value = ''; 
     
-    
-    // Reset ស្ថានភាពបង់ប្រាក់មក Paid វិញ
     let paymentStatusEl = document.getElementById('paymentStatus');
     if(paymentStatusEl) {
         paymentStatusEl.value = 'Paid';
         if(typeof toggleDueDate === 'function') toggleDueDate();
+    }
+    
+    if(document.getElementById('invoiceCurrency')) {
+        document.getElementById('invoiceCurrency').value = 'KHR';
+        changeInvoiceCurrency();
     }
     
     resetFormRows(); 
@@ -1596,8 +1817,6 @@ window.performSearch = function() {
       let badge = isUnpaid ? `<span class="status-badge" style="background:rgba(239,68,68,0.1); color:#ef4444;">ជំពាក់ ${money(debt)}</span>` : `<span class="status-badge success">ទូទាត់រួច</span>`;
       
       let actionButtons = `<button class="btn outline small" onclick="viewInvoiceDetail('${invNo}')" title="មើលលម្អិត និងបោះពុម្ព"><i class='bx bx-list-ul'></i> លម្អិត</button>`;
-      
-      if (isUnpaid) { actionButtons = `<button class="btn primary small" onclick="openInvoicePayment('${invNo}', ${inv.paidTotal}, ${inv.grandTotal})" style="background:var(--success); border-color:var(--success); margin-right:5px;"><i class='bx bx-wallet'></i> សងលុយ</button>` + actionButtons; }
 
       html += `<tr><td class="muted">${inv.date}</td><td><b>${invNo}</b></td><td><b>${esc(inv.customer)}</b></td><td class="text-center">${inv.items.length} មុខ</td><td class="text-right"><b style="color:var(--text);">${money(inv.grandTotal)}</b></td><td class="text-center">${badge}</td><td class="text-center" style="white-space: nowrap;">${actionButtons}</td></tr>`;
   });
@@ -1867,6 +2086,7 @@ window.exportToCSV = function() {
 };
 
 window.handleEditBtn = function(btn) { openEditSale(btn.getAttribute('data-id'), btn.getAttribute('data-item'), btn.getAttribute('data-qty'), btn.getAttribute('data-price'), btn.getAttribute('data-discount'), btn.getAttribute('data-status')); };
+
 window.openEditSale = function(id, item, qty, price, discount, status) { 
     document.getElementById('editSaleId').value = id; 
     document.getElementById('editSaleItem').value = item; 
@@ -1878,14 +2098,35 @@ window.openEditSale = function(id, item, qty, price, discount, status) {
         document.getElementById('editPaymentStatus').value = cleanStatus(status);
     }
     
-    // 🌟 ចាប់យកថ្ងៃខែពី Database មកបង្ហាញក្នុងប្រអប់កែប្រែ 🌟
     let sInfo = salesData.find(s => String(s.id) === String(id));
     if (sInfo && document.getElementById('editSaleDate')) {
         document.getElementById('editSaleDate').value = sInfo.date || '';
     }
 
+    // 🌟 Reset មក KHR វិញរាល់ពេលបើកផ្ទាំង ព្រោះទិន្នន័យចាស់បង្ហាញជារៀល 🌟
+    if(document.getElementById('editSaleCurrency')) {
+        document.getElementById('editSaleCurrency').value = 'KHR';
+    }
+
     calculateEditTotal(); 
     openModal('editSaleModal'); 
+};
+
+window.calculateEditTotal = function() { 
+    let qty = parseFloat(document.getElementById('editSaleQty').value) || 0; 
+    let inputPrice = parseFloat(document.getElementById('editSalePrice').value) || 0; 
+    let inputDiscount = parseFloat(document.getElementById('editSaleDiscount').value) || 0; 
+    
+    // 🌟 គុណ Exchange Rate ភ្លាមៗបើជ្រើសរើសយកដុល្លារ 🌟
+    let cur = document.getElementById('editSaleCurrency') ? document.getElementById('editSaleCurrency').value : 'KHR';
+    let exRate = parseFloat(localStorage.getItem('exchangeRate')) || 4100;
+    let multiplier = cur === 'USD' ? exRate : 1;
+
+    let priceKHR = inputPrice * multiplier;
+    let discountKHR = inputDiscount * multiplier;
+
+    let totalKHR = Math.max(0, (qty * priceKHR) - discountKHR);
+    document.getElementById('editSaleTotal').value = money(totalKHR); 
 };
 
 window.saveEditedSale = async function() { 
@@ -1901,26 +2142,36 @@ window.saveEditedSale = async function() {
     }
     window.unlockedInvoiceId = null; 
 
-    // 🌟 ចាប់យកតម្លៃកាលបរិច្ឆេទថ្មី ដែលបងទើបនឹងកែប្រែ 🌟
     let newDate = document.getElementById('editSaleDate') ? document.getElementById('editSaleDate').value : (item.date || todayStr);
+    let statusVal = document.getElementById('editPaymentStatus') ? document.getElementById('editPaymentStatus').value : 'Paid'; 
     
     let qty = parseFloat(document.getElementById('editSaleQty').value) || 0; 
-    let price = parseFloat(document.getElementById('editSalePrice').value) || 0; 
-    let discount = parseFloat(document.getElementById('editSaleDiscount').value) || 0; 
-    let statusVal = document.getElementById('editPaymentStatus') ? document.getElementById('editPaymentStatus').value : 'Paid'; 
-    let total = Math.max(0, (qty * price) - discount); 
+    let inputPrice = parseFloat(document.getElementById('editSalePrice').value) || 0; 
+    let inputDiscount = parseFloat(document.getElementById('editSaleDiscount').value) || 0; 
+
+    let cur = document.getElementById('editSaleCurrency') ? document.getElementById('editSaleCurrency').value : 'KHR';
+    let exRate = parseFloat(localStorage.getItem('exchangeRate')) || 4100;
+    let multiplier = cur === 'USD' ? exRate : 1;
+
+    // 🌟 បម្លែងជាលេខរៀលសុទ្ធ មុននឹង Save ចូល Database 🌟
+    let finalPriceKHR = Math.round(inputPrice * multiplier);
+    let finalDiscountKHR = Math.round(inputDiscount * multiplier);
+    let finalTotalKHR = Math.max(0, (qty * finalPriceKHR) - finalDiscountKHR); 
+    
+    // 🌟 កំណត់ Paid Amount ឱ្យត្រូវជាមួយស្ថានភាព 🌟
+    let paidAmount = statusVal === 'Paid' ? finalTotalKHR : 0;
     
     let btn = document.querySelector('#editSaleModal .btn.primary');
     let oldTxt = btn.innerHTML; btn.innerHTML = "កំពុងរក្សាទុក..."; btn.disabled = true;
 
-    // 🌟 បញ្ជូនថ្ងៃខែថ្មី (date: newDate) ចូលទៅអាប់ដេតក្នុង Supabase 🌟
     const { error } = await db.from(TABLE_SALES).update({ 
         date: newDate, 
         qty: qty, 
-        price: price, 
-        discount: discount, 
-        total: total, 
-        status: statusVal 
+        price: finalPriceKHR, 
+        discount: finalDiscountKHR, 
+        total: finalTotalKHR, 
+        status: statusVal,
+        paid_amount: paidAmount
     }).eq('id', id); 
     
     btn.innerHTML = oldTxt; btn.disabled = false;
@@ -1930,13 +2181,11 @@ window.saveEditedSale = async function() {
     } else { 
         showToast("កែប្រែជោគជ័យ!", "success"); 
         closeModal('editSaleModal'); 
+        
+        // Refresh ដើម្បីឱ្យវាលោតចូលបញ្ជីជំពាក់វិញ
         await refreshAllData(); 
     } 
 };
-
-
-window.calculateEditTotal = function() { let qty = parseFloat(document.getElementById('editSaleQty').value) || 0; let price = parseFloat(document.getElementById('editSalePrice').value) || 0; let discount = parseFloat(document.getElementById('editSaleDiscount').value) || 0; document.getElementById('editSaleTotal').value = money(Math.max(0, (qty * price) - discount)); }
-
 window.deleteSaleEntry = async function(id) { 
     let item = salesData.find(s => String(s.id) === String(id));
     let todayStr = new Date().toISOString().slice(0, 10);
@@ -2319,11 +2568,38 @@ function loadDashboard() {
       else { growthText = `កើនឡើង ${percent.toFixed(1)}%`; growthClass = "up"; }
   }
 
-  if(document.getElementById('dashSalesMonth')) document.getElementById('dashSalesMonth').innerText = money(currentMonthSales);
+  // 🌟 អាប់ដេតប្រអប់ Dashboard (ថែមលុយដុល្លារពីក្រោម) 🌟
+  let storedRate = localStorage.getItem('exchangeRate');
+  let exRate = (storedRate && !isNaN(storedRate) && parseFloat(storedRate) > 0) ? parseFloat(storedRate) : 4100;
+  
+  // 1. ចំណូលលក់សរុបប្រចាំខែ
+  if(document.getElementById('dashSalesTotalContainer')) {
+      let salesUsd = currentMonthSales / exRate;
+      let usdFormatted = `$${salesUsd.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+      document.getElementById('dashSalesTotalContainer').innerHTML = `<strong style="font-size: 26px; color: var(--text); display: block; font-weight: 600; letter-spacing: -0.02em;">${money(currentMonthSales)}</strong> <span style="font-size: 13px; color: var(--muted); font-weight: 500; display: block; margin-top: 4px;">(${usdFormatted})</span>`;
+  }
+  
+  // 2. សាច់ប្រាក់ទទួលបានប្រចាំខែ
+  let currentMonthCash = 0;
+  salesData.forEach(row => {
+      if(row.date) {
+          let d = new Date(row.date);
+          if(d.getMonth() === currentMonth && d.getFullYear() === currentYear) {
+              let rev = parseFloat(row.total || 0);
+              currentMonthCash += cleanStatus(row.status) === 'Paid' ? rev : parseFloat(row.paid_amount || 0);
+          }
+      }
+  });
+
+  if(document.getElementById('dashCashCollectedContainer')) {
+      let cashUsd = currentMonthCash / exRate;
+      let usdFormatted = `$${cashUsd.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+      document.getElementById('dashCashCollectedContainer').innerHTML = `<strong style="font-size: 26px; color: var(--success); display: block; font-weight: 600; letter-spacing: -0.02em;">${money(currentMonthCash)}</strong> <span style="font-size: 13px; color: var(--success); opacity: 0.8; font-weight: 500; display: block; margin-top: 4px;">(${usdFormatted})</span>`;
+  }
+
   if(document.getElementById('dashCustomers')) document.getElementById('dashCustomers').innerText = customersData.length;
   let momEl = document.getElementById('momGrowth'); 
   if(momEl) { momEl.innerHTML = `<i class='bx bx-${growthClass==="up"?"up":"down"}-arrow-alt'></i> ${growthText}`; momEl.className = `trend ${growthClass}`; }
-
   let yearlyTarget = parseFloat(localStorage.getItem('salesTarget_' + currentYear)) || 0; 
   let targetProgress = 0;
   if (yearlyTarget > 0) { targetProgress = (currentYearSalesTotal / yearlyTarget) * 100; }
@@ -2499,7 +2775,6 @@ window.updateChart = function() {
   let grossProfitByDate = {}; 
   let expenseByDate = {}; 
   
-  // 🌟 អថេរសម្រាប់គណនាចំណេញដុល ចំណាយ និង Bonus សុទ្ធ 🌟
   let filteredGrossProfit = 0;
   let filteredExpenseTotal = 0;
 
@@ -2524,7 +2799,23 @@ window.updateChart = function() {
       let cusName = item.customer_name || item['customer-name'] || 'Walk-in';
       
       let cleanItemName = String(item.item || '').trim().toLowerCase();
-      let matchedProduct = productsData.find(p => String(p.name || '').trim().toLowerCase() === cleanItemName);
+      let unitVal = String(item.unit || '').trim();
+      let itemSalePrice = parseFloat(String(item.price || item.Price || 0).replace(/,/g, '')); // យកតម្លៃលក់ជាក់ស្តែង
+      
+      // 🌟 1. ស្វែងរកតាមឈ្មោះ និងខ្នាត (Unit)
+      let matchedProduct = productsData.find(p => p.name.trim().toLowerCase() === cleanItemName && String(p.unit || '').trim() === unitVal && p.status !== 'inactive');
+      
+      // 🌟 2. បើរកខ្នាតអត់ឃើញ រកតាម "ឈ្មោះ និង តម្លៃលក់" (Smart Fallback សម្រាប់ទិន្នន័យចាស់)
+      if (!matchedProduct) {
+          matchedProduct = productsData.find(p => p.name.trim().toLowerCase() === cleanItemName && parseFloat(p.price) === itemSalePrice && p.status !== 'inactive');
+      }
+      
+      // 🌟 3. បើនៅតែរកមិនឃើញទៀត យកតាមឈ្មោះសុទ្ធ
+      if (!matchedProduct) {
+          matchedProduct = productsData.find(p => p.name.trim().toLowerCase() === cleanItemName && p.status !== 'inactive');
+      }
+      if (!matchedProduct) matchedProduct = productsData.find(p => p.name.trim().toLowerCase() === cleanItemName);
+      
       let categoryName = item.agro_chemicals || (matchedProduct ? matchedProduct.category : 'ផ្សេងៗ'); 
       
       totalSales += rev; 
@@ -2532,27 +2823,22 @@ window.updateChart = function() {
       outstandingDebt += (rev - paidAmt);
       if(cleanStatus(item.status) === 'Unpaid') unpaidCount++; 
       
-      // 🌟 រូបមន្តថ្មី សម្រាប់ទាញយក "តម្លៃក្រុមហ៊ុន (Base Price)" ឱ្យបានសុក្រឹតបំផុត 🌟
-      let rawBasePrice = String(item.base_price || item.Base_price || item['Base Price'] || '').trim().toUpperCase();
+      // 🌟 ប្រើប្រាស់ថ្លៃដើមពីបញ្ជី Products ជានិច្ច 🌟
       let historicalBasePrice = 0;
-      
-      // បើទិន្នន័យមានពាក្យ EMPTY, NULL ឬទទេ គឺរំលងអត់យកមកគិតលេខទេ
-      if (rawBasePrice !== 'EMPTY' && rawBasePrice !== 'NULL' && rawBasePrice !== '') {
-          historicalBasePrice = parseFloat(rawBasePrice.replace(/,/g, ''));
-      }
-      
-      // បើ Base Price ក្នុងប្រវត្តិលក់ស្មើ ០ ឬរកមិនឃើញ ទៅទាញពីបញ្ជី "មុខទំនិញ (Products)" មកប្រើ
-      if (isNaN(historicalBasePrice) || historicalBasePrice <= 0) {
-          historicalBasePrice = (matchedProduct && matchedProduct.base_price > 0) ? matchedProduct.base_price : 0;
-      }
-      
-      // បើនៅតែ ០ ទៀត បានន័យថាទំនិញហ្នឹងអត់មានថ្លៃដើមមែន ទើបយកថ្លៃលក់ធ្វើថ្លៃដើម (ចំណេញ = ០)
-      if (isNaN(historicalBasePrice) || historicalBasePrice <= 0) {
-          historicalBasePrice = parseFloat(String(item.price || item.Price || 0).replace(/,/g, ''));
+      if (matchedProduct && parseFloat(matchedProduct.base_price) > 0) {
+          historicalBasePrice = parseFloat(matchedProduct.base_price);
+      } else {
+          let rawBasePrice = String(item.base_price || item.Base_price || item['Base Price'] || '').trim().toUpperCase();
+          if (rawBasePrice !== 'EMPTY' && rawBasePrice !== 'NULL' && rawBasePrice !== '') {
+              historicalBasePrice = parseFloat(rawBasePrice.replace(/,/g, ''));
+          }
+          if (isNaN(historicalBasePrice) || historicalBasePrice <= 0) {
+              historicalBasePrice = itemSalePrice; // បើអត់ថ្លៃដើមសោះ ដាក់ប្រាក់ចំណេញ = 0
+          }
       }
       
       let rowCost = historicalBasePrice * rowQty;
-      let rowProfit = rev - rowCost; // ចំណេញដុលសរុប (Gross Profit) ប្រចាំវិក្កយបត្រនីមួយៗ
+      let rowProfit = rev - rowCost; // ចំណេញដុលសរុប (Gross Profit)
       
       filteredGrossProfit += rowProfit;
 
@@ -2568,18 +2854,31 @@ window.updateChart = function() {
       if(cusName !== 'Walk-in') cusCount[cusName] = (cusCount[cusName] || 0) + rev;
   });
 
-  // 🌟 អាប់ដេតប្រអប់ "ប្រាក់ចំណេញក្នុងហាង" ថ្មី 🌟
-  if(document.getElementById('dashGrossProfitTotal')) {
-      let storedRate = localStorage.getItem('exchangeRate');
-      let exRate = (storedRate && !isNaN(storedRate) && parseFloat(storedRate) > 0) ? parseFloat(storedRate) : 4100;
+  let storedRate = localStorage.getItem('exchangeRate');
+  let exRate = (storedRate && !isNaN(storedRate) && parseFloat(storedRate) > 0) ? parseFloat(storedRate) : 4100;
+
+  if(document.getElementById('dashSalesTotalContainer')) {
+      let salesUsd = totalSales / exRate;
+      let usdFormatted = `$${salesUsd.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+      document.getElementById('dashSalesTotalContainer').innerHTML = `<strong id="dashSalesTotal" style="font-size: 26px; color: var(--text); display: block; font-weight: 600; letter-spacing: -0.02em;">${money(totalSales)}</strong> <span style="font-size: 13px; color: var(--muted); font-weight: 500; display: block; margin-top: 4px;">(${usdFormatted})</span>`;
+  }
+  
+  if(document.getElementById('dashCashCollectedContainer')) {
+      let cashUsd = cashCollected / exRate;
+      let usdFormatted = `$${cashUsd.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+      document.getElementById('dashCashCollectedContainer').innerHTML = `<strong id="dashCashCollected" style="font-size: 26px; color: var(--success); display: block; font-weight: 600; letter-spacing: -0.02em;">${money(cashCollected)}</strong> <span style="font-size: 13px; color: var(--success); opacity: 0.8; font-weight: 500; display: block; margin-top: 4px;">(${usdFormatted})</span>`;
+  }
+
+  if(document.getElementById('dashGrossProfitTotalContainer')) {
+      let grossUsd = filteredGrossProfit / exRate;
+      let usdFormattedGross = `$${grossUsd.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+      document.getElementById('dashGrossProfitTotalContainer').innerHTML = `<strong id="dashGrossProfitTotal" style="font-size: 26px; color: #8b5cf6; display: block; font-weight: 600; letter-spacing: -0.02em;">${money(filteredGrossProfit)}</strong> <span style="font-size: 13px; color: #8b5cf6; opacity: 0.8; font-weight: 500; display: block; margin-top: 4px;">(${usdFormattedGross})</span>`;
+  } else if(document.getElementById('dashGrossProfitTotal')) {
       let grossUsd = filteredGrossProfit / exRate;
       let usdFormattedGross = `$${grossUsd.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
       document.getElementById('dashGrossProfitTotal').innerHTML = `${money(filteredGrossProfit)} <span style="font-size: 13px; color: var(--muted); font-weight: 500;">(${usdFormattedGross})</span>`;
   }
 
-  // ==========================================
-  // 🌟 ការគណនា Bonus ៤០% តាមរូបមន្តពិតប្រាកដ (ចំណេញដុល - ចំណាយសរុប) * 40% 🌟
-  // ==========================================
   let netEarnings = filteredGrossProfit - filteredExpenseTotal; 
   let filteredBonusTotal = netEarnings > 0 ? netEarnings * 0.40 : 0;
 
@@ -2613,9 +2912,6 @@ window.updateChart = function() {
           }
       }
 
-      let storedRate = localStorage.getItem('exchangeRate');
-      let exRate = (storedRate && !isNaN(storedRate) && parseFloat(storedRate) > 0) ? parseFloat(storedRate) : 4100;
-
       if(document.getElementById('myCommission')) {
           let bonusUsd = filteredBonusTotal / exRate;
           let usdFormattedBonus = `$${bonusUsd.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
@@ -2636,9 +2932,6 @@ window.updateChart = function() {
       }
   }
 
-  // អាប់ដេតប្រអប់ផ្សេងៗនៅលើ Dashboard
-  if(document.getElementById('dashSalesTotal')) document.getElementById('dashSalesTotal').innerText = money(totalSales);
-  if(document.getElementById('dashCashCollected')) document.getElementById('dashCashCollected').innerText = money(cashCollected);
   if(document.getElementById('dashOutstanding')) document.getElementById('dashOutstanding').innerText = money(outstandingDebt);
   if(document.getElementById('dateRangeLabelSales')) document.getElementById('dateRangeLabelSales').innerHTML = `<i class='bx bx-calendar'></i> ${dateLabel}`;
 
@@ -3692,4 +3985,388 @@ window.saveBulkInvoiceDate = async function() {
     
     // បើកផ្ទាំងលម្អិតឡើងវិញដើម្បីបង្ហាញកាលបរិច្ឆេទថ្មី
     viewInvoiceDetail(invNo); 
+};
+
+// ==========================================
+// 🌟 មុខងារវិក្កយបត្រទទួលប្រាក់ (Receipts) 🌟
+// ==========================================
+window.renderReceipts = function() {
+    let tbody = document.getElementById('receiptsTableBody');
+    if (!tbody) return;
+    
+    let kw = document.getElementById('searchReceipt') ? document.getElementById('searchReceipt').value.toLowerCase().trim() : '';
+    let startDate = document.getElementById('receiptStartDate') ? document.getElementById('receiptStartDate').value : '';
+    let endDate = document.getElementById('receiptEndDate') ? document.getElementById('receiptEndDate').value : '';
+    
+    let filtered = receiptsData;
+    
+    if (kw) {
+        filtered = filtered.filter(r => (r.customer_name || '').toLowerCase().includes(kw) || (r.receipt_no || '').toLowerCase().includes(kw));
+    }
+    if (startDate || endDate) {
+        let start = startDate ? new Date(startDate) : new Date('1970-01-01'); start.setHours(0,0,0,0);
+        let end = endDate ? new Date(endDate) : new Date('2100-01-01'); end.setHours(23,59,59,999);
+        filtered = filtered.filter(r => {
+            if (!r.date) return false;
+            let d = new Date(r.date);
+            return d >= start && d <= end;
+        });
+    }
+    
+    let html = '';
+    filtered.forEach(r => {
+        let rNo = r.receipt_no || `REC-${String(r.id).padStart(5, '0')}`;
+        html += `<tr>
+            <td class="muted">${r.date || '-'}</td>
+            <td><b>${rNo}</b></td>
+            <td><b>${esc(r.customer_name)}</b></td>
+            <td class="text-right"><b style="color:var(--success); font-size: 14px;">${money(r.amount)}</b></td>
+            <td><small class="muted">${esc(r.note)}</small></td>
+            <td class="text-center" style="white-space: nowrap;">
+                <!-- 🌟 ប្តូរទៅជាប៊ូតុង លម្អិត វិញ 🌟 -->
+                <button class="btn outline small" style="border-color:#4f46e5; color:#4f46e5; margin-right:5px;" onclick="viewReceiptDetail('${r.id}')" title="លម្អិត"><i class='bx bx-list-ul'></i> លម្អិត</button>
+                <button class="btn outline small" style="border-color:#f59e0b; color:#f59e0b;" onclick="openEditReceipt('${r.id}')" title="កែប្រែ/លុប"><i class='bx bx-edit'></i></button>
+            </td>
+        </tr>`;
+    });
+    tbody.innerHTML = html || '<tr><td colspan="6" class="text-center muted pt-4 pb-4">គ្មានប្រវត្តិទទួលប្រាក់ទេ</td></tr>';
+};
+
+// 🌟 មុខងារ Export Receipts 🌟
+window.exportReceiptsCSV = function() {
+    if(!receiptsData || receiptsData.length === 0){showToast("គ្មានទិន្នន័យ","error"); return;} 
+    let csvContent="data:text/csv;charset=utf-8,\uFEFF"; 
+    csvContent+="កាលបរិច្ឆេទ,លេខបង្កាន់ដៃ,អតិថិជន,ទឹកប្រាក់,កំណត់សម្គាល់\r\n"; 
+    
+    receiptsData.forEach(r => { 
+        let rNo = r.receipt_no || `REC-${String(r.id).padStart(5, '0')}`;
+        let arr = [r.date || "", rNo, r.customer_name || "", r.amount || 0, r.note || ""]; 
+        let rowStr = arr.map(e => `"${String(e).replace(/"/g,'""')}"`).join(","); 
+        csvContent += rowStr + "\r\n"; 
+    }); 
+    
+    const encodedUri = encodeURI(csvContent); 
+    const link = document.createElement("a"); 
+    link.setAttribute("href", encodedUri); 
+    
+    let startInput = document.getElementById('receiptStartDate') ? document.getElementById('receiptStartDate').value : 'start';
+    let endInput = document.getElementById('receiptEndDate') ? document.getElementById('receiptEndDate').value : 'end';
+    
+    link.setAttribute("download", `Receipts_Report_${startInput}_to_${endInput}.csv`); 
+    document.body.appendChild(link); 
+    link.click(); 
+    document.body.removeChild(link); 
+};
+
+window.checkCustomerDebt = function() {
+    let cName = document.getElementById('newReceiptCustomer').value.trim().toLowerCase();
+    let debtInfoBox = document.getElementById('receiptDebtInfo');
+    let debtText = document.getElementById('receiptCurrentDebt');
+    
+    if (!cName) { debtInfoBox.style.display = 'none'; return; }
+    
+    let totalDebt = 0;
+    salesData.forEach(s => {
+        let n = (s.customer_name || s['customer-name'] || '').trim().toLowerCase();
+        if (n === cName && cleanStatus(s.status).toLowerCase() === 'unpaid') {
+            let itemTotal = parseFloat(String(s.total || 0).replace(/,/g, ''));
+            let itemPaid = parseFloat(String(s.paid_amount || 0).replace(/,/g, ''));
+            totalDebt += (itemTotal - itemPaid);
+        }
+    });
+    
+    if (totalDebt > 0) {
+        debtText.innerText = money(totalDebt);
+        debtInfoBox.style.display = 'block';
+    } else {
+        debtInfoBox.style.display = 'none';
+    }
+};
+
+window.saveNewReceipt = async function() {
+    let dateStr = document.getElementById('newReceiptDate').value || new Date().toISOString().slice(0, 10);
+    let cName = document.getElementById('newReceiptCustomer').value.trim();
+    let inputAmount = parseFloat(document.getElementById('newReceiptAmount').value);
+    
+    // ចាប់យកប្រភេទលុយ
+    let curEl = document.getElementById('newReceiptCurrency');
+    let cur = curEl ? curEl.value : 'KHR';
+    let exRate = parseFloat(localStorage.getItem('exchangeRate')) || 4100;
+    
+    // បម្លែងលុយជា KHR មុននឹង Save ចូល Database
+    let payAmount = cur === 'USD' ? Math.round(inputAmount * exRate) : inputAmount;
+    let note = document.getElementById('newReceiptNote').value.trim();
+    
+    if (!cName) { showToast("សូមជ្រើសរើសអតិថិជន!", "error"); return; }
+    if (!payAmount || payAmount <= 0) { showToast("សូមបញ្ចូលទឹកប្រាក់ឱ្យបានត្រឹមត្រូវ!", "error"); return; }
+    
+    let btn = document.querySelector('#newReceiptModal .btn.primary');
+    let oldText = btn.innerHTML; btn.innerHTML = "កំពុងរកទុក..."; btn.disabled = true;
+    
+    // ១. កាត់កងវិក្កយបត្រចាស់ៗដែលនៅជំពាក់
+    let unpaidItems = salesData.filter(s => {
+        let n = (s.customer_name || s['customer-name'] || '').trim().toLowerCase();
+        return n === cName.toLowerCase() && cleanStatus(s.status).toLowerCase() === 'unpaid';
+    }).sort((a,b) => new Date(a.date || 0) - new Date(b.date || 0));
+
+    let remainingToDistribute = payAmount;
+    let updatePromises = [];
+
+    for (let s of unpaidItems) {
+        if (remainingToDistribute <= 0) break;
+        
+        let itemTotal = parseFloat(String(s.total || 0).replace(/,/g, ''));
+        let itemPaid = parseFloat(String(s.paid_amount || 0).replace(/,/g, ''));
+        let itemDebt = itemTotal - itemPaid;
+        
+        if (itemDebt > 0.01) { 
+            let payForThisItem = Math.min(itemDebt, remainingToDistribute);
+            let newItemPaid = itemPaid + payForThisItem;
+            let newStatus = (itemTotal - newItemPaid) <= 0.01 ? 'Paid' : 'Unpaid';
+            
+            updatePromises.push(db.from(TABLE_SALES).update({ 
+                status: newStatus, 
+                paid_amount: newItemPaid,
+                due_date: dateStr
+            }).eq('id', s.id));
+            
+            remainingToDistribute -= payForThisItem;
+        }
+    }
+    
+    // ២. បង្កើតលេខបង្កាន់ដៃ និងទិន្នន័យ Receipt ថ្មី
+    let maxId = 0;
+    if (receiptsData && receiptsData.length > 0) {
+        maxId = receiptsData.reduce((max, p) => (p.id && p.id > max ? p.id : max), 0);
+    }
+    
+    let nextRecNum = maxId + 1;
+    let recNo = `REC-${String(nextRecNum).padStart(5, '0')}`;
+    
+    // 🌟 លុប id ចេញ ទុកឱ្យ Supabase ជាអ្នកបង្កើតដោយស្វ័យប្រវត្តិ 🌟
+    let receiptEntry = { receipt_no: recNo, date: dateStr, customer_name: cName, amount: payAmount, note: note };
+    
+    // ធ្វើការ Insert ចូល Supabase ដោយផ្ទាល់ និងចាប់កំហុស
+    const { data: insertedData, error: insertError } = await db.from(TABLE_RECEIPTS).insert([receiptEntry]);
+    
+    if (insertError) {
+        console.error("Supabase Insert Error:", insertError);
+        showToast("រក្សាទុកបរាជ័យ! សូមពិនិត្យមើល Supabase", "error");
+        btn.innerHTML = oldText; btn.disabled = false;
+        return;
+    }
+
+    // បើមានការ Update បំណុលចាស់ៗ ឱ្យវាដំណើរការនៅទីនេះ
+    if (updatePromises.length > 0) {
+        await Promise.all(updatePromises);
+    }
+    
+    btn.innerHTML = oldText; btn.disabled = false;
+    showToast("បានទទួលប្រាក់ជោគជ័យ!", "success");
+    
+    // លាក់ផ្ទាំង Form
+    closeModal('newReceiptModal');
+    document.getElementById('newReceiptCustomer').value = '';
+    document.getElementById('newReceiptAmount').value = '';
+    document.getElementById('newReceiptNote').value = '';
+    document.getElementById('receiptDebtInfo').style.display = 'none';
+
+    // ទាញទិន្នន័យពី Database មកវិញភ្លាមៗ រួច Update UI (តារាង)
+    await loadReceipts(); 
+    await loadSalesData();
+    renderReceipts(); 
+    renderCustomers();
+};
+
+// 🌟 មុខងារថ្មី៖ មើលលម្អិត (ទាញចេញពីប្រវត្តិ) 🌟
+window.viewReceiptDetail = function(id) {
+    let rec = receiptsData.find(r => String(r.id) === String(id));
+    if(!rec) return;
+    
+    let exRate = parseFloat(localStorage.getItem('exchangeRate')) || 4100;
+    let totalPaidUSD = rec.amount / exRate;
+    let rNo = rec.receipt_no || `REC-${String(rec.id).padStart(5, '0')}`;
+    
+    let nameEl = document.getElementById('receiptCusName');
+    let dateEl = document.getElementById('receiptDate');
+    let khrEl = document.getElementById('receiptTotalKHR');
+    let usdEl = document.getElementById('receiptTotalUSD');
+    let bodyEl = document.getElementById('receiptItemsBody');
+    
+    if(!nameEl || !bodyEl) { return; }
+
+    nameEl.innerText = rec.customer_name;
+    dateEl.innerText = rec.date;
+    khrEl.innerText = money(rec.amount);
+    usdEl.innerText = `$${totalPaidUSD.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+    
+    let html = `
+    <tr style="border-bottom: 1px dotted #ccc;">
+        <td style="padding: 6px 4px;"><b>${rNo}</b><br><small class="muted">${esc(rec.note || 'ទូទាត់ប្រាក់បំណុល')}</small></td>
+        <td class="text-right" style="padding: 6px 4px; color:var(--danger);">-</td>
+        <td class="text-right" style="padding: 6px 4px; color:var(--success); font-weight:bold;">${money(rec.amount)}</td>
+        <td class="text-center" style="padding: 6px 4px;"><span style="color:var(--success); font-size:10px;">✅ បានទទួល</span></td>
+    </tr>`;
+    
+    bodyEl.innerHTML = html;
+    openModal('paymentReceiptModal');
+};
+
+window.printPaymentReceipt = function() {
+    let printContentEl = document.getElementById('receiptPrintArea');
+    if(!printContentEl) return;
+    
+    let printContent = printContentEl.innerHTML;
+    let originalBody = document.body.innerHTML;
+    
+    document.body.innerHTML = `
+    <div style="font-family: 'Kantumruy Pro', sans-serif; font-size: 11px; padding: 10px; width: 300px; color: #000; background: white; margin: 0 auto;">
+        ${printContent}
+    </div>`;
+    
+    window.print();
+    document.body.innerHTML = originalBody;
+    location.reload(); 
+};
+
+// ==========================================
+// 🌟 មុខងារកែប្រែ និងលុប Receipt 🌟
+// ==========================================
+
+window.openEditReceipt = function(id) {
+    let rec = receiptsData.find(r => String(r.id) === String(id));
+    if(!rec) return;
+    
+    document.getElementById('editReceiptId').value = rec.id;
+    document.getElementById('editReceiptDate').value = rec.date;
+    document.getElementById('editReceiptCustomer').value = rec.customer_name;
+    document.getElementById('editReceiptAmount').value = rec.amount;
+    document.getElementById('editReceiptOldAmount').value = rec.amount;
+    document.getElementById('editReceiptOldCustomer').value = rec.customer_name;
+    document.getElementById('editReceiptNote').value = rec.note || '';
+    
+    openModal('editReceiptModal');
+};
+
+// 🌟 មុខងាររៀបចំបំណុលឡើងវិញ (Recalculate Debt) 🌟
+async function recalculateCustomerDebt(cName) {
+    // ទាញវិក្កយបត្រម៉ូយនេះ ដែលធ្លាប់បង់លុយ (មានសង) រួចតម្រៀបពីចាស់ទៅថ្មី
+    let items = salesData.filter(s => {
+        let n = (s.customer_name || s['customer-name'] || '').trim().toLowerCase();
+        return n === cName.trim().toLowerCase();
+    }).sort((a,b) => new Date(a.date || 0) - new Date(b.date || 0));
+
+    // ទាញប្រវត្តិ Receipt របស់ម៉ូយនេះ
+    let recs = receiptsData.filter(r => (r.customer_name || '').trim().toLowerCase() === cName.trim().toLowerCase());
+    
+    let totalCashReceived = recs.reduce((sum, r) => sum + parseFloat(r.amount || 0), 0);
+    let remainingCash = totalCashReceived;
+    let updatePromises = [];
+
+    // ចាប់ផ្តើមគិតលុយសងចូលវិក្កយបត្រម្តងមួយៗឡើងវិញ ពីចាស់ទៅថ្មី
+    for (let s of items) {
+        let itemTotal = parseFloat(String(s.total || 0).replace(/,/g, ''));
+        
+        // វាយតម្លៃថា តើវិក្កយបត្រនេះបង់ផ្តាច់ (Paid by Cashier) ពីដំបូង ឬជំពាក់ (Unpaid)
+        // យើងសន្មតថា វិក្កយបត្រដែល Cashier កំណត់ថាជំពាក់ គឺត្រូវការកាត់កងពី Receipt
+        
+        // នេះជាបំណុលសុទ្ធដែលនៅជំពាក់ពីដើម (មុនទូទាត់)
+        let basePaid = 0; 
+        
+        let applyAmount = 0;
+        if (remainingCash > 0) {
+            applyAmount = Math.min(itemTotal, remainingCash);
+            remainingCash -= applyAmount;
+        }
+        
+        let newStatus = (itemTotal - applyAmount) <= 0.01 ? 'Paid' : 'Unpaid';
+        
+        // ប្រសិនបើទិន្នន័យមានការផ្លាស់ប្តូរ ទើប Update
+        let currentPaid = parseFloat(String(s.paid_amount || 0).replace(/,/g, ''));
+        let currentStatus = cleanStatus(s.status);
+        
+        if(applyAmount !== currentPaid || newStatus !== currentStatus) {
+            updatePromises.push(db.from(TABLE_SALES).update({ 
+                status: newStatus, 
+                paid_amount: applyAmount 
+            }).eq('id', s.id));
+        }
+    }
+    
+    if (updatePromises.length > 0) {
+        await Promise.all(updatePromises);
+    }
+}
+
+window.saveEditedReceipt = async function() {
+    let id = document.getElementById('editReceiptId').value;
+    let dateStr = document.getElementById('editReceiptDate').value;
+    let amt = parseFloat(document.getElementById('editReceiptAmount').value);
+    let note = document.getElementById('editReceiptNote').value.trim();
+    let cName = document.getElementById('editReceiptCustomer').value.trim();
+    let oldAmt = parseFloat(document.getElementById('editReceiptOldAmount').value);
+    
+    if (!amt || amt <= 0) { showToast("សូមបញ្ចូលទឹកប្រាក់ឱ្យបានត្រឹមត្រូវ!", "error"); return; }
+    
+    let btn = document.querySelector('#editReceiptModal .btn.primary');
+    let oldText = btn.innerHTML; btn.innerHTML = "កំពុងរក្សាទុក..."; btn.disabled = true;
+
+    // ១. កែប្រែទិន្នន័យក្នុង Table Receipts
+    const { error } = await db.from(TABLE_RECEIPTS).update({ date: dateStr, amount: amt, note: note }).eq('id', id);
+    
+    if (!error) {
+        // Update Local Data ភ្លាមៗ ដើម្បីយកទៅគណនា
+        let recIndex = receiptsData.findIndex(r => String(r.id) === String(id));
+        if (recIndex !== -1) {
+            receiptsData[recIndex].amount = amt;
+            receiptsData[recIndex].date = dateStr;
+            receiptsData[recIndex].note = note;
+        }
+
+        // ២. បើមានការប្រែប្រួលទឹកប្រាក់ ត្រូវគណនាបំណុលម៉ូយឡើងវិញ
+        if (amt !== oldAmt) {
+            showToast("កំពុងគណនាបំណុលឡើងវិញ...", "warning");
+            await recalculateCustomerDebt(cName);
+        }
+        
+        showToast("កែប្រែជោគជ័យ!", "success");
+        closeModal('editReceiptModal');
+        await refreshAllData(); 
+    } else {
+        showToast("បរាជ័យក្នុងការកែប្រែ!", "error");
+        console.error(error);
+    }
+    btn.innerHTML = oldText; btn.disabled = false;
+};
+
+window.deleteReceipt = async function() {
+    let id = document.getElementById('editReceiptId').value;
+    let cName = document.getElementById('editReceiptCustomer').value.trim();
+    
+    let pass = prompt("🔒 ការលុបនេះនឹងធ្វើឱ្យបំណុលរបស់អតិថិជនកើនឡើងវិញដោយស្វ័យប្រវត្តិ។\nសូមបញ្ចូលលេខកូដថៅកែ (PIN) ដើម្បីបន្ត៖");
+    if(pass !== ADMIN_PIN) {
+        showToast("លេខកូដមិនត្រឹមត្រូវទេ! ប្រតិបត្តិការត្រូវបានលុបចោល។", "error");
+        return;
+    }
+
+    if(confirm("តើអ្នកពិតជាចង់លុបការទទួលប្រាក់នេះមែនទេ?")) {
+        showToast("កំពុងលុបទិន្នន័យ...", "warning");
+        
+        // ១. លុបចេញពី Database
+        const { error } = await db.from(TABLE_RECEIPTS).delete().eq('id', id);
+        
+        if (!error) {
+            // Update Local Data
+            receiptsData = receiptsData.filter(r => String(r.id) !== String(id));
+            
+            // ២. គណនាបំណុលម៉ូយឡើងវិញ (ដកលុយដែលធ្លាប់បង់នេះចេញ)
+            await recalculateCustomerDebt(cName);
+            
+            showToast("លុបជោគជ័យ!", "success");
+            closeModal('editReceiptModal');
+            await refreshAllData();
+        } else {
+            showToast("លុបបរាជ័យ!", "error");
+        }
+    }
 };
