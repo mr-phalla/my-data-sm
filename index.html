@@ -90,7 +90,7 @@
 
       .form-input.item-input, .form-input.item-qty, .form-input.item-price, .form-input.item-amount { 
           border: none !important; background: transparent !important; padding: 0 !important; color: #000 !important; 
-          font-weight: bold; font-size: 10px !important; width: 100%; -webkit-appearance: none !important; 
+          font-weight: bold; font-size: 10px !important; width: 100%; appearance: none !important; -webkit-appearance: none !important; 
       }
       .form-input.item-input { white-space: normal; } 
       
@@ -160,6 +160,7 @@
 
 <div class="app-shell" id="appShell" style="display: none;">
   <!-- Sidebar -->
+  <!-- Sidebar -->
   <aside class="sidebar" id="adminSidebar">
     <div class="brand"><img src="https://lh3.googleusercontent.com/d/1-lHJgWS1XhknNZPCQ3nUUGSPi7CoJmLC" alt="Logo" style="width: 36px; height: 36px; border-radius: 10px; object-fit: contain; background: white; padding: 3px; box-shadow: 0 4px 10px rgba(0,0,0,0.15);"><div><strong>StockFlow</strong><small>ស្រែមាស ចំការលើ</small></div></div>
     <div class="sidebar-section">MAIN</div>
@@ -167,6 +168,8 @@
     <button class="nav-item" data-tab="productTab" onclick="openTab('productTab')"><i class='bx bx-grid-alt'></i> Products</button>
     <button class="nav-item" data-tab="invoiceTab" onclick="openTab('invoiceTab')"><i class='bx bx-cart-add'></i> New Sale</button>
     <button class="nav-item" data-tab="historyTab" onclick="openTab('historyTab')"><i class='bx bx-line-chart'></i> Sales History</button>
+    <!-- 🌟 បន្ថែមមឺនុយ ទទួលប្រាក់ (Receipt) ត្រង់នេះ 🌟 -->
+    <button class="nav-item" data-tab="receiptTab" onclick="openTab('receiptTab')"><i class='bx bx-wallet'></i> ទទួលប្រាក់ (Receipt)</button>
     <button class="nav-item" data-tab="expenseTab" onclick="openTab('expenseTab')"><i class='bx bx-money-withdraw'></i> Expenses</button>
     <button class="nav-item" data-tab="branchTab" onclick="openTab('branchTab')"><i class='bx bx-store-alt'></i> Branch Ops</button>
     <div class="sidebar-section mt-4">PEOPLE</div>
@@ -234,27 +237,40 @@
       <!-- 🌟 កាតសង្ខេបខាងលើ (១ ជួរមាន ៥ ប្រអប់) 🌟 -->
       <div class="stats-grid" style="grid-template-columns: repeat(4, 1fr);">
         <!-- 🌟 កាតសង្ខេបខាងលើ (ត្រឡប់មក ១ ជួរមាន ៤ ប្រអប់វិញ យ៉ាងស្រឡះល្អ) 🌟 -->
-        <!-- 1. ចំណូលលក់សរុប -->
+       <!-- 1. ចំណូលលក់សរុប -->
+<!-- 1. ចំណូលលក់សរុប -->
         <div class="stat-card">
-            <div><span>ចំណូលលក់សរុប</span><strong id="dashSalesTotal">0 ៛</strong><small class="trend primary" id="dateRangeLabelSales"><i class='bx bx-calendar'></i> ទិន្នន័យទាំងអស់</small></div>
+            <div>
+                <span>ចំណូលលក់សរុប</span>
+                <div id="dashSalesTotalContainer"><strong id="dashSalesTotal">0 ៛</strong></div>
+                <small class="trend primary" id="dateRangeLabelSales" style="margin-top: 8px;"><i class='bx bx-calendar'></i> ទិន្នន័យទាំងអស់</small>
+            </div>
             <div class="stat-icon-light" style="color:#3b82f6; background:rgba(59,130,246,0.1);"><i class='bx bx-line-chart'></i></div>
         </div>
         
         <!-- 2. សាច់ប្រាក់ទទួលបាន -->
         <div class="stat-card" style="border-bottom: 3px solid var(--success);">
-            <div><span>សាច់ប្រាក់ទទួលបាន</span><strong id="dashCashCollected" style="color: var(--success);">0 ៛</strong><small class="trend success"><i class='bx bx-wallet'></i> ចូលថតជាក់ស្តែង</small></div>
+            <div>
+                <span>សាច់ប្រាក់ទទួលបាន</span>
+                <div id="dashCashCollectedContainer"><strong id="dashCashCollected" style="color: var(--success);">0 ៛</strong></div>
+                <small class="trend success" style="margin-top: 8px;"><i class='bx bx-wallet'></i> ចូលថតជាក់ស្តែង</small>
+            </div>
             <div class="stat-icon-light" style="color:#10b981; background:rgba(16,185,129,0.1);"><i class='bx bx-dollar'></i></div>
         </div>
         
-        <!-- 3. ប្រាក់ចំណេញក្នុងហាង (ដាក់ជំនួសកន្លែងប្រាក់ជំពាក់ចាស់) -->
+        <!-- 3. ប្រាក់ចំណេញក្នុងហាង -->
         <div class="stat-card" style="border-bottom: 3px solid #8b5cf6;">
-            <div><span style="color: #8b5cf6; font-weight: bold;">ប្រាក់ចំណេញក្នុងហាង</span><strong id="dashGrossProfitTotal" style="color: #8b5cf6;">0 ៛</strong><small class="trend" style="color: #8b5cf6;"><i class='bx bx-coin-stack'></i> ចំណេញដុលសរុប</small></div>
+            <div>
+                <span style="color: #8b5cf6; font-weight: bold;">ប្រាក់ចំណេញក្នុងហាង</span>
+                <div id="dashGrossProfitTotalContainer"><strong id="dashGrossProfitTotal" style="color: #8b5cf6;">0 ៛</strong></div>
+                <small class="trend" style="color: #8b5cf6; margin-top: 8px;"><i class='bx bx-coin-stack'></i> ចំណេញដុលសរុប</small>
+            </div>
             <div class="stat-icon-light" style="color:#8b5cf6; background:rgba(139,92,246,0.1);"><i class='bx bx-trending-up'></i></div>
         </div>
         
         <!-- 4. អតិថិជនសរុប -->
         <div class="stat-card">
-            <div><span>អតិថិជនសរុប</span><strong id="dashCustomers">0</strong><small class="trend primary"><i class='bx bx-user-plus'></i> ក្នុងប្រព័ន្ធ</small></div>
+            <div><span>អតិថិជនសរុប</span><strong id="dashCustomers">0</strong><small class="trend primary" style="margin-top: 8px;"><i class='bx bx-user-plus'></i> ក្នុងប្រព័ន្ធ</small></div>
             <div class="stat-icon-light" style="color:#64748b; background:rgba(100,116,139,0.1);"><i class='bx bx-user'></i></div>
         </div>
         
@@ -417,7 +433,17 @@
                     </select>
                     <input type="date" id="dueDate" class="form-input" style="display:none; border-color:var(--danger); color:var(--danger);">
                 </div>
-            </label>
+                </label>
+                <!-- 🌟 ប្រអប់រូបិយប័ណ្ណ 🌟 -->
+                <!-- 🌟 ប្រអប់រូបិយប័ណ្ណ (រួមបញ្ចូល Exchange Rate ខាងក្នុង) 🌟 -->
+                <label>រូបិយប័ណ្ណ (Currency)
+                    <select id="invoiceCurrency" class="form-input" onchange="changeInvoiceCurrency()" style="color: var(--primary); font-weight: bold; background: var(--sidebar-hover);">
+                        <option value="KHR">រៀល (៛)</option>
+                        <!-- យើងទុក id="usdOption" ដើម្បីឱ្យ JS បាញ់អក្សរ 1$ = 4100៛ ចូលតាមក្រោយ -->
+                        <option value="USD" id="usdOption">ដុល្លារ ($)</option>
+                    </select>
+                </label>
+                
                 <label>អ្នកគិតលុយ<input type="text" id="cashier" value="Admin" class="form-input"></label>
                 <label class="span-2">អតិថិជន<input type="text" id="customerInput" list="customerListOptions" placeholder="ស្វែងរកអតិថិជន..." onchange="onCustomerSelect()" class="form-input"></label>
                 <label>លេខទូរស័ព្ទ<input type="text" id="phone" class="form-input"></label>
@@ -434,15 +460,14 @@
                         <option value="ផ្សេងៗ">ផ្សេងៗ</option>
                     </select>
                 </label>
-                <label id="lblSaleSize">ទំហំ/ចំនួនដាំដុះ<input type="text" id="saleCropSize" class="form-input" placeholder="ឧ. 10 ហិកតា ឬ 500 ដើម"></label>
+                <label id="lblSaleSize" class="span-2">ទំហំ/ចំនួនដាំដុះ<input type="text" id="saleCropSize" class="form-input" placeholder="ឧ. 10 ហិកតា ឬ 500 ដើម"></label>
               </div>
               
-              <!-- 🌟 មុខងារថ្មីទី១៖ ជំនួយការលក់ឆ្លាតវៃ (Smart Assistant) 🌟 -->
               <div id="smartAssistantBox" class="no-print" style="display: none; background: #eef2ff; border: 1px solid #c7d2fe; border-left: 4px solid #4f46e5; padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; font-size: 13px; color: #3730a3; align-items: flex-start; gap: 10px;">
                   <i class='bx bx-bulb' style="font-size: 20px; color: #f59e0b;"></i>
                   <div id="smartAssistantText">កំពុងវិភាគអតិថិជន...</div>
               </div>
-              <!-- ប្រអប់បង្ហាញរបៀបប្រើប្រាស់ (Product Guide) -->
+              
               <div id="productGuideBox" class="no-print" style="display: none; background: #ecfdf5; border: 1px solid #a7f3d0; border-left: 4px solid #10b981; padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; font-size: 13px; color: #065f46; align-items: flex-start; gap: 10px;">
                   <i class='bx bx-book-reader' style="font-size: 20px; color: #10b981;"></i>
                   <div id="productGuideText">របៀបប្រើប្រាស់...</div>
@@ -450,33 +475,33 @@
 
               <div class="table-scroll border-top pt-3">
                 <table class="data-table">
-                  <!-- 🌟 លុប Column បញ្ចុះតម្លៃ 🌟 -->
-                  <thead><tr><th style="width: 25%;">មុខទំនិញ</th><th style="width: 15%;">ខ្នាត/ប្រភេទ</th><th style="width: 15%; text-align: center;">ចំនួន</th><th style="width: 20%; text-align: right;">តម្លៃ (៛)</th><th style="width: 20%; text-align: right;">សរុប (៛)</th><th style="width: 5%; text-align: center;" class="no-print">លុប</th></tr></thead>
+                  <!-- 🌟 កែប្រែក្បាលតារាងឱ្យដូរ (៛) ទៅជា ($) បាន 🌟 -->
+                  <thead><tr><th style="width: 25%;">មុខទំនិញ</th><th style="width: 15%;">ខ្នាត/ប្រភេទ</th><th style="width: 15%; text-align: center;">ចំនួន</th><th style="width: 20%; text-align: right;" id="thPrice">តម្លៃ (៛)</th><th style="width: 20%; text-align: right;" id="thTotal">សរុប (៛)</th><th style="width: 5%; text-align: center;" class="no-print">លុប</th></tr></thead>
                   <tbody id="itemTable"></tbody>
                 </table>
               </div>
+              
               <div class="flex-between mt-4 border-top pt-4 align-start flex-mobile-col">
-                <button class="btn secondary no-print mb-mobile" onclick="addItemRow()"><i class='bx bx-plus'></i> បន្ថែមជួរថ្មី</button>
+                <button class="btn secondary no-print mb-mobile" onclick="addItemRow()"><i class='bx bx-plus'></i> បន្ថែមជួរ</button>
                 <div>
                     <div style="display: flex; gap: 20px; align-items: flex-end; flex-wrap: wrap; justify-content: flex-end;">
-                        <!-- 🌟 ប្រអប់បញ្ចុះតម្លៃសរុប 🌟 -->
                         <div style="text-align: right;" class="no-print">
-                            <label class="muted block mb-1">បញ្ចុះតម្លៃ (៛)</label>
+                            <label class="muted block mb-1" id="lblDiscount">បញ្ចុះតម្លៃ (៛)</label>
                             <input type="number" id="globalDiscount" class="form-input" style="width: 140px; font-weight:bold; font-size: 16px; color: var(--danger);" placeholder="0" oninput="calculateGrandTotal()">
                         </div>
-                        <div style="text-align: right;" class="no-print">
-                            <label class="muted block mb-1">ប្រាក់ទទួល (៛)</label>
+                        <!-- 🌟 ប្រអប់ប្រាក់ទទួល 🌟 -->
+                        <div style="text-align: right; border-left: 1px solid var(--line); padding-left: 20px;" class="no-print">
+                            <label class="muted block mb-1" id="lblReceived">ប្រាក់ទទួលជាក់ស្តែង (៛)</label>
                             <input type="number" id="cashReceived" class="form-input" style="width: 140px; font-weight:bold; font-size: 16px;" placeholder="0" oninput="calculateChange()">
                         </div>
                         <div style="text-align: right;" class="no-print">
-                            <label class="muted block mb-1">ប្រាក់អាប់ (៛)</label>
-                            <input type="text" id="cashChange" class="form-input" style="width: 140px; color: var(--danger); font-weight:bold; font-size: 16px;" readonly value="0 ៛">
+                            <label class="muted block mb-1" id="lblChange">ប្រាក់អាប់ (៛)</label>
+                            <input type="text" id="cashChange" class="form-input" style="width: 140px; color: var(--danger); font-weight:bold; font-size: 16px;" readonly value="0">
                         </div>
-                        <div style="text-align: right; min-width: 150px;">
+                        <div style="text-align: right; min-width: 150px; margin-left: 15px;">
                             <span class="muted" style="font-size: 13px;">សរុបទឹកប្រាក់ភ្ញៀវ</span>
                             <strong id="grandTotal" style="display: block; font-size: 28px; color: var(--text); margin-top: 4px;">0 ៛</strong>
                             
-                            <!-- 🌟 ប្រអប់គណនាប្រាក់ចំណេញ និង Bonus ៤០% ប្រចាំវិក្កយបត្រ 🌟 -->
                             <div class="no-print" style="margin-top: 8px; border-top: 1px dashed var(--line); padding-top: 8px; background: rgba(16,185,129,0.05); border-radius: 6px; padding: 8px; text-align: left;">
                                 <small class="muted block" style="margin-bottom: 4px;">+ ចំណេញសរុប: <b id="invoiceTotalProfit" style="color:var(--text);">0 ៛</b></small>
                                 <small class="muted block" style="font-size: 13px;">🔥 <b>Bonus សាខា (40%):</b> <b id="branchBonusTotal" style="color:var(--success);">0 ៛</b></small>
@@ -484,9 +509,9 @@
                         </div>
                     </div>
                     
-                        <div class="no-print" style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px;">
+                    <div class="no-print" style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px;">
                         <button class="btn primary" id="btnSave" onclick="saveData()"><i class='bx bx-save'></i> រក្សាទុកការលក់</button>
-                        </div>
+                    </div>
                 </div>
               </div>
             </div>
@@ -607,7 +632,48 @@
           </table></div>
       </div>
     </section>
-
+    <!-- ================= Receipt Tab (ទទួលប្រាក់) ================= -->
+    <section id="receiptTab" class="tab-content">
+      <div class="page-heading flex-mobile-col align-start">
+        <div>
+            <h1>វិក្កយបត្រទទួលប្រាក់ (Receipts)</h1>
+            <p class="muted">កត់ត្រាការសងប្រាក់របស់អតិថិជន និងទូទាត់បំណុលចាស់ៗដោយស្វ័យប្រវត្តិ។</p>
+        </div>
+        <div style="display: flex; flex-wrap: wrap; gap: 15px; align-items: center; justify-content: flex-end;">
+            <div style="display: flex; align-items: center; gap: 5px; background: var(--surface); padding: 4px 8px; border-radius: 8px; border: 1px solid var(--line); white-space: nowrap;">
+                <i class='bx bx-calendar muted'></i>
+                <input type="date" id="receiptStartDate" class="form-input" style="padding: 6px; width: auto; font-size: 12px; border:none;">
+                <span class="muted">-</span>
+                <input type="date" id="receiptEndDate" class="form-input" style="padding: 6px; width: auto; font-size: 12px; border:none;">
+                <button class="btn primary small" onclick="renderReceipts()"><i class='bx bx-filter-alt'></i> ចម្រាញ់</button>
+                <button class="btn secondary" onclick="exportReceiptsCSV()"><i class='bx bx-export'></i> Export CSV</button>
+            </div>
+            <button class="btn primary" onclick="openModal('newReceiptModal')"><i class='bx bx-plus'></i> បង្កើតការទទួលប្រាក់</button>
+        </div>
+      </div>
+      
+      <div class="panel">
+          <div class="panel-head flex-between border-bottom pb-3 mb-3 flex-mobile-col align-start">
+              <div class="tabs-inline mb-mobile"><span class="active">ប្រវត្តិទទួលប្រាក់</span></div>
+              <div class="search-box"><i class='bx bx-search'></i><input type="text" id="searchReceipt" placeholder="ស្វែងរកអតិថិជន..." oninput="renderReceipts()"></div>
+          </div>
+          <div class="table-scroll">
+              <table class="data-table">
+                  <thead>
+                      <tr>
+                          <th>កាលបរិច្ឆេទ</th>
+                          <th>លេខបង្កាន់ដៃ</th>
+                          <th>អតិថិជន</th>
+                          <th class="text-right">ទឹកប្រាក់ (៛)</th>
+                          <th>កំណត់សម្គាល់</th>
+                          <th class="text-center">ជម្រើស</th>
+                      </tr>
+                  </thead>
+                  <tbody id="receiptsTableBody"></tbody>
+              </table>
+          </div>
+      </div>
+    </section>
     <!-- ================= Expenses Tab ================= -->
     <section id="expenseTab" class="tab-content">
       <div class="page-heading flex-mobile-col align-start">
@@ -1046,8 +1112,8 @@
         </div>
     </div>
 </div>
-<div id="editSaleModal" class="modal"><!-- 🌟 Modal កែប្រែទិន្នន័យលក់ (មានថែមប្រអប់កាលបរិច្ឆេទ) 🌟 -->
-
+<!-- 🌟 Modal កែប្រែទិន្នន័យលក់ (ថែមប្រអប់រើសដុល្លារ) 🌟 -->
+<div id="editSaleModal" class="modal">
     <div class="modal-card" style="width: 600px;">
         <div class="modal-head">
             <h3><i class='bx bx-edit' style="color:var(--primary); margin-right:5px;"></i> កែប្រែទិន្នន័យវិក្កយបត្រ</h3>
@@ -1056,13 +1122,21 @@
         <input type="hidden" id="editSaleId">
         <div class="form-grid two mb-4">
             <label class="span-2">មុខទំនិញ<input type="text" id="editSaleItem" class="form-input" readonly style="background: rgba(0,0,0,0.05); color: var(--muted);"></label>
-            <!-- 🌟 ប្រអប់ថ្ងៃខែ ដែលទើបបន្ថែមថ្មី 🌟 -->
             <label>កាលបរិច្ឆេទ<input type="date" id="editSaleDate" class="form-input"></label>
             <label>ស្ថានភាព<select id="editPaymentStatus" class="form-input"><option value="Paid">ទូទាត់រួច</option><option value="Unpaid">ជំពាក់</option></select></label>
+            
+            <!-- 🌟 ប្រអប់រើសរូបិយប័ណ្ណដែលបន្ថែមថ្មី 🌟 -->
+            <label>វាយបញ្ចូលជាលុយ
+                <select id="editSaleCurrency" class="form-input" onchange="calculateEditTotal()" style="color: var(--primary); font-weight: bold; background: var(--sidebar-hover);">
+                    <option value="KHR">រៀល (៛)</option>
+                    <option value="USD">ដុល្លារ ($)</option>
+                </select>
+            </label>
             <label>ចំនួន<input type="number" id="editSaleQty" class="form-input" oninput="calculateEditTotal()"></label>
-            <label>តម្លៃ (៛)<input type="number" id="editSalePrice" class="form-input" oninput="calculateEditTotal()"></label>
-            <label>បញ្ចុះតម្លៃ (៛)<input type="number" id="editSaleDiscount" class="form-input" oninput="calculateEditTotal()"></label>
-            <label class="span-2">សរុប (៛)<input type="text" id="editSaleTotal" class="form-input" readonly style="color:var(--success); font-weight:bold; font-size: 16px;"></label>
+            
+            <label>តម្លៃ<input type="number" id="editSalePrice" class="form-input" oninput="calculateEditTotal()"></label>
+            <label>បញ្ចុះតម្លៃ<input type="number" id="editSaleDiscount" class="form-input" oninput="calculateEditTotal()"></label>
+            <label class="span-2">សរុបលទ្ធផល (៛)<input type="text" id="editSaleTotal" class="form-input" readonly style="color:var(--success); font-weight:bold; font-size: 16px;"></label>
         </div>
         <div class="modal-actions border-top pt-3">
             <button class="btn secondary" onclick="closeModal('editSaleModal')">បោះបង់</button>
@@ -1326,6 +1400,158 @@
         <div class="modal-actions border-top pt-3">
             <button class="btn secondary" onclick="closeModal('editInvoiceDateModal')">បោះបង់</button>
             <button class="btn primary" onclick="saveBulkInvoiceDate()"><i class='bx bx-save'></i> រក្សាទុកកែប្រែ</button>
+        </div>
+    </div>
+</div>
+<!-- 🌟 Modal សម្រាប់សងបំណុលម៉ូយ (Customer Payment) 🌟 -->
+<div id="customerPaymentModal" class="modal">
+    <div class="modal-card" style="width: 450px;">
+        <div class="modal-head">
+            <h3><i class='bx bx-wallet' style="color:var(--success); margin-right:5px;"></i> ទូទាត់ប្រាក់សង (ម៉ូយ)</h3>
+            <button class="icon-btn-round" onclick="closeModal('customerPaymentModal')"><i class='bx bx-x'></i></button>
+        </div>
+        <input type="hidden" id="payCusName">
+        
+        <div style="background: var(--sidebar-hover); padding: 15px; border-radius: 8px; margin-bottom: 15px; text-align: center;">
+            <p style="margin: 0; color: var(--muted); font-size: 13px;">ប្រាក់ជំពាក់សរុប (នៅសល់)</p>
+            <b id="payCusTotalDebt" style="font-size: 24px; color: var(--danger);">0 ៛</b>
+        </div>
+        
+        <div class="form-group">
+            <label>ចំនួនទឹកប្រាក់ត្រូវសងពេលនេះ</label>
+            <div style="display: flex; gap: 10px; margin-top: 5px;">
+                <input type="number" id="payCusAmount" class="form-input" style="font-size: 18px; font-weight: bold; color: var(--success); flex: 2;" placeholder="ឧ. 100000 ឬ 36.5">
+                <select id="payCusCurrency" class="form-input" style="font-weight: bold; color: var(--primary); flex: 1;">
+                    <option value="KHR">រៀល (៛)</option>
+                    <option value="USD">ដុល្លារ ($)</option>
+                </select>
+            </div>
+            <small class="muted mt-2 block" style="color: var(--primary);"><i class='bx bx-info-circle'></i> ប្រព័ន្ធនឹងកាត់លុយនេះទៅទូទាត់វិក្កយបត្រចាស់ៗមុនគេដោយស្វ័យប្រវត្តិ។</small>
+        </div>
+        
+        <div class="modal-actions border-top pt-3">
+            <button class="btn secondary" onclick="closeModal('customerPaymentModal')">បោះបង់</button>
+            <button class="btn primary" onclick="saveCustomerPayment()"><i class='bx bx-save'></i> រក្សាទុកការបង់ប្រាក់</button>
+        </div>
+    </div>
+</div>
+<!-- 🌟 Modal សម្រាប់បង្កើត Receipt (ទទួលប្រាក់) 🌟 -->
+<div id="newReceiptModal" class="modal">
+    <div class="modal-card" style="width: 500px;">
+        <div class="modal-head">
+            <h3><i class='bx bx-wallet' style="color:var(--success); margin-right:5px;"></i> ទទួលប្រាក់ពីអតិថិជន (Receipt)</h3>
+            <button class="icon-btn-round" onclick="closeModal('newReceiptModal')"><i class='bx bx-x'></i></button>
+        </div>
+        
+        <div class="form-grid mb-4" style="grid-template-columns: 1fr;">
+            <label>កាលបរិច្ឆេទ<input type="date" id="newReceiptDate" class="form-input"></label>
+            <label>អតិថិជន<input type="text" id="newReceiptCustomer" list="customerListOptions" placeholder="ជ្រើសរើសម៉ូយ..." class="form-input" onchange="checkCustomerDebt()"></label>
+            
+            <div id="receiptDebtInfo" style="display: none; background: rgba(245,158,11,0.1); padding: 12px; border-radius: 8px; border: 1px dashed #f59e0b; margin-top: 5px;">
+                <span class="muted" style="font-size: 13px;">ប្រាក់កំពុងជំពាក់សរុប៖</span>
+                <b id="receiptCurrentDebt" style="display: block; font-size: 20px; color: var(--danger); margin-top: 4px;">0 ៛</b>
+            </div>
+            
+            <label>ចំនួនទឹកប្រាក់
+                <div style="display: flex; gap: 10px; margin-top: 5px;">
+                    <input type="number" id="newReceiptAmount" class="form-input" style="font-size: 18px; font-weight: bold; color: var(--success); flex: 2;" placeholder="ឧ. 100000 ឬ 36.5">
+                    <select id="newReceiptCurrency" class="form-input" style="font-weight: bold; color: var(--primary); flex: 1;">
+                        <option value="KHR">រៀល (៛)</option>
+                        <option value="USD">ដុល្លារ ($)</option>
+                    </select>
+                </div>
+            </label>
+            <label>កំណត់សម្គាល់<input type="text" id="newReceiptNote" class="form-input" placeholder="ឧ. សងថ្លៃជីខែមុន..."></label>
+        </div>
+        
+        <div class="modal-actions border-top pt-3">
+            <button class="btn secondary" onclick="closeModal('newReceiptModal')">បោះបង់</button>
+            <button class="btn primary" style="background: var(--success);" onclick="saveNewReceipt()"><i class='bx bx-save'></i> រក្សាទុក និងទូទាត់</button>
+        </div>
+    </div>
+</div>
+<!-- 🌟 Modal សម្រាប់កែប្រែ Receipt (Edit Receipt) 🌟 -->
+<div id="editReceiptModal" class="modal">
+    <div class="modal-card" style="width: 500px;">
+        <div class="modal-head">
+            <h3><i class='bx bx-edit' style="color:var(--primary); margin-right:5px;"></i> កែប្រែការទទួលប្រាក់</h3>
+            <button class="icon-btn-round" onclick="closeModal('editReceiptModal')"><i class='bx bx-x'></i></button>
+        </div>
+        <input type="hidden" id="editReceiptId">
+        <input type="hidden" id="editReceiptOldAmount">
+        <input type="hidden" id="editReceiptOldCustomer">
+        
+        <div class="form-grid mb-4" style="grid-template-columns: 1fr;">
+            <label>កាលបរិច្ឆេទ<input type="date" id="editReceiptDate" class="form-input"></label>
+            <label>អតិថិជន<input type="text" id="editReceiptCustomer" class="form-input" readonly style="background: rgba(0,0,0,0.05); color: var(--muted);"></label>
+            
+            <div style="background: #eef2ff; padding: 12px; border-radius: 8px; border: 1px dashed #c7d2fe; margin-top: 5px;">
+                <small class="muted" style="color: #3730a3;"><i class='bx bx-info-circle'></i> ការកែប្រែទឹកប្រាក់នៅទីនេះ នឹងធ្វើឱ្យប្រព័ន្ធគណនា និងកាត់កងបំណុលម៉ូយឡើងវិញដោយស្វ័យប្រវត្តិ។</small>
+            </div>
+            
+            <label>ចំនួនទឹកប្រាក់ (៛)<input type="number" id="editReceiptAmount" class="form-input" style="font-size: 18px; font-weight: bold; color: var(--primary);" placeholder="ឧ. 100000"></label>
+            <label>កំណត់សម្គាល់<input type="text" id="editReceiptNote" class="form-input"></label>
+        </div>
+        
+        <div class="modal-actions border-top pt-3" style="display: flex; justify-content: space-between;">
+            <button class="btn outline" style="color: var(--danger); border-color: var(--danger);" onclick="deleteReceipt()"><i class='bx bx-trash'></i> លុបការទទួលប្រាក់</button>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn secondary" onclick="closeModal('editReceiptModal')">បោះបង់</button>
+                <button class="btn primary" onclick="saveEditedReceipt()"><i class='bx bx-save'></i> រក្សាទុកកែប្រែ</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- 🌟 Modal សម្រាប់បង្ហាញ និងបោះពុម្ព Receipt បន្ទាប់ពីទទួលប្រាក់ 🌟 -->
+<div id="paymentReceiptModal" class="modal">
+    <div class="modal-card" style="width: 400px; padding: 0;">
+        <div class="modal-head no-print" style="padding: 20px 20px 10px 20px;">
+            <h3><i class='bx bx-printer' style="color:var(--primary); margin-right:5px;"></i> វិក្កយបត្រទទួលប្រាក់</h3>
+            <button class="icon-btn-round" onclick="closeModal('paymentReceiptModal')"><i class='bx bx-x'></i></button>
+        </div>
+        
+        <!-- តំបន់សម្រាប់ Print -->
+        <div id="receiptPrintArea" style="padding: 20px; background: white; color: black; font-family: 'Kantumruy Pro', sans-serif;">
+            <div style="text-align: center; border-bottom: 1px dashed #000; padding-bottom: 15px; margin-bottom: 15px;">
+                <h2 style="margin: 0; font-size: 18px; color: #1e3a8a;">ស្រែមាស ចំការលើ</h2>
+                <h3 style="margin: 5px 0 0; font-size: 14px;">វិក្កយបត្រទទួលប្រាក់ (RECEIPT)</h3>
+            </div>
+            
+            <div style="font-size: 12px; margin-bottom: 15px;">
+                អតិថិជន: <b id="receiptCusName"></b><br>
+                ថ្ងៃទទួលប្រាក់: <b id="receiptDate"></b>
+            </div>
+            
+            <table style="width: 100%; font-size: 12px; margin-bottom: 15px; border-collapse: collapse;">
+                <thead style="border-bottom: 1px dashed #000;">
+                    <tr>
+                        <th style="text-align: left; padding-bottom: 8px;">វិក្កយបត្របំណុលចាស់</th>
+                        <th style="text-align: right; padding-bottom: 8px;">ជំពាក់</th>
+                        <th style="text-align: right; padding-bottom: 8px;">បង់សង</th>
+                        <th style="text-align: center; padding-bottom: 8px;">ស្ថានភាព</th>
+                    </tr>
+                </thead>
+                <tbody id="receiptItemsBody">
+                    <!-- JS នឹងទម្លាក់ទិន្នន័យនៅទីនេះ -->
+                </tbody>
+            </table>
+            
+            <div style="border-top: 1px dashed #000; padding-top: 15px; text-align: right;">
+                <span style="font-size: 13px; color: #666;">សរុបប្រាក់បានទទួល:</span><br>
+                <b id="receiptTotalKHR" style="font-size: 20px; color: #10b981; display: block; margin-top: 4px;">0 ៛</b>
+                <b id="receiptTotalUSD" style="font-size: 14px; color: #666; display: block;">$0.00</b>
+            </div>
+            
+            <div style="text-align: center; margin-top: 20px; font-weight: bold; border-top: 1px dashed #000; padding-top: 15px;">
+                🙏 សូមអរគុណសម្រាប់ការទូទាត់!
+            </div>
+        </div>
+        
+        <div class="modal-actions border-top pt-3 no-print" style="padding: 10px 20px 20px 20px;">
+            <button class="btn secondary" onclick="closeModal('paymentReceiptModal')">បិទ</button>
+            <button class="btn primary" onclick="printPaymentReceipt()"><i class='bx bx-printer'></i> បោះពុម្ព</button>
         </div>
     </div>
 </div>
